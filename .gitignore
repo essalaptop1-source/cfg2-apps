@@ -1,0 +1,21 @@
+# Build output
+bin/
+obj/
+publish_out/
+
+# IDE / tooling
+.vs/
+.freebuff/
+*.user
+*.suo
+
+# Old app leftovers (config manager era)
+configs/
+configs.json
+
+# Local logs
+debug_crash.log
+debug_state.log
+
+# Published apps (local delivery folder)
+Cfg2 apps/

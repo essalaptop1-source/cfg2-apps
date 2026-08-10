@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <AssemblyTitle>Discord Embed Sender</AssemblyTitle>
+    <AssemblyDescription>Compose and send Discord embeds via webhooks</AssemblyDescription>
+    <Product>Discord Embed Sender</Product>
+    <Version>1.1.0</Version>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <!-- Single-file WPF on Windows 10 crashes with DllNotFoundException in
+         SetWindowLongPtrWndProc unless native libraries are force-extracted. -->
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Themes\Colors.xaml" />
+    <Resource Include="Themes\Icons.xaml" />
+    <Resource Include="Themes\Styles.xaml" />
+    <Resource Include="Assets\app.ico" />
+  </ItemGroup>
+
+</Project>
