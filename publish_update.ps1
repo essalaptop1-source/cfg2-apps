@@ -1,20 +1,22 @@
 # ============================================================
-#  publish_update.ps1 - build a new version of the app
+#  publish_update.ps1 - build and ship a new version of a CFG2 app
 #
 #  Usage:
-#    powershell -ExecutionPolicy Bypass -File publish_update.ps1 -Version 1.2.0 [-Repo owner/repo] [-Url https://host/app.exe]
+#    powershell -ExecutionPolicy Bypass -File publish_update.ps1 -Version 1.2.0 [-App embed|fps] [-Repo owner/repo] [-Url https://host/app.exe] [-Notes "what changed"]
 #
 #  -Version  required - bumps the csproj <Version> and builds the single-file exe
+#  -App      optional - which app: embed (default) or fps
 #  -Repo     optional - your GitHub repo (owner/repo). When set, the script
 #            uploads the exe as a GitHub release (tag v<Version>) automatically.
 #  -Url      optional - a direct URL where the exe will be hosted. The script
 #            writes a matching version.json for you to upload next to it.
 #  -Notes    optional - release notes for the GitHub release (used with -Repo).
 #
-#  Output: Cfg2 apps\CFG2 Embed sender.exe (in this project's parent folder)
+#  Output: Cfg2 apps\<App folder>\<App name>.exe (in this project's parent folder)
 # ============================================================
 param(
     [Parameter(Mandatory = $true)][string]$Version,
+    [ValidateSet("embed", "fps")][string]$App = "embed",
     [string]$Repo = "",
     [string]$Url = "",
     [string]$Notes = ""
@@ -22,8 +24,19 @@ param(
 $ErrorActionPreference = "Stop"
 
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
-$csproj = Join-Path $root "Configuration2App\Configuration2App.csproj"
-$outDir = Join-Path $root "..\Cfg2 apps"
+
+switch ($App) {
+    "embed" {
+        $csproj = Join-Path $root "Configuration2App\Configuration2App.csproj"
+        $assemblyName = "CFG2 Embed sender"
+        $outDir = Join-Path $root "..\Cfg2 apps\CFG2 embed sender"
+    }
+    "fps" {
+        $csproj = Join-Path $root "FPSBoosterApp\FPSBoosterApp.csproj"
+        $assemblyName = "FPS Booster"
+        $outDir = Join-Path $root "..\Cfg2 apps\FPS booster"
+    }
+}
 New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 
 # 1) Bump the version
@@ -31,25 +44,26 @@ $content = Get-Content $csproj -Raw
 if ($content -notmatch "<Version>$([regex]::Escape($Version))</Version>") {
     $content = $content -replace '<Version>[^<]*</Version>', "<Version>$Version</Version>"
     Set-Content -Path $csproj -Value $content -NoNewline -Encoding UTF8
-    Write-Host "Bumped <Version> to $Version"
+    Write-Host "Bumped <Version> to $Version ($App)"
 }
 
 # 2) Publish the single-file exe (native-lib extraction fix is baked into csproj)
-Push-Location (Join-Path $root "Configuration2App")
+$projDir = Split-Path -Parent $csproj
+Push-Location $projDir
 try {
     dotnet publish -c Release -r win-x64 --self-contained true `
-        -p:PublishSingleFile=true -p:AssemblyName="CFG2 Embed sender" -o $outDir | Out-Null
+        -p:PublishSingleFile=true -p:AssemblyName="$assemblyName" -o $outDir | Out-Null
 } finally {
     Pop-Location
 }
 
-$exe = Join-Path $outDir "CFG2 Embed sender.exe"
+$exe = Join-Path $outDir "$assemblyName.exe"
 if (-not (Test-Path $exe)) { throw "Publish failed: exe not found at $exe" }
 Write-Host "Built: $exe"
 
 # 3) Ship it
 if ($Repo) {
-    $notes = if ($Notes) { $Notes } else { "Version $Version of CFG2 Embed sender." }
+    $notes = if ($Notes) { $Notes } else { "Version $Version of $assemblyName." }
     if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
         Write-Host "GitHub CLI not found - publish the release manually:" -ForegroundColor Yellow
         Write-Host "  gh release create v$Version `"$exe`" --repo $Repo --title `"v$Version`" --notes `"$notes`""
