@@ -160,6 +160,29 @@
                                     </Grid>
                                 </Border>
 
+                                <!-- Running games selector -->
+                                <Border Background="{StaticResource SurfaceBrush}"
+                                        BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
+                                        CornerRadius="10" Padding="12,10" Margin="0,12,0,0">
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="RUNNING GAMES" Style="{StaticResource BoostLabel}" Margin="0,0,0,4" VerticalAlignment="Center"/>
+                                            <Button x:Name="RefreshGamesButton" Content="Refresh"
+                                                    Style="{StaticResource GhostButton}" Height="24" Padding="10,0"
+                                                    Margin="8,0,0,4" Click="RefreshGames_Click"
+                                                    AutomationProperties.Name="Refresh games"/>
+                                        </StackPanel>
+                                        <ComboBox x:Name="ActiveGamesCombo" Style="{StaticResource ModernComboBox}"
+                                                  Height="34" AutomationProperties.Name="Running games"
+                                                  SelectionChanged="ActiveGames_Changed"
+                                                  ToolTip="Pick a running game - fills the exe path and process name below automatically"/>
+                                        <TextBlock x:Name="GamePickHint"
+                                                   Text="Pick a running game above, or type the exe path / process name manually."
+                                                   FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}"
+                                                   Margin="0,6,0,0" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Border>
+
                                 <StackPanel Orientation="Horizontal" Margin="0,16,0,8">
                                     <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconZap}"
                                           Width="13" Height="13" Stroke="{StaticResource AccentTextBrush}"
@@ -213,7 +236,7 @@
                                                 </Border>
                                             </StackPanel>
                                             <TextBlock x:Name="PremiumSubtitle"
-                                                       Text="Unlock the advanced tweaks with a license key. Each key works on one device and one IP."
+                                                       Text="Unlock the advanced tweaks with a license key."
                                                        FontSize="12" Foreground="#FFF0F0F0" Margin="0,3,0,0"
                                                        TextWrapping="Wrap" MaxWidth="460"/>
                                         </StackPanel>
@@ -307,6 +330,39 @@
                                         <TextBlock x:Name="StatusText" Text="Ready" FontSize="11.5"
                                                    Foreground="{StaticResource TextSecondaryBrush}"
                                                    TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <TextBlock Text="SYSTEM" Style="{StaticResource SectionHeader}" Margin="0,14,0,8"/>
+
+                                <Border Background="{StaticResource SurfaceBrush}"
+                                        BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
+                                        CornerRadius="10" Padding="12,12">
+                                    <StackPanel>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="CPU usage" FontSize="11"
+                                                       Foreground="{StaticResource TextSecondaryBrush}"/>
+                                            <TextBlock x:Name="CpuText" Grid.Column="1" Text="--" FontSize="11"
+                                                       FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
+                                        </Grid>
+                                        <Grid Margin="0,6,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="Memory" FontSize="11"
+                                                       Foreground="{StaticResource TextSecondaryBrush}"/>
+                                            <TextBlock x:Name="RamText" Grid.Column="1" Text="--" FontSize="11"
+                                                       FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
+                                        </Grid>
+                                        <Border Height="1" Background="{StaticResource DividerBrush}"
+                                                Margin="0,10,0,10"/>
+                                        <TextBlock x:Name="GameStatsText" Text="No game selected" FontSize="10.5"
+                                                   Foreground="{StaticResource TextTertiaryBrush}" TextWrapping="Wrap"/>
                                     </StackPanel>
                                 </Border>
 

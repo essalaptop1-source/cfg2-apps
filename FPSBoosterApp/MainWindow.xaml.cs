@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
@@ -6,6 +7,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 using FPSBoosterApp.Services;
 
 namespace FPSBoosterApp;
@@ -24,6 +26,16 @@ public partial class MainWindow : Window
     private readonly List<Path> _featureLocks = new();
     private bool _busy;
 
+    // ---- live system stats ----
+    private readonly DispatcherTimer _statsTimer;
+    private long _lastIdle, _lastKernel, _lastUser;
+    private ulong _totalRam;
+    private int _tick;
+    private Process? _monitoredGame;
+    private DateTime _lastGameSample;
+    private TimeSpan _lastGameCpu;
+    private bool _refreshingGames;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -33,6 +45,15 @@ public partial class MainWindow : Window
         UpdateTabs();
         RefreshPremiumUi();
         RefreshAll("Ready");
+
+        // Report this launch (device / IP / HWID / premium status) - never blocks.
+        _ = Task.Run(TelemetryService.ReportLaunchAsync);
+
+        InitStats();
+        _statsTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        _statsTimer.Tick += StatsTimer_Tick;
+        _statsTimer.Start();
+        RefreshGamesList();
 
         var isAdmin = BoostService.IsAdmin();
         if (isAdmin)
@@ -278,8 +299,8 @@ public partial class MainWindow : Window
             : new SolidColorBrush(Color.FromArgb(0x33, 0xFF, 0xFF, 0xFF));
         PremiumPillText.Foreground = active ? new SolidColorBrush(Color.FromRgb(6, 18, 11)) : Brushes.White;
         PremiumSubtitle.Text = active
-            ? "Premium is active on this device. The extra tweaks are unlocked in the BOOST tab."
-            : "Unlock the advanced tweaks with a license key. Each key works on one device and one IP.";
+            ? "Premium is active. The extra tweaks are unlocked in the BOOST tab."
+            : "Unlock the advanced tweaks with a license key.";
 
         PremiumDot.Fill = active
             ? (Brush)FindResource("OnlineBrush")
@@ -333,6 +354,168 @@ public partial class MainWindow : Window
 
     private void PremiumGame_Changed(object sender, TextChangedEventArgs e) =>
         BoostService.GameProcessName = PremiumGameBox.Text.Trim();
+
+    // ================================================================ Running games
+
+    private sealed class GameEntry
+    {
+        public GameEntry(Process p)
+        {
+            Process = p;
+            Label = $"{p.ProcessName}  -  {p.MainWindowTitle}";
+        }
+        public Process Process { get; }
+        public string Label { get; }
+        public override string ToString() => Label;
+    }
+
+    private void RefreshGames_Click(object sender, RoutedEventArgs e) => RefreshGamesList();
+
+    private void RefreshGamesList()
+    {
+        _refreshingGames = true;
+        var previous = ActiveGamesCombo.SelectedItem as GameEntry;
+        ActiveGamesCombo.Items.Clear();
+        var me = Environment.ProcessId;
+        foreach (var p in Process.GetProcesses()
+                     .Where(p => !string.IsNullOrWhiteSpace(p.MainWindowTitle) && p.Id != me)
+                     .OrderBy(p => p.ProcessName, StringComparer.OrdinalIgnoreCase))
+        {
+            ActiveGamesCombo.Items.Add(new GameEntry(p));
+        }
+        if (previous != null)
+        {
+            ActiveGamesCombo.SelectedItem = ActiveGamesCombo.Items
+                .OfType<GameEntry>()
+                .FirstOrDefault(g => g.Process.Id == previous.Process.Id);
+        }
+        _refreshingGames = false;
+    }
+
+    private void ActiveGames_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (_refreshingGames || ActiveGamesCombo.SelectedItem is not GameEntry entry) return;
+
+        var name = entry.Process.ProcessName;
+        BoostService.GameProcessName = name;
+        PremiumGameBox.Text = name;
+
+        try
+        {
+            var path = entry.Process.MainModule?.FileName;
+            if (!string.IsNullOrWhiteSpace(path))
+            {
+                BoostService.GameExePath = path;
+                GameExeBox.Text = path;
+            }
+        }
+        catch
+        {
+            // process may have exited - path stays as typed
+        }
+
+        _monitoredGame = entry.Process;
+        _lastGameSample = DateTime.UtcNow;
+        _lastGameCpu = TimeSpan.Zero;
+        GameStatsText.Text = $"Monitoring {name}";
+    }
+
+    // ================================================================ System stats
+
+    [StructLayout(LayoutKind.Sequential)]
+    private sealed class MemoryStatusEx
+    {
+        public uint Length = (uint)Marshal.SizeOf(typeof(MemoryStatusEx));
+        public uint MemoryLoad;
+        public ulong TotalPhys;
+        public ulong AvailPhys;
+        public ulong TotalPageFile;
+        public ulong AvailPageFile;
+        public ulong TotalVirtual;
+        public ulong AvailVirtual;
+        public ulong AvailExtendedVirtual;
+    }
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GlobalMemoryStatusEx([In, Out] MemoryStatusEx buffer);
+
+    [DllImport("kernel32.dll")]
+    private static extern bool GetSystemTimes(out long idleTime, out long kernelTime, out long userTime);
+
+    private void InitStats()
+    {
+        var mem = new MemoryStatusEx();
+        if (GlobalMemoryStatusEx(mem))
+            _totalRam = mem.TotalPhys;
+        GetSystemTimes(out var idle, out var kernel, out var user);
+        _lastIdle = idle;
+        _lastKernel = kernel;
+        _lastUser = user;
+    }
+
+    private void StatsTimer_Tick(object? sender, EventArgs e)
+    {
+        _tick++;
+        SampleCpu();
+        SampleRam();
+        SampleGame();
+        if (_tick % 10 == 0) RefreshGamesList(); // keep the running-games list fresh
+    }
+
+    private void SampleCpu()
+    {
+        if (!GetSystemTimes(out var idle, out var kernel, out var user)) return;
+        var total1 = _lastKernel + _lastUser;
+        var total2 = kernel + user;
+        var dTotal = total2 - total1;
+        if (dTotal <= 0) return;
+        var pct = 100.0 * (1.0 - (double)(idle - _lastIdle) / dTotal);
+        _lastIdle = idle;
+        _lastKernel = kernel;
+        _lastUser = user;
+        CpuText.Text = $"{Math.Clamp(pct, 0, 100):F0}%";
+    }
+
+    private void SampleRam()
+    {
+        var mem = new MemoryStatusEx();
+        if (!GlobalMemoryStatusEx(mem) || mem.TotalPhys == 0) return;
+        var used = mem.TotalPhys - mem.AvailPhys;
+        RamText.Text = $"{used / 1073741824.0:F1} / {mem.TotalPhys / 1073741824.0:F0} GB";
+    }
+
+    private void SampleGame()
+    {
+        if (_monitoredGame == null) return;
+        try
+        {
+            _monitoredGame.Refresh();
+            if (_monitoredGame.HasExited)
+            {
+                _monitoredGame = null;
+                GameStatsText.Text = "No game selected";
+                return;
+            }
+            var now = DateTime.UtcNow;
+            var elapsed = (now - _lastGameSample).TotalSeconds;
+            if (elapsed > 0 && _lastGameCpu > TimeSpan.Zero)
+            {
+                var cpu = 100.0 * (_monitoredGame.TotalProcessorTime - _lastGameCpu).TotalSeconds
+                          / elapsed / Environment.ProcessorCount;
+                var memMb = _monitoredGame.WorkingSet64 / 1048576.0;
+                GameStatsText.Text =
+                    $"{_monitoredGame.ProcessName}: CPU {Math.Clamp(cpu, 0, 100):F0}%  ·  {memMb:F0} MB";
+            }
+            _lastGameSample = now;
+            _lastGameCpu = _monitoredGame.TotalProcessorTime;
+        }
+        catch
+        {
+            _monitoredGame = null;
+            GameStatsText.Text = "No game selected";
+        }
+    }
 
     // ================================================================ Actions
 

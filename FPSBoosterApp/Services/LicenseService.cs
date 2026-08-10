@@ -123,11 +123,11 @@ public static class LicenseService
                 string.Equals(boundIp, ip, StringComparison.OrdinalIgnoreCase))
             {
                 IsPremiumActive = true;
-                return (true, "This key is already active on this device.");
+                return (true, "This key is already active.");
             }
             if (string.Equals(boundHwid, hwid, StringComparison.OrdinalIgnoreCase))
-                return (false, "This key is bound to a different IP address on this device.");
-            return (false, "This key is already in use on another device.");
+                return (false, "This key cannot be activated on this network.");
+            return (false, "This key is already in use.");
         }
 
         // Unbound - bind it to this device + IP.
@@ -136,7 +136,7 @@ public static class LicenseService
             lines[index] = $"{normalized}  {hwid}  {ip}  {DateTime.Now:yyyy-MM-dd}";
             File.WriteAllLines(KeysPath, lines);
             IsPremiumActive = true;
-            return (true, "Activated! Premium is now unlocked on this device.");
+            return (true, "Activated! Premium is now unlocked.");
         }
         catch
         {

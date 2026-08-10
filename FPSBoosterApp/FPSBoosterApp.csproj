@@ -9,7 +9,7 @@
     <AssemblyTitle>FPS Booster</AssemblyTitle>
     <AssemblyDescription>Apply Windows tweaks to boost gaming performance</AssemblyDescription>
     <Product>FPS Booster</Product>
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <!-- Single-file WPF on Windows 10 needs the native-lib extraction fix. -->
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
