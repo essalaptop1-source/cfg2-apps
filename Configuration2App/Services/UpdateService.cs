@@ -19,6 +19,13 @@ public record UpdateInfo(string Version, string DownloadUrl, string? Notes);
 /// </summary>
 public static class UpdateService
 {
+    /// <summary>
+    /// Built-in update source so every install auto-updates without configuration.
+    /// Users can still override it in Settings (empty GitHubRepo = this default;
+    /// UpdateUrl, when set, takes priority over GitHub).
+    /// </summary>
+    public const string DefaultRepo = "essalaptop1-source/cfg2-apps";
+
     private static readonly HttpClient Http = CreateClient();
 
     private static HttpClient CreateClient()
@@ -34,7 +41,7 @@ public static class UpdateService
     /// <summary>Returns update info when a newer version exists, otherwise null.</summary>
     public static async Task<UpdateInfo?> CheckAsync(AppSettings settings)
     {
-        var repo = settings.GitHubRepo?.Trim();
+        var repo = string.IsNullOrWhiteSpace(settings.GitHubRepo) ? DefaultRepo : settings.GitHubRepo.Trim();
         if (!string.IsNullOrWhiteSpace(repo))
         {
             try

@@ -698,8 +698,8 @@ public partial class MainWindow : Window
     private async Task CheckForUpdatesSilently()
     {
         if (!_settings.CheckUpdatesOnStartup) return;
-        if (string.IsNullOrWhiteSpace(_settings.GitHubRepo) && string.IsNullOrWhiteSpace(_settings.UpdateUrl))
-            return;
+        // An empty GitHubRepo falls back to the built-in update source, so every
+        // install auto-updates even when nothing is configured in Settings.
         var info = await UpdateService.CheckAsync(_settings);
         if (info == null || info.Version == _settings.SkippedVersion) return;
         _pendingUpdate = info;
@@ -719,13 +719,6 @@ public partial class MainWindow : Window
 
         _settings.GitHubRepo = GitHubRepoBox.Text.Trim();
         _settings.UpdateUrl = UpdateUrlBox.Text.Trim();
-        if (string.IsNullOrWhiteSpace(_settings.GitHubRepo) && string.IsNullOrWhiteSpace(_settings.UpdateUrl))
-        {
-            UpdateStatusText.Text = "Set a GitHub repo or update URL first.";
-            UpdateStatusText.Foreground = (Brush)FindResource("TextTertiaryBrush");
-            return;
-        }
-
         CheckUpdatesButton.IsEnabled = false;
         UpdateStatusText.Text = "Checking for updates…";
         UpdateStatusText.Foreground = (Brush)FindResource("TextSecondaryBrush");
