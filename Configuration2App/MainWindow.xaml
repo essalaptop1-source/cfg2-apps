@@ -672,7 +672,7 @@
                     <TextBlock Style="{StaticResource FieldLabel}" Text="CURRENT VERSION" Margin="0,0,0,2"/>
                     <TextBlock x:Name="VersionText" Text="1.0.0" FontSize="13" FontWeight="SemiBold"
                                Foreground="{StaticResource TextBrush}"
-                               AutomationProperties.Name="Current version"/>
+                               AutomationProperties.AutomationId="VersionText"/>
 
                     <TextBlock Style="{StaticResource FieldLabel}" Text="GITHUB REPO  (owner/repo)"/>
                     <TextBox x:Name="GitHubRepoBox" Style="{StaticResource ComposerField}"
@@ -703,7 +703,7 @@
                     </Grid>
                     <TextBlock x:Name="UpdateStatusText" FontSize="11" TextWrapping="Wrap" Margin="0,8,0,0"
                                Foreground="{StaticResource TextTertiaryBrush}"
-                               AutomationProperties.Name="Update status"/>
+                               AutomationProperties.AutomationId="UpdateStatusText"/>
 
                     <Border Height="1" Background="{DynamicResource DividerBrush}" Margin="0,18,0,10"/>
                     <TextBlock Text="Changes apply instantly and are saved for next launch." FontSize="11"

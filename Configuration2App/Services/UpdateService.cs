@@ -44,10 +44,13 @@ public static class UpdateService
                 if (!resp.IsSuccessStatusCode) return null;
                 var json = JObject.Parse(await resp.Content.ReadAsStringAsync().ConfigureAwait(false));
                 var version = ParseVersion((string?)json["tag_name"]);
-                var exeName = Path.GetFileName(Environment.ProcessPath ?? "");
+                // GitHub's CLI stores assets with spaces replaced by dots
+                // (CFG2 Embed sender.exe -> CFG2.Embed.sender.exe), so compare
+                // normalized names to stay immune to that.
+                var exeName = NormalizeName(Path.GetFileName(Environment.ProcessPath ?? ""));
                 var assets = json["assets"] as JArray;
                 var asset = assets?.FirstOrDefault(a =>
-                               string.Equals((string?)a["name"], exeName, StringComparison.OrdinalIgnoreCase))
+                               NormalizeName((string?)a["name"] ?? "") == exeName)
                            ?? assets?.FirstOrDefault();
                 var downloadUrl = (string?)asset?["browser_download_url"];
                 if (version == null || string.IsNullOrWhiteSpace(downloadUrl)) return null;
@@ -148,6 +151,9 @@ public static class UpdateService
             return false;
         }
     }
+
+    private static string NormalizeName(string name) =>
+        new string(name.Where(char.IsLetterOrDigit).ToArray()).ToLowerInvariant();
 
     public static Version? ParseVersion(string? raw)
     {

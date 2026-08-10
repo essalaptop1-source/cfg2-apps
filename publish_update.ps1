@@ -1,14 +1,14 @@
 # ============================================================
-#  publish_update.ps1 — build a new version of the app
+#  publish_update.ps1 - build a new version of the app
 #
 #  Usage:
 #    powershell -ExecutionPolicy Bypass -File publish_update.ps1 -Version 1.2.0 [-Repo owner/repo] [-Url https://host/app.exe]
 #
-#  -Version  required — bumps the csproj <Version> and builds the single-file exe
-#  -Repo     optional — your GitHub repo (owner/repo). Then publish a GitHub
+#  -Version  required - bumps the csproj <Version> and builds the single-file exe
+#  -Repo     optional - your GitHub repo (owner/repo). Then publish a GitHub
 #            release with tag v<Version> and the exe as its only asset.
 #            The app auto-checks this repo's latest release.
-#  -Url      optional — a direct URL where the exe will be hosted. The script
+#  -Url      optional - a direct URL where the exe will be hosted. The script
 #            writes a matching version.json for you to upload next to it.
 #            The app auto-checks this URL when set in Settings.
 #

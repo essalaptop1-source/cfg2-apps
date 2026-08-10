@@ -1,5 +1,5 @@
 # ============================================================
-#  setup_github.ps1 — one-time GitHub setup for CFG2 apps
+#  setup_github.ps1 - one-time GitHub setup for CFG2 apps
 #
 #  Requirements (run once):
 #    1. Install the GitHub CLI:
@@ -42,38 +42,43 @@ Write-Host "Logged in as: $owner" -ForegroundColor Green
 if (-not $Repo) { $Repo = "$owner/$RepoName" }
 
 # ---- 2. Create the repo if needed ----
-$repoExists = gh repo view $Repo --json name 2>$null
+$prevEap = $ErrorActionPreference
+$ErrorActionPreference = "SilentlyContinue"
+gh repo view $Repo --json name 2>$null | Out-Null
+$repoExists = ($LASTEXITCODE -eq 0)
+$ErrorActionPreference = $prevEap
 if (-not $repoExists) {
     Write-Host "Creating public repo $Repo ..."
     gh repo create $RepoName --public --source $root --push
     if ($LASTEXITCODE -ne 0) { Write-Host "Repo create/push failed." -ForegroundColor Red; exit 1 }
 } else {
-    Write-Host "Repo $Repo already exists — pushing."
+    Write-Host "Repo $Repo already exists - pushing."
     Push-Location $root
     try { git push -u origin main } finally { Pop-Location }
 }
 
 # ---- 3. Build + publish the current version ----
-& (Join-Path $root "publish_update.ps1") -Repo $Repo
+$versionLine = (Select-String -Path (Join-Path $root "Configuration2App\Configuration2App.csproj") -Pattern '<Version>([^<]*)</Version>').Matches[0].Groups[1].Value
+& (Join-Path $root "publish_update.ps1") -Version $versionLine -Repo $Repo
 
-$versionLine = (Select-String -Path (Join-Path $root "Configuration2App\Configuration2App.csproj") -Pattern '<Version>([^<]*)</Version>').Matches.Groups[1].Value
 $exe = Join-Path $root "..\Cfg2 apps\CFG2 Embed sender.exe"
 if (-not (Test-Path $exe)) { Write-Host "Build output missing: $exe" -ForegroundColor Red; exit 1 }
 
 # ---- 4. Upload the exe as a release asset ----
 Write-Host "Creating GitHub release v$versionLine ..."
 gh release create "v$versionLine" $exe --repo $Repo --title "v$versionLine" --notes "Latest build of CFG2 Embed sender."
-if ($LASTEXITCODE -ne 0) { Write-Host "Release create failed (maybe it exists?) — run publish_update.ps1 manually." -ForegroundColor Yellow }
+if ($LASTEXITCODE -ne 0) { Write-Host "Release create failed (maybe it exists?) - run publish_update.ps1 manually." -ForegroundColor Yellow }
 
 # ---- 5. Point the app at this repo so it auto-updates ----
 $settingsPath = Join-Path $env:APPDATA "Kicia\settings.json"
 if (Test-Path $settingsPath) {
     $j = Get-Content $settingsPath -Raw | ConvertFrom-Json
     $j | Add-Member -NotePropertyName GitHubRepo -NotePropertyValue $Repo -Force
+    $j | Add-Member -NotePropertyName CheckUpdatesOnStartup -NotePropertyValue $true -Force
     $j | ConvertTo-Json -Depth 6 | Set-Content $settingsPath -Encoding UTF8
-    Write-Host "App update source set to: $Repo (in Settings → UPDATES)" -ForegroundColor Green
+    Write-Host "App update source set to: $Repo (in Settings, UPDATES section)" -ForegroundColor Green
 } else {
-    Write-Host "No settings.json found yet — set GitHub repo to '$Repo' in the app's Settings → UPDATES." -ForegroundColor Yellow
+    Write-Host "No settings.json found yet - set GitHub repo to '$Repo' in the app's Settings, UPDATES section." -ForegroundColor Yellow
 }
 
 Write-Host ""
