@@ -50,7 +50,8 @@ Write-Host "Built: $exe"
 # 3) Tell the user how to ship it
 if ($Repo) {
     Write-Host ""
-    Write-Host "Now create the GitHub release (asset name must stay 'CFG2 Embed sender.exe'):"
+    Write-Host "Now create the GitHub release with the exe as its asset (gh stores it as"
+    Write-Host "'CFG2.Embed.sender.exe' - the app matches either form):"
     Write-Host "  gh release create v$Version `"$exe`" --repo $Repo --title `"v$Version`" --notes `"What changed?`""
     Write-Host "The app finds this repo's latest release automatically once users set the repo in Settings."
 }
