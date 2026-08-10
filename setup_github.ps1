@@ -57,19 +57,11 @@ if (-not $repoExists) {
     try { git push -u origin main } finally { Pop-Location }
 }
 
-# ---- 3. Build + publish the current version ----
+# ---- 3. Build + publish the current version (creates the GitHub release too) ----
 $versionLine = (Select-String -Path (Join-Path $root "Configuration2App\Configuration2App.csproj") -Pattern '<Version>([^<]*)</Version>').Matches[0].Groups[1].Value
 & (Join-Path $root "publish_update.ps1") -Version $versionLine -Repo $Repo
 
-$exe = Join-Path $root "..\Cfg2 apps\CFG2 Embed sender.exe"
-if (-not (Test-Path $exe)) { Write-Host "Build output missing: $exe" -ForegroundColor Red; exit 1 }
-
-# ---- 4. Upload the exe as a release asset ----
-Write-Host "Creating GitHub release v$versionLine ..."
-gh release create "v$versionLine" $exe --repo $Repo --title "v$versionLine" --notes "Latest build of CFG2 Embed sender."
-if ($LASTEXITCODE -ne 0) { Write-Host "Release create failed (maybe it exists?) - run publish_update.ps1 manually." -ForegroundColor Yellow }
-
-# ---- 5. Point the app at this repo so it auto-updates ----
+# ---- 4. Point the app at this repo so it auto-updates ----
 $settingsPath = Join-Path $env:APPDATA "Kicia\settings.json"
 if (Test-Path $settingsPath) {
     $j = Get-Content $settingsPath -Raw | ConvertFrom-Json

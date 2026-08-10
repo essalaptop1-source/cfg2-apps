@@ -5,19 +5,19 @@
 #    powershell -ExecutionPolicy Bypass -File publish_update.ps1 -Version 1.2.0 [-Repo owner/repo] [-Url https://host/app.exe]
 #
 #  -Version  required - bumps the csproj <Version> and builds the single-file exe
-#  -Repo     optional - your GitHub repo (owner/repo). Then publish a GitHub
-#            release with tag v<Version> and the exe as its only asset.
-#            The app auto-checks this repo's latest release.
+#  -Repo     optional - your GitHub repo (owner/repo). When set, the script
+#            uploads the exe as a GitHub release (tag v<Version>) automatically.
 #  -Url      optional - a direct URL where the exe will be hosted. The script
 #            writes a matching version.json for you to upload next to it.
-#            The app auto-checks this URL when set in Settings.
+#  -Notes    optional - release notes for the GitHub release (used with -Repo).
 #
 #  Output: Cfg2 apps\CFG2 Embed sender.exe (in this project's parent folder)
 # ============================================================
 param(
     [Parameter(Mandatory = $true)][string]$Version,
     [string]$Repo = "",
-    [string]$Url = ""
+    [string]$Url = "",
+    [string]$Notes = ""
 )
 $ErrorActionPreference = "Stop"
 
@@ -47,13 +47,35 @@ $exe = Join-Path $outDir "CFG2 Embed sender.exe"
 if (-not (Test-Path $exe)) { throw "Publish failed: exe not found at $exe" }
 Write-Host "Built: $exe"
 
-# 3) Tell the user how to ship it
+# 3) Ship it
 if ($Repo) {
-    Write-Host ""
-    Write-Host "Now create the GitHub release with the exe as its asset (gh stores it as"
-    Write-Host "'CFG2.Embed.sender.exe' - the app matches either form):"
-    Write-Host "  gh release create v$Version `"$exe`" --repo $Repo --title `"v$Version`" --notes `"What changed?`""
-    Write-Host "The app finds this repo's latest release automatically once users set the repo in Settings."
+    $notes = if ($Notes) { $Notes } else { "Version $Version of CFG2 Embed sender." }
+    if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
+        Write-Host "GitHub CLI not found - publish the release manually:" -ForegroundColor Yellow
+        Write-Host "  gh release create v$Version `"$exe`" --repo $Repo --title `"v$Version`" --notes `"$notes`""
+        exit 0
+    }
+    $prevEap = $ErrorActionPreference
+    $ErrorActionPreference = "SilentlyContinue"
+    gh release view "v$Version" --repo $Repo --json tagName 2>$null | Out-Null
+    $exists = ($LASTEXITCODE -eq 0)
+    if ($exists) {
+        Write-Host "Release v$Version already exists - updating its asset."
+        gh release upload "v$Version" $exe --repo $Repo --clobber 2>$null
+        $ok = ($LASTEXITCODE -eq 0)
+    } else {
+        Write-Host "Creating GitHub release v$Version ..."
+        gh release create "v$Version" $exe --repo $Repo --title "v$Version" --notes $notes 2>$null
+        $ok = ($LASTEXITCODE -eq 0)
+    }
+    $ErrorActionPreference = $prevEap
+    if ($ok) {
+        Write-Host "Published: https://github.com/$Repo/releases/tag/v$Version" -ForegroundColor Green
+        Write-Host "Users' apps will detect v$Version on their next launch."
+    } else {
+        Write-Host "Release step failed (tag name collision?). Run it manually:" -ForegroundColor Yellow
+        Write-Host "  gh release create v$Version `"$exe`" --repo $Repo --title `"v$Version`" --notes `"$notes`""
+    }
 }
 elseif ($Url) {
     $vj = Join-Path $outDir "version.json"
