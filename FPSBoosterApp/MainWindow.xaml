@@ -7,9 +7,9 @@
         AllowsTransparency="True"
         Background="Transparent"
         WindowStartupLocation="CenterScreen"
-        MinWidth="880"
-        MinHeight="560"
-        Width="960" Height="680"
+        MinWidth="900"
+        MinHeight="580"
+        Width="980" Height="700"
         FontFamily="{StaticResource AppFont}"
         TextOptions.TextFormattingMode="Display"
         UseLayoutRounding="True"
@@ -26,6 +26,26 @@
             <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
             <Setter Property="Margin" Value="0,10,0,4"/>
         </Style>
+        <Style x:Key="TabButton" TargetType="Button">
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Padding" Value="16,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontFamily" Value="{StaticResource AppFont}"/>
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bg" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1"
+                                CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <Grid>
@@ -33,7 +53,7 @@
         <Border x:Name="WindowFrame" CornerRadius="16" Margin="14" Background="{DynamicResource BgBrush}"
                 BorderBrush="{StaticResource WindowEdgeBrush}" BorderThickness="1">
             <Border.Effect>
-                <DropShadowEffect BlurRadius="32" ShadowDepth="0" Opacity="0.55" Color="#000000"/>
+                <DropShadowEffect BlurRadius="32" ShadowDepth="0" Opacity="0.6" Color="#000000"/>
             </Border.Effect>
             <Grid>
                 <Grid.RowDefinitions>
@@ -54,10 +74,9 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <Border Width="24" Height="24" CornerRadius="7" Margin="14,0,9,0"
-                                    Background="{StaticResource AccentGradientBrush}">
-                                <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconZap}"
-                                      Width="12" Height="12" Stroke="{StaticResource OnAccentBrush}"
-                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
+                                    ClipToBounds="True">
+                                <Image Source="/Assets/logo.png" Stretch="UniformToFill"/>
                             </Border>
                             <TextBlock Text="FPS Booster" FontSize="13" FontWeight="SemiBold"
                                        Foreground="{StaticResource TextBrush}" VerticalAlignment="Center"/>
@@ -65,6 +84,11 @@
                                     CornerRadius="4" Padding="5,2" Margin="10,0,0,0"
                                     VerticalAlignment="Center" Visibility="Collapsed">
                                 <TextBlock Text="ADMIN" FontSize="8.5" FontWeight="Bold" Foreground="#06120B"/>
+                            </Border>
+                            <Border x:Name="PremiumBadge" Background="{StaticResource AccentGradientBrush}"
+                                    CornerRadius="4" Padding="5,2" Margin="8,0,0,0"
+                                    VerticalAlignment="Center" Visibility="Collapsed">
+                                <TextBlock Text="PREMIUM" FontSize="8.5" FontWeight="Bold" Foreground="#FFFFFF"/>
                             </Border>
                         </StackPanel>
                         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
@@ -90,64 +114,169 @@
                         <ColumnDefinition Width="262"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- ==================== Main: hero + tweaks ==================== -->
-                    <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto"
-                                  HorizontalScrollBarVisibility="Disabled">
-                        <StackPanel Margin="16,14,16,14">
+                    <!-- ==================== Main ==================== -->
+                    <Grid Grid.Column="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
 
-                            <!-- Hero -->
-                            <Border Background="{StaticResource AccentGradientBrush}"
-                                    BorderBrush="{StaticResource AccentBorderBrush}" BorderThickness="1"
-                                    CornerRadius="14" Padding="20,18">
-                                <Border.Effect>
-                                    <DropShadowEffect BlurRadius="22" ShadowDepth="0" Opacity="0.4" Color="#EF4444"/>
-                                </Border.Effect>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel VerticalAlignment="Center">
-                                        <TextBlock Text="Boost your FPS" FontSize="17" FontWeight="Bold" Foreground="White"/>
-                                        <TextBlock Text="One click applies the recommended tweaks below. Every change can be restored."
-                                                   FontSize="12" Foreground="#FFF0F0F0" Margin="0,3,0,0"
-                                                   TextWrapping="Wrap" MaxWidth="430"/>
-                                    </StackPanel>
-                                    <Button Grid.Column="1" x:Name="BoostButton" Content="BOOST NOW"
-                                            Style="{StaticResource ModernButton}" Height="42" Padding="22,0"
-                                            VerticalAlignment="Center" Click="Boost_Click"
-                                            AutomationProperties.Name="Boost now"/>
-                                </Grid>
-                            </Border>
-
-                            <StackPanel Orientation="Horizontal" Margin="0,16,0,8">
-                                <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconZap}"
-                                      Width="13" Height="13" Stroke="{StaticResource AccentTextBrush}"
-                                      VerticalAlignment="Center"/>
-                                <TextBlock Text="TWEAKS" FontSize="11" FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextSecondaryBrush}" Margin="7,0,0,0"
-                                           VerticalAlignment="Center"/>
-                            </StackPanel>
-
-                            <StackPanel x:Name="TweakList"/>
-
-                            <!-- Game exe input (for the GPU tweak) -->
-                            <Border Background="{StaticResource SurfaceBrush}"
-                                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
-                                    CornerRadius="10" Padding="12,10" Margin="0,10,0,0">
-                                <StackPanel>
-                                    <TextBlock Text="GAME EXE PATH" Style="{StaticResource BoostLabel}" Margin="0,0,0,4"/>
-                                    <TextBox x:Name="GameExeBox" Style="{StaticResource BoostField}"
-                                             AutomationProperties.Name="Game exe path"
-                                             ToolTip="e.g. C:\Games\game.exe - used by the high-performance GPU tweak"
-                                             TextChanged="GameExe_Changed"/>
-                                    <TextBlock Text="Optional - only needed if you enable the high-performance GPU tweak above."
-                                               FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}"
-                                               Margin="0,6,0,0" TextWrapping="Wrap"/>
-                                </StackPanel>
-                            </Border>
+                        <!-- Tabs -->
+                        <StackPanel Orientation="Horizontal" Margin="16,12,16,0">
+                            <Button x:Name="TabBoost" Content="BOOST" Style="{StaticResource TabButton}"
+                                    Click="Tab_Click" Tag="boost" AutomationProperties.Name="Tab Boost"/>
+                            <Button x:Name="TabPremium" Content="PREMIUM" Style="{StaticResource TabButton}"
+                                    Margin="8,0,0,0" Click="Tab_Click" Tag="premium"
+                                    AutomationProperties.Name="Tab Premium"/>
                         </StackPanel>
-                    </ScrollViewer>
+
+                        <!-- ============ BOOST tab ============ -->
+                        <ScrollViewer x:Name="PanelBoost" Grid.Row="1" VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Disabled">
+                            <StackPanel Margin="16,12,16,16">
+
+                                <!-- Hero -->
+                                <Border Background="{StaticResource AccentGradientBrush}"
+                                        BorderBrush="{StaticResource AccentBorderBrush}" BorderThickness="1"
+                                        CornerRadius="14" Padding="20,18">
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="22" ShadowDepth="0" Opacity="0.4" Color="#EF4444"/>
+                                    </Border.Effect>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="Boost your FPS" FontSize="17" FontWeight="Bold" Foreground="White"/>
+                                            <TextBlock Text="One click applies the recommended tweaks below. Every change can be restored."
+                                                       FontSize="12" Foreground="#FFF0F0F0" Margin="0,3,0,0"
+                                                       TextWrapping="Wrap" MaxWidth="430"/>
+                                        </StackPanel>
+                                        <Button Grid.Column="1" x:Name="BoostButton" Content="BOOST NOW"
+                                                Style="{StaticResource ModernButton}" Height="42" Padding="22,0"
+                                                VerticalAlignment="Center" Click="Boost_Click"
+                                                AutomationProperties.Name="Boost now"/>
+                                    </Grid>
+                                </Border>
+
+                                <StackPanel Orientation="Horizontal" Margin="0,16,0,8">
+                                    <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconZap}"
+                                          Width="13" Height="13" Stroke="{StaticResource AccentTextBrush}"
+                                          VerticalAlignment="Center"/>
+                                    <TextBlock Text="TWEAKS" FontSize="11" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextSecondaryBrush}" Margin="7,0,0,0"
+                                               VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <StackPanel x:Name="TweakList"/>
+
+                                <!-- Game exe input (for the GPU / fullscreen tweaks) -->
+                                <Border Background="{StaticResource SurfaceBrush}"
+                                        BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
+                                        CornerRadius="10" Padding="12,10" Margin="0,10,0,0">
+                                    <StackPanel>
+                                        <TextBlock Text="GAME EXE PATH" Style="{StaticResource BoostLabel}" Margin="0,0,0,4"/>
+                                        <TextBox x:Name="GameExeBox" Style="{StaticResource BoostField}"
+                                                 AutomationProperties.Name="Game exe path"
+                                                 ToolTip="e.g. C:\Games\game.exe - used by the GPU and fullscreen-optimization tweaks"
+                                                 TextChanged="GameExe_Changed"/>
+                                        <TextBlock Text="Optional - needed for the GPU preference and fullscreen-optimization tweaks."
+                                                   FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}"
+                                                   Margin="0,6,0,0" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <!-- ============ PREMIUM tab ============ -->
+                        <ScrollViewer x:Name="PanelPremium" Grid.Row="1" VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Disabled" Visibility="Collapsed">
+                            <StackPanel Margin="16,12,16,16">
+
+                                <!-- Premium hero -->
+                                <Border Background="{StaticResource AccentGradientBrush}"
+                                        BorderBrush="{StaticResource AccentBorderBrush}" BorderThickness="1"
+                                        CornerRadius="14" Padding="20,18">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel VerticalAlignment="Center">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="FPS Booster PREMIUM" FontSize="17" FontWeight="Bold" Foreground="White"/>
+                                                <Border x:Name="PremiumPill" Background="#33FFFFFF" CornerRadius="4"
+                                                        Padding="6,2" Margin="10,0,0,0" VerticalAlignment="Center">
+                                                    <TextBlock x:Name="PremiumPillText" Text="LOCKED" FontSize="9"
+                                                               FontWeight="Bold" Foreground="White"/>
+                                                </Border>
+                                            </StackPanel>
+                                            <TextBlock x:Name="PremiumSubtitle"
+                                                       Text="Unlock the advanced tweaks with a license key. Each key works on one device and one IP."
+                                                       FontSize="12" Foreground="#FFF0F0F0" Margin="0,3,0,0"
+                                                       TextWrapping="Wrap" MaxWidth="460"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+
+                                <!-- Activation card -->
+                                <Border Background="{StaticResource SurfaceBrush}"
+                                        BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
+                                        CornerRadius="10" Padding="14,12" Margin="0,12,0,0">
+                                    <StackPanel>
+                                        <TextBlock Text="ACTIVATE WITH YOUR KEY" Style="{StaticResource BoostLabel}" Margin="0,0,0,4"/>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBox x:Name="KeyBox" Style="{StaticResource BoostField}"
+                                                     AutomationProperties.Name="License key"
+                                                     FontFamily="{StaticResource MonoFont}"
+                                                     ToolTip="Format: XXXX-XXXX-XXXX-XXXX"
+                                                     TextChanged="KeyBox_Changed"/>
+                                            <Button Grid.Column="1" x:Name="ActivateButton" Content="Activate"
+                                                    Style="{StaticResource ModernButton}" Height="34" Padding="16,0"
+                                                    Margin="8,0,0,0" VerticalAlignment="Center"
+                                                    AutomationProperties.Name="Activate key" Click="Activate_Click"/>
+                                        </Grid>
+                                        <TextBlock x:Name="KeyStatusText" FontSize="11.5" TextWrapping="Wrap"
+                                                   Foreground="{StaticResource TextTertiaryBrush}" Margin="0,8,0,0"
+                                                   AutomationProperties.AutomationId="KeyStatusText"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Premium feature list -->
+                                <StackPanel Orientation="Horizontal" Margin="0,16,0,8">
+                                    <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconZap}"
+                                          Width="13" Height="13" Stroke="{StaticResource AccentTextBrush}"
+                                          VerticalAlignment="Center"/>
+                                    <TextBlock Text="PREMIUM FEATURES" FontSize="11" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextSecondaryBrush}" Margin="7,0,0,0"
+                                               VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <StackPanel x:Name="PremiumFeaturesPanel"/>
+
+                                <!-- Game process name (for the priority tweak) -->
+                                <Border Background="{StaticResource SurfaceBrush}"
+                                        BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
+                                        CornerRadius="10" Padding="12,10" Margin="0,10,0,0">
+                                    <StackPanel>
+                                        <TextBlock Text="GAME PROCESS NAME" Style="{StaticResource BoostLabel}" Margin="0,0,0,4"/>
+                                        <TextBox x:Name="PremiumGameBox" Style="{StaticResource BoostField}"
+                                                 AutomationProperties.Name="Game process name"
+                                                 ToolTip="e.g. cs2, fortnite, valorant - used by the high-priority tweak"
+                                                 TextChanged="PremiumGame_Changed"/>
+                                        <TextBlock Text="Optional - needed for 'High priority for the game process'. Enter the process name without .exe."
+                                                   FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}"
+                                                   Margin="0,6,0,0" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Grid>
 
                     <Border Grid.Column="1" Background="{DynamicResource BgBrush}"/>
 
@@ -168,6 +297,13 @@
                                                    Foreground="{StaticResource TextTertiaryBrush}"/>
                                         <Border Height="1" Background="{StaticResource DividerBrush}"
                                                 Margin="0,10,0,10"/>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                            <Ellipse x:Name="PremiumDot" Width="8" Height="8" Fill="{StaticResource TextDisabledBrush}"
+                                                     VerticalAlignment="Center"/>
+                                            <TextBlock x:Name="PremiumSideText" Text="Premium: locked" FontSize="11"
+                                                       Foreground="{StaticResource TextTertiaryBrush}" Margin="7,0,0,0"
+                                                       VerticalAlignment="Center"/>
+                                        </StackPanel>
                                         <TextBlock x:Name="StatusText" Text="Ready" FontSize="11.5"
                                                    Foreground="{StaticResource TextSecondaryBrush}"
                                                    TextWrapping="Wrap"/>

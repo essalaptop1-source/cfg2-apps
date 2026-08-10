@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Security.Principal;
 using Microsoft.Win32;
 
@@ -12,6 +13,10 @@ public enum TweakId
     GameDvr,
     Nagle,
     GpuPreference,
+    // Premium (unlocked with a license key)
+    StandbyMemory,
+    GamePriority,
+    FullscreenOpt,
 }
 
 public class BoostTweak
@@ -21,6 +26,7 @@ public class BoostTweak
     public string Description { get; init; } = "";
     public bool NeedsAdmin { get; init; }
     public bool Recommended { get; init; } = true;
+    public bool IsPremium { get; init; }
 }
 
 public static class BoostService
@@ -30,6 +36,9 @@ public static class BoostService
 
     /// <summary>Full path to the game exe that should get the high-performance GPU.</summary>
     public static string GameExePath { get; set; } = "";
+
+    /// <summary>Process name (without .exe) of the game for the high-priority tweak.</summary>
+    public static string GameProcessName { get; set; } = "";
 
     public static readonly List<BoostTweak> Tweaks = new()
     {
@@ -76,6 +85,34 @@ public static class BoostService
             NeedsAdmin = false,
             Recommended = false,
         },
+        // ================= Premium =================
+        new BoostTweak
+        {
+            Id = TweakId.StandbyMemory,
+            Title = "Clear standby memory",
+            Description = "Instantly frees cached RAM (standby list) for more available memory. Windows refills it as needed.",
+            NeedsAdmin = true,
+            Recommended = false,
+            IsPremium = true,
+        },
+        new BoostTweak
+        {
+            Id = TweakId.GamePriority,
+            Title = "High priority for the game process",
+            Description = "Runs the game at High priority so Windows favors it over background apps.",
+            NeedsAdmin = true,
+            Recommended = false,
+            IsPremium = true,
+        },
+        new BoostTweak
+        {
+            Id = TweakId.FullscreenOpt,
+            Title = "Disable fullscreen optimizations",
+            Description = "Turns off Windows fullscreen optimizations for the game, which can fix input lag and stutter.",
+            NeedsAdmin = true,
+            Recommended = false,
+            IsPremium = true,
+        },
     };
 
     public static bool IsAdmin()
@@ -111,6 +148,10 @@ public static class BoostService
                 TweakId.Nagle => AnyInterface(f => f.GetValue("TcpAckFrequency") is int ack && ack == 1),
                 TweakId.GpuPreference => !string.IsNullOrWhiteSpace(GameExePath) &&
                     ReadString(Registry.CurrentUser, @"Software\Microsoft\DirectX\UserGpuPreferences", GameExePath) != null,
+                TweakId.StandbyMemory => false, // transient - never "applied" as a state
+                TweakId.GamePriority => HighPriorityGameRunning(),
+                TweakId.FullscreenOpt => !string.IsNullOrWhiteSpace(GameExePath) &&
+                    ReadString(Registry.LocalMachine, @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers", GameExePath) != null,
                 _ => false,
             };
         }
@@ -130,6 +171,9 @@ public static class BoostService
         TweakId.GameDvr => SetGameDvr(false),
         TweakId.Nagle => SetNagle(true),
         TweakId.GpuPreference => SetGpuPreference(true),
+        TweakId.StandbyMemory => ClearStandbyMemory(),
+        TweakId.GamePriority => SetGamePriority(true),
+        TweakId.FullscreenOpt => SetFullscreenOpt(true),
         _ => (false, "Unknown tweak"),
     };
 
@@ -141,6 +185,9 @@ public static class BoostService
         TweakId.GameDvr => SetGameDvr(true),
         TweakId.Nagle => SetNagle(false),
         TweakId.GpuPreference => SetGpuPreference(false),
+        TweakId.StandbyMemory => (true, "Nothing to restore - memory is managed by Windows"),
+        TweakId.GamePriority => SetGamePriority(false),
+        TweakId.FullscreenOpt => SetFullscreenOpt(false),
         _ => (false, "Unknown tweak"),
     };
 
@@ -226,6 +273,97 @@ public static class BoostService
         else
             prefs.DeleteValue(GameExePath, throwOnMissingValue: false);
         return (true, enable ? "GPU preference set for the game" : "GPU preference removed");
+    }
+
+    private static bool HighPriorityGameRunning()
+    {
+        var name = GameProcessName.Trim().Replace(".exe", "", StringComparison.OrdinalIgnoreCase);
+        if (string.IsNullOrWhiteSpace(name)) return false;
+        try
+        {
+            return Process.GetProcessesByName(name)
+                .Any(p => p.PriorityClass == ProcessPriorityClass.High ||
+                          p.PriorityClass == ProcessPriorityClass.RealTime);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static (bool, string) ClearStandbyMemory()
+    {
+        try
+        {
+            const int systemMemoryListInformation = 80;
+            const int memoryPurgeStandbyList = 4;
+            var size = Marshal.SizeOf<int>();
+            var ptr = Marshal.AllocHGlobal(size);
+            try
+            {
+                Marshal.WriteInt32(ptr, memoryPurgeStandbyList);
+                var status = NtSetSystemInformation(systemMemoryListInformation, ptr, size);
+                return status == 0
+                    ? (true, "Standby memory cleared")
+                    : (false, $"Windows refused (status 0x{status:X8}) - try running as administrator");
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(ptr);
+            }
+        }
+        catch (Exception ex)
+        {
+            return (false, ex.Message);
+        }
+    }
+
+    [DllImport("ntdll.dll")]
+    private static extern int NtSetSystemInformation(int systemInformationClass, IntPtr systemInformation, int systemInformationLength);
+
+    private static (bool, string) SetGamePriority(bool high)
+    {
+        var name = GameProcessName.Trim().Replace(".exe", "", StringComparison.OrdinalIgnoreCase);
+        if (string.IsNullOrWhiteSpace(name))
+            return (false, "Enter the game process name first (e.g. cs2)");
+        try
+        {
+            var procs = Process.GetProcessesByName(name);
+            if (procs.Length == 0)
+                return (false, $"No running process named '{name}' - start the game first");
+            foreach (var p in procs)
+            {
+                p.PriorityClass = high ? ProcessPriorityClass.High : ProcessPriorityClass.Normal;
+                p.Dispose();
+            }
+            return (true, high ? $"'{name}' set to High priority" : $"'{name}' priority restored to Normal");
+        }
+        catch (Exception ex)
+        {
+            return (false, ex.Message);
+        }
+    }
+
+    private static (bool, string) SetFullscreenOpt(bool disable)
+    {
+        if (string.IsNullOrWhiteSpace(GameExePath))
+            return (false, "Enter the game exe path first");
+        try
+        {
+            using var layers = Registry.LocalMachine.CreateSubKey(
+                @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers");
+            if (disable)
+                layers.SetValue(GameExePath, "DISABLEFULLSCREENOPTIMIZATIONS", RegistryValueKind.String);
+            else
+                layers.DeleteValue(GameExePath, throwOnMissingValue: false);
+            return (true, disable
+                ? "Fullscreen optimizations disabled for the game"
+                : "Fullscreen optimizations restored");
+        }
+        catch
+        {
+            return (false, "Could not write the registry - needs administrator");
+        }
     }
 
     // ================================================================ Helpers

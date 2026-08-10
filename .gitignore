@@ -19,3 +19,7 @@ debug_state.log
 
 # Published apps (local delivery folder)
 Cfg2 apps/
+
+# License keys - never commit these
+keys.txt
+*.pdb
