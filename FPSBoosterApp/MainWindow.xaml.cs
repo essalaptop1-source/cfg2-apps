@@ -418,6 +418,27 @@ public partial class MainWindow : Window
         _lastGameSample = DateTime.UtcNow;
         _lastGameCpu = TimeSpan.Zero;
         GameStatsText.Text = $"Monitoring {name}";
+
+        // the overlay follows the picked game too
+        _overlay?.Attach(entry.Process);
+    }
+
+    private OverlayWindow? _overlay;
+
+    private void Overlay_Click(object sender, RoutedEventArgs e)
+    {
+        if (_overlay is { IsVisible: true })
+        {
+            _overlay.Close();
+            _overlay = null;
+            return;
+        }
+
+        _overlay?.Close(); // it may have been closed via its x button
+        _overlay = new OverlayWindow();
+        var picked = ActiveGamesCombo.SelectedItem as GameEntry;
+        _overlay.Attach(picked?.Process);
+        _overlay.Show();
     }
 
     // ================================================================ System stats
@@ -648,6 +669,12 @@ public partial class MainWindow : Window
     private void Minimize_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
 
     private void Close_Click(object sender, RoutedEventArgs e) => Close();
+
+    protected override void OnClosed(EventArgs e)
+    {
+        _overlay?.Close();
+        base.OnClosed(e);
+    }
 
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {

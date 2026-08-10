@@ -366,8 +366,17 @@
                                     </StackPanel>
                                 </Border>
 
+                                <Button x:Name="OverlayButton" Style="{StaticResource ModernButton}" Height="34"
+                                        Margin="0,12,0,0" Click="Overlay_Click"
+                                        AutomationProperties.Name="Show overlay">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#x25B2;" FontSize="10" Margin="0,1,0,0"/>
+                                        <TextBlock Text="Show FPS overlay" FontSize="11.5" Margin="6,0,0,0"/>
+                                    </StackPanel>
+                                </Button>
+
                                 <Button x:Name="RestoreButton" Content="Restore defaults"
-                                        Style="{StaticResource OutlineButton}" Height="34" Margin="0,12,0,0"
+                                        Style="{StaticResource OutlineButton}" Height="34" Margin="0,8,0,0"
                                         AutomationProperties.Name="Restore defaults" Click="Restore_Click"/>
 
                                 <Button x:Name="AdminButton" Style="{StaticResource GhostButton}" Height="34"

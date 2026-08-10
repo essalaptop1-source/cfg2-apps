@@ -1,0 +1,45 @@
+<Window x:Class="FPSBoosterApp.OverlayWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="FPS Overlay"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Topmost="True"
+        ShowInTaskbar="False"
+        ShowActivated="False"
+        ResizeMode="NoResize"
+        SizeToContent="WidthAndHeight"
+        WindowStartupLocation="Manual"
+        FontFamily="{StaticResource AppFont}"
+        TextOptions.TextFormattingMode="Display"
+        UseLayoutRounding="True">
+
+    <Border x:Name="Card" CornerRadius="10" Background="#D9000000"
+            BorderBrush="#40FFFFFF" BorderThickness="1" Padding="12,9"
+            MouseLeftButtonDown="Card_MouseLeftButtonDown"
+            MouseLeftButtonUp="Card_MouseLeftButtonUp"
+            ToolTip="Drag to move. Double-click to pin / unpin (stays in front of games).">
+        <StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock x:Name="GameNameText" Text="No game" FontSize="11" FontWeight="SemiBold"
+                           Foreground="#FFE8E8E8" TextTrimming="CharacterEllipsis" MaxWidth="170"
+                           VerticalAlignment="Center"/>
+                <TextBlock x:Name="CloseButton" Text="&#x2715;" FontSize="11" Foreground="#FF9A9A9A"
+                           Cursor="Hand" Margin="10,0,0,0" VerticalAlignment="Center"
+                           MouseLeftButtonDown="Close_Click" ToolTip="Close overlay"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="0,7,0,0">
+                <TextBlock Text="FPS" FontSize="9" FontWeight="Bold" Foreground="#FF8A8A8A"
+                           VerticalAlignment="Bottom" Margin="0,0,0,4"/>
+                <TextBlock x:Name="FpsText" Text="--" FontSize="24" FontWeight="Bold" Foreground="White"
+                           Margin="9,0,0,0"/>
+                <StackPanel Margin="14,2,0,0">
+                    <TextBlock x:Name="CpuText" Text="CPU --%" FontSize="10.5" Foreground="#FFCFCFCF"/>
+                    <TextBlock x:Name="RamText" Text="RAM -- MB" FontSize="10.5" Foreground="#FFCFCFCF"
+                               Margin="0,3,0,0"/>
+                </StackPanel>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</Window>
