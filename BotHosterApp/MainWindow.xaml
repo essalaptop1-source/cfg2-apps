@@ -6,14 +6,15 @@
         MinWidth="980" MinHeight="600"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None" ResizeMode="CanResize"
-        Background="{StaticResource BgBrush}"
+        AllowsTransparency="True"
+        Background="Transparent"
         FontFamily="{StaticResource AppFont}"
         UseLayoutRounding="True">
-    <!-- WindowChrome with a zero glass frame removes DWM's white non-client
-         border line at the top of frameless windows, while keeping resizing. -->
-    <WindowChrome.WindowChrome>
-        <WindowChrome GlassFrameThickness="0" CornerRadius="0" ResizeBorderThickness="6" CaptionHeight="0"/>
-    </WindowChrome.WindowChrome>
+    <!-- AllowsTransparency + transparent window background means WPF paints 100%
+         of the surface itself. Without it, DWM leaves a translucent glass band at
+         the top of frameless windows that shows whatever is behind the window
+         (the classic "not full dark" strip). Resizing is restored via a
+         WM_NCHITTEST hook in MainWindow.xaml.cs. -->
     <Window.Resources>
         <!-- Bot list item template -->
         <DataTemplate x:Key="BotItemTemplate">
@@ -78,8 +79,11 @@
         </DataTemplate>
     </Window.Resources>
 
-    <Border BorderBrush="{StaticResource WindowEdgeBrush}" BorderThickness="1">
-        <Grid Background="{StaticResource WindowBgBrush}">
+    <Border x:Name="ChromeBorder" BorderBrush="{StaticResource WindowEdgeBrush}" BorderThickness="1" CornerRadius="10">
+        <Grid x:Name="RootGrid" Background="{StaticResource WindowBgBrush}">
+            <Grid.Clip>
+                <RectangleGeometry x:Name="RootClip" RadiusX="10" RadiusY="10"/>
+            </Grid.Clip>
             <Grid.RowDefinitions>
                 <RowDefinition Height="48"/>
                 <RowDefinition Height="*"/>

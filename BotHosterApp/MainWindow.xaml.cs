@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -42,7 +43,12 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         _startToTray = Environment.GetCommandLineArgs().Contains("--tray");
-        Loaded += (_, _) =>
+        RootGrid.SizeChanged += (_, e) =>
+        {
+            if (RootClip != null)
+                RootClip.Rect = new Rect(0, 0, e.NewSize.Width, e.NewSize.Height);
+        };
+        Loaded += (_, e) =>
         {
             ClampToWorkArea();
             SetupTray();
@@ -1170,6 +1176,112 @@ public partial class MainWindow : Window
     }
 
     private void Close_Click(object sender, RoutedEventArgs e) => Close();
+
+    // ================================================= frameless chrome helpers
+    // The window is AllowsTransparency so DWM never paints glass over it. That
+    // removes native resize borders, so WM_NCHITTEST restores edge resizing and
+    // WM_GETMINMAXINFO keeps the taskbar visible when maximized.
+
+    private const int WM_NCHITTEST = 0x0084;
+    private const int WM_GETMINMAXINFO = 0x0024;
+    private const int HTCLIENT = 1, HTLEFT = 10, HTRIGHT = 11, HTTOP = 12,
+        HTTOPLEFT = 13, HTTOPRIGHT = 14, HTBOTTOM = 15, HTBOTTOMLEFT = 16,
+        HTBOTTOMRIGHT = 17;
+    private const uint MONITOR_DEFAULTTONEAREST = 2;
+    private const int RESIZE_MARGIN = 6;
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct WinPoint { public int X; public int Y; }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct WinRect { public int Left, Top, Right, Bottom; }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MinMaxInfo
+    {
+        public WinPoint ptReserved;
+        public WinPoint ptMaxSize;
+        public WinPoint ptMaxPosition;
+        public WinPoint ptMinTrackSize;
+        public WinPoint ptMaxTrackSize;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MonitorInfo
+    {
+        public int cbSize;
+        public WinRect rcMonitor;
+        public WinRect rcWork;
+        public uint dwFlags;
+    }
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
+
+    [DllImport("user32.dll")]
+    private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MonitorInfo lpmi);
+
+    [DllImport("user32.dll")]
+    private static extern bool GetWindowRect(IntPtr hwnd, out WinRect rect);
+
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+        if (PresentationSource.FromVisual(this) is HwndSource src)
+            src.AddHook(WindowProc);
+    }
+
+    private IntPtr WindowProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        switch (msg)
+        {
+            case WM_NCHITTEST:
+            {
+                if (WindowState == WindowState.Maximized) break;
+                var screen = new WinPoint
+                {
+                    X = (short)((long)lParam & 0xFFFF),
+                    Y = (short)(((long)lParam >> 16) & 0xFFFF)
+                };
+                handled = true;
+                return new IntPtr(HitTest(screen));
+            }
+            case WM_GETMINMAXINFO:
+            {
+                var mmi = Marshal.PtrToStructure<MinMaxInfo>(lParam);
+                var monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+                var mi = new MonitorInfo { cbSize = Marshal.SizeOf<MonitorInfo>() };
+                if (GetMonitorInfo(monitor, ref mi))
+                {
+                    mmi.ptMaxPosition.X = mi.rcWork.Left;
+                    mmi.ptMaxPosition.Y = mi.rcWork.Top;
+                    mmi.ptMaxSize.X = mi.rcWork.Right - mi.rcWork.Left;
+                    mmi.ptMaxSize.Y = mi.rcWork.Bottom - mi.rcWork.Top;
+                    Marshal.StructureToPtr(mmi, lParam, false);
+                    handled = true;
+                }
+                break;
+            }
+        }
+        return IntPtr.Zero;
+    }
+
+    private int HitTest(WinPoint screen)
+    {
+        var hwnd = new WindowInteropHelper(this).Handle;
+        if (!GetWindowRect(hwnd, out var r)) return HTCLIENT;
+        var x = screen.X - r.Left;
+        var y = screen.Y - r.Top;
+        var w = r.Right - r.Left;
+        var h = r.Bottom - r.Top;
+        if (x <= RESIZE_MARGIN)
+            return y <= RESIZE_MARGIN ? HTTOPLEFT : y >= h - RESIZE_MARGIN ? HTBOTTOMLEFT : HTLEFT;
+        if (x >= w - RESIZE_MARGIN)
+            return y <= RESIZE_MARGIN ? HTTOPRIGHT : y >= h - RESIZE_MARGIN ? HTBOTTOMRIGHT : HTRIGHT;
+        if (y <= RESIZE_MARGIN) return HTTOP;
+        if (y >= h - RESIZE_MARGIN) return HTBOTTOM;
+        return HTCLIENT;
+    }
 
     private static string GetVersion()
     {
