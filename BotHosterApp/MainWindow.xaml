@@ -564,6 +564,10 @@
                         <CheckBox x:Name="UpdateCheck" Content="Check for updates on launch"
                                   Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,8"/>
                         <CheckBox x:Name="TelemetryCheck" Content="Send anonymous usage stats to the owner"
+                                  Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,8"/>
+                        <CheckBox x:Name="StartupCheck" Content="Launch on startup (24/7 background - starts hidden in the tray)"
+                                  Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,8"/>
+                        <CheckBox x:Name="TrayCheck" Content="Keep running in the tray when the window is closed"
                                   Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,14"/>
 
                         <TextBlock Text="BOTS RUN AS PYTHON PROCESSES" Style="{StaticResource SectionHeader}" Margin="0,14,0,8"/>
@@ -592,6 +596,34 @@
                             <Button x:Name="SettingsSaveBtn" Style="{StaticResource ModernButton}" Height="32" Padding="18,0"
                                     Margin="10,0,0,0" Click="SettingsSave_Click">
                                 <TextBlock Text="Save" FontSize="12" FontWeight="SemiBold"
+                                           Foreground="{StaticResource OnAccentBrush}"/>
+                            </Button>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- ======================== Startup ask ======================== -->
+            <Grid x:Name="AskStartupOverlay" Grid.RowSpan="2" Visibility="Collapsed" Background="#66000000">
+                <Border Width="400" VerticalAlignment="Center" HorizontalAlignment="Center"
+                        Background="{StaticResource BgElevatedBrush}" BorderBrush="{StaticResource BorderStrongBrush}"
+                        BorderThickness="1" CornerRadius="12" Padding="22">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconPower}"
+                                  Width="16" Height="16" Stroke="{StaticResource AccentTextBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="Run 24/7?" FontSize="15" FontWeight="Bold" Margin="8,0,0,0"
+                                       Foreground="{StaticResource TextBrush}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock Text="Launch CFG2 Bot Hoster on startup so your bots stay online even when you close the window. It runs hidden in the system tray and keeps the PC awake while bots are running."
+                                   FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,8,0,16"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Style="{StaticResource GhostButton}" Height="32" Padding="14,0" Click="AskStartupNo_Click">
+                                <TextBlock Text="No thanks" FontSize="11.5" Foreground="{StaticResource TextSecondaryBrush}"/>
+                            </Button>
+                            <Button x:Name="AskStartupYesBtn" Style="{StaticResource ModernButton}" Height="32" Padding="16,0"
+                                    Margin="10,0,0,0" Click="AskStartupYes_Click">
+                                <TextBlock Text="Yes, run on startup" FontSize="11.5" FontWeight="SemiBold"
                                            Foreground="{StaticResource OnAccentBrush}"/>
                             </Button>
                         </StackPanel>

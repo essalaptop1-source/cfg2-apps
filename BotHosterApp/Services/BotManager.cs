@@ -80,6 +80,30 @@ public sealed class BotEntry : INotifyPropertyChanged
 /// </summary>
 public sealed class BotManager
 {
+    // 24/7 mode: while any bot runs, keep the PC from sleeping automatically.
+    [System.Runtime.InteropServices.DllImport("kernel32.dll")]
+    private static extern uint SetThreadExecutionState(uint esFlags);
+    private const uint ES_CONTINUOUS = 0x80000000;
+    private const uint ES_SYSTEM_REQUIRED = 0x00000001;
+
+    private static void UpdateWakeLock(bool anyRunning)
+    {
+        try
+        {
+            SetThreadExecutionState(anyRunning
+                ? ES_CONTINUOUS | ES_SYSTEM_REQUIRED
+                : ES_CONTINUOUS);
+        }
+        catch { }
+    }
+
+    private void RefreshWakeLock()
+    {
+        lock (_lock)
+        {
+            UpdateWakeLock(Bots.Any(b => b.Running));
+        }
+    }
     public ObservableCollection<BotEntry> Bots { get; } = new();
     private readonly object _lock = new();
 
@@ -257,6 +281,7 @@ public sealed class BotManager
             entry.LiveState = "offline";
             Log(entry, "Python was not found on this PC - install it from python.org and add it to PATH.", LogSeverity.Error);
             StateChanged?.Invoke(entry);
+            RefreshWakeLock();
             return;
         }
 
@@ -302,6 +327,7 @@ public sealed class BotManager
             entry.LiveState = "starting";
             Log(entry, $"Starting {Path.GetFileName(entry.PythonPath)} with {python}...", LogSeverity.Info);
             StateChanged?.Invoke(entry);
+            RefreshWakeLock();
 
             _ = Task.Run(() => PumpStream(proc.StandardOutput.BaseStream, entry, LogSeverity.Info));
             _ = Task.Run(() => PumpStream(proc.StandardError.BaseStream, entry, LogSeverity.Warning));
@@ -402,6 +428,7 @@ public sealed class BotManager
         entry.LiveState = "offline";
         Log(entry, "Stopped", LogSeverity.Info);
         StateChanged?.Invoke(entry);
+        RefreshWakeLock();
     }
 
     public async Task RestartAsync(BotEntry entry)

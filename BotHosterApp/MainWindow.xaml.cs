@@ -27,10 +27,23 @@ public partial class MainWindow : Window
     private static readonly Brush ErrorBrush = new SolidColorBrush(MediaColor.FromRgb(0xF8, 0x71, 0x71));
     private static readonly Brush DimBrush = new SolidColorBrush(MediaColor.FromRgb(0x71, 0x71, 0x7A));
 
+    private System.Windows.Forms.NotifyIcon? _trayIcon;
+    private bool _exiting;
+    private bool _startToTray;
+
     public MainWindow()
     {
         InitializeComponent();
-        Loaded += (_, _) => InitAsync();
+        _startToTray = Environment.GetCommandLineArgs().Contains("--tray");
+        Loaded += (_, _) =>
+        {
+            SetupTray();
+            if (_startToTray)
+                // Hide after Show() fully completes, otherwise the pending
+                // Show re-applies Visibility and the window pops up.
+                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, new Action(Hide));
+            InitAsync();
+        };
         Closed += (_, _) =>
         {
             _ticker.Stop();
@@ -65,6 +78,64 @@ public partial class MainWindow : Window
         _ = TelemetryService.ReportLaunchAsync();
     }
 
+    /// <summary>System tray icon: lets the app keep running 24/7 in the
+    /// background when the window is closed. Exit lives in the tray menu.</summary>
+    private void SetupTray()
+    {
+        try
+        {
+            _trayIcon = new System.Windows.Forms.NotifyIcon
+            {
+                Text = "CFG2 Bot Hoster - bots running in the background",
+                Visible = true,
+            };
+            try
+            {
+                if (Environment.ProcessPath != null)
+                    _trayIcon.Icon = System.Drawing.Icon.ExtractAssociatedIcon(Environment.ProcessPath);
+            }
+            catch { }
+
+            var menu = new System.Windows.Forms.ContextMenuStrip();
+            menu.Items.Add("Open CFG2 Bot Hoster", null, (_, _) =>
+            {
+                Show();
+                WindowState = WindowState.Normal;
+                Activate();
+            });
+            menu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
+            menu.Items.Add("Exit", null, (_, _) => TrayExit());
+            _trayIcon.ContextMenuStrip = menu;
+            _trayIcon.DoubleClick += (_, _) =>
+            {
+                Show();
+                WindowState = WindowState.Normal;
+                Activate();
+            };
+        }
+        catch { }
+    }
+
+    private void TrayExit()
+    {
+        _exiting = true;
+        _trayIcon?.Dispose();
+        _trayIcon = null;
+        Close();
+    }
+
+    /// <summary>Close hides to the tray instead of quitting when tray mode is on.</summary>
+    protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+    {
+        if (!_exiting && _settings.KeepInTray && _trayIcon != null)
+        {
+            e.Cancel = true;
+            Hide();
+            return;
+        }
+        base.OnClosing(e);
+    }
+
     private async void InitAsync()
     {
         VersionText.Text = "v" + GetVersion();
@@ -95,6 +166,24 @@ public partial class MainWindow : Window
         _ticker.Start();
         if (_settings.CheckUpdates)
             _ = CheckForUpdateAsync();
+
+        // Ask once per open while startup mode is off.
+        if (!_settings.LaunchOnStartup)
+            AskStartupOverlay.Visibility = Visibility.Visible;
+    }
+
+    private void AskStartupYes_Click(object sender, RoutedEventArgs e)
+    {
+        _settings.LaunchOnStartup = true;
+        AppSettings.SetLaunchOnStartup(true);
+        _settings.Save();
+        AskStartupOverlay.Visibility = Visibility.Collapsed;
+        if (StartupCheck != null) StartupCheck.IsChecked = true;
+    }
+
+    private void AskStartupNo_Click(object sender, RoutedEventArgs e)
+    {
+        AskStartupOverlay.Visibility = Visibility.Collapsed;
     }
 
     private async Task CheckForUpdateAsync()
@@ -764,6 +853,8 @@ public partial class MainWindow : Window
         AutoRestartNewCheck.IsChecked = _settings.AutoRestartNew;
         UpdateCheck.IsChecked = _settings.CheckUpdates;
         TelemetryCheck.IsChecked = _settings.Telemetry;
+        StartupCheck.IsChecked = _settings.LaunchOnStartup;
+        TrayCheck.IsChecked = _settings.KeepInTray;
         DataPathText.Text = System.IO.Path.Combine(AppPaths.LocalDataDir, "bot_hoster_bots.json");
         SettingsOverlay.Visibility = Visibility.Visible;
     }
@@ -777,6 +868,9 @@ public partial class MainWindow : Window
         _settings.AutoRestartNew = AutoRestartNewCheck.IsChecked == true;
         _settings.CheckUpdates = UpdateCheck.IsChecked == true;
         _settings.Telemetry = TelemetryCheck.IsChecked == true;
+        _settings.LaunchOnStartup = StartupCheck.IsChecked == true;
+        _settings.KeepInTray = TrayCheck.IsChecked == true;
+        AppSettings.SetLaunchOnStartup(_settings.LaunchOnStartup);
         _settings.Save();
         TelemetryService.Enabled = _settings.Telemetry;
         SettingsOverlay.Visibility = Visibility.Collapsed;

@@ -13,6 +13,48 @@ public sealed class AppSettings
     public string DefaultActivityText { get; set; } = "";
     public bool CheckUpdates { get; set; } = true;
     public bool Telemetry { get; set; } = true;
+    public bool LaunchOnStartup { get; set; }
+    public bool KeepInTray { get; set; } = true;
+
+    private const string StartupValueName = "CFG2BotHoster";
+
+    /// <summary>Registers (or removes) the app in the current user's startup
+    /// programs via the HKCU Run key. The --tray flag starts it hidden in the
+    /// background so the bots keep running without a window on the desktop.</summary>
+    public static void SetLaunchOnStartup(bool enable)
+    {
+        try
+        {
+            using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(
+                @"Software\Microsoft\Windows\CurrentVersion\Run", true);
+            if (key == null) return;
+            if (enable)
+            {
+                var exe = Environment.ProcessPath ?? "";
+                if (exe.Length > 0)
+                    key.SetValue(StartupValueName, $"\"{exe}\" --tray");
+            }
+            else
+            {
+                key.DeleteValue(StartupValueName, false);
+            }
+        }
+        catch { }
+    }
+
+    public static bool IsLaunchOnStartup()
+    {
+        try
+        {
+            using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(
+                @"Software\Microsoft\Windows\CurrentVersion\Run");
+            return key?.GetValue(StartupValueName) != null;
+        }
+        catch
+        {
+            return false;
+        }
+    }
 
     private static string Path_ => Path.Combine(AppPaths.LocalDataDir, "bot_hoster_settings.json");
 
