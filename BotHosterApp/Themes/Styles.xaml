@@ -23,8 +23,8 @@
 
     <!-- ============ Window Control Buttons ============ -->
     <Style x:Key="WindowControlButton" TargetType="Button">
-        <Setter Property="Width" Value="36"/>
-        <Setter Property="Height" Value="30"/>
+        <Setter Property="Width" Value="34"/>
+        <Setter Property="Height" Value="34"/>
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
         <Setter Property="Cursor" Value="Hand"/>
@@ -33,7 +33,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="Bg" Background="{TemplateBinding Background}"
-                            CornerRadius="7" Margin="2">
+                            CornerRadius="17" Margin="3">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -56,7 +56,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="Bg" Background="{TemplateBinding Background}"
-                            CornerRadius="7" Margin="2">
+                            CornerRadius="17" Margin="3">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -89,9 +89,9 @@
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="Bg" Background="{TemplateBinding Background}"
-                            CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            CornerRadius="16" Padding="{TemplateBinding Padding}">
                         <Border.Effect>
-                            <DropShadowEffect BlurRadius="14" ShadowDepth="0" Opacity="0.5" Color="#8A22D3EE"/>
+                            <DropShadowEffect BlurRadius="16" ShadowDepth="0" Opacity="0.55" Color="#8A22D3EE"/>
                         </Border.Effect>
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
@@ -100,7 +100,7 @@
                             <Setter TargetName="Bg" Property="Background" Value="{DynamicResource AccentGradientHoverBrush}"/>
                             <Setter TargetName="Bg" Property="Effect">
                                 <Setter.Value>
-                                    <DropShadowEffect BlurRadius="20" ShadowDepth="0" Opacity="0.7" Color="#A622D3EE"/>
+                                    <DropShadowEffect BlurRadius="22" ShadowDepth="0" Opacity="0.8" Color="#A622D3EE"/>
                                 </Setter.Value>
                             </Setter>
                         </Trigger>
@@ -144,7 +144,7 @@
                     <Border x:Name="Bg" Background="{TemplateBinding Background}"
                             BorderBrush="{DynamicResource BorderStrongBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            CornerRadius="14" Padding="{TemplateBinding Padding}">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -178,7 +178,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="Bg" Background="{TemplateBinding Background}"
-                            CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            CornerRadius="12" Padding="{TemplateBinding Padding}">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -200,16 +200,16 @@
 
     <!-- ============ Icon rail (activity bar) ============ -->
     <Style x:Key="RailIconButton" TargetType="Button">
-        <Setter Property="Width" Value="40"/>
-        <Setter Property="Height" Value="40"/>
-        <Setter Property="Margin" Value="0,4"/>
+        <Setter Property="Width" Value="44"/>
+        <Setter Property="Height" Value="44"/>
+        <Setter Property="Margin" Value="0,5"/>
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="Bg" Background="{TemplateBinding Background}" CornerRadius="11">
+                    <Border x:Name="Bg" Background="{TemplateBinding Background}" CornerRadius="14">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -226,16 +226,15 @@
     </Style>
 
     <Style x:Key="RailIconActiveButton" TargetType="Button" BasedOn="{StaticResource RailIconButton}">
-        <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource AccentBorderBrush}"/>
-        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Background" Value="{DynamicResource AccentGradientBrush}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="Bg" Background="{TemplateBinding Background}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="11">
+                            CornerRadius="14">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="14" ShadowDepth="0" Opacity="0.55" Color="#8A22D3EE"/>
+                        </Border.Effect>
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -660,10 +659,10 @@
                     <Border x:Name="Row" Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="10" Padding="16,12">
+                            CornerRadius="14" Padding="16,13">
                         <Border.Effect>
-                            <DropShadowEffect BlurRadius="14" ShadowDepth="2" Direction="270"
-                                              Color="#000000" Opacity="0.32"/>
+                            <DropShadowEffect BlurRadius="16" ShadowDepth="2" Direction="270"
+                                              Color="#000000" Opacity="0.38"/>
                         </Border.Effect>
                         <ContentPresenter/>
                     </Border>
@@ -710,24 +709,24 @@
     <!-- ============ Chips ============ -->
     <Style x:Key="TagChip" TargetType="Border">
         <Setter Property="Background" Value="{DynamicResource SurfaceAltBrush}"/>
-        <Setter Property="CornerRadius" Value="7"/>
-        <Setter Property="Padding" Value="11,5"/>
-        <Setter Property="Margin" Value="0,0,6,6"/>
+        <Setter Property="CornerRadius" Value="10"/>
+        <Setter Property="Padding" Value="12,6"/>
+        <Setter Property="Margin" Value="0,0,7,7"/>
     </Style>
 
     <Style x:Key="TagChipText" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource AppFont}"/>
-        <Setter Property="FontSize" Value="11"/>
-        <Setter Property="FontWeight" Value="Medium"/>
+        <Setter Property="FontSize" Value="11.5"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
     </Style>
 
     <!-- ============ Section Header ============ -->
     <Style x:Key="SectionHeader" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource AppFont}"/>
-        <Setter Property="FontSize" Value="10.5"/>
+        <Setter Property="FontSize" Value="12.5"/>
         <Setter Property="FontWeight" Value="Bold"/>
-        <Setter Property="Foreground" Value="{StaticResource TextTertiaryBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource AccentTextBrush}"/>
         <Setter Property="TextOptions.TextFormattingMode" Value="Display"/>
     </Style>
 

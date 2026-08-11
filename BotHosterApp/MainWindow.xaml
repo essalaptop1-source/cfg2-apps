@@ -48,12 +48,12 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="30"/>
                 </Grid.ColumnDefinitions>
-                <Border Width="46" Height="46" CornerRadius="23" Padding="2"
+                <Border Width="54" Height="54" CornerRadius="27" Padding="2"
                         BorderBrush="{Binding StateBrush}" BorderThickness="2"
                         Background="{StaticResource SurfaceAltBrush}"
                         VerticalAlignment="Center">
                     <Grid>
-                        <TextBlock Text="{Binding Initial}" FontSize="15" FontWeight="Bold"
+                        <TextBlock Text="{Binding Initial}" FontSize="18" FontWeight="Bold"
                                    Foreground="{StaticResource TextSecondaryBrush}"
                                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         <Ellipse>
@@ -64,16 +64,16 @@
                         </Ellipse>
                     </Grid>
                 </Border>
-                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="11,0,6,0">
-                    <TextBlock Text="{Binding Name}" FontSize="13.5" FontWeight="SemiBold"
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="12,0,6,0">
+                    <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold"
                                Foreground="{StaticResource TextBrush}"
                                TextTrimming="CharacterEllipsis"/>
-                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                        <Ellipse Width="7" Height="7" Fill="{Binding StateBrush}" VerticalAlignment="Center"/>
-                        <TextBlock Text="{Binding StateText}" FontSize="11"
+                    <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                        <Ellipse Width="8" Height="8" Fill="{Binding StateBrush}" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding StateText}" FontSize="11.5"
                                    Foreground="{StaticResource TextSecondaryBrush}" Margin="5,0,0,0"/>
-                        <TextBlock Text="{Binding UptimeText}" FontSize="10.5"
-                                   Foreground="{StaticResource AccentTextBrush}" Margin="6,0,0,0"/>
+                        <TextBlock Text="{Binding UptimeText}" FontSize="11"
+                                   Foreground="{StaticResource AccentTextBrush}" Margin="7,0,0,0"/>
                     </StackPanel>
                 </StackPanel>
                 <Border Grid.Column="2" Background="{StaticResource SurfaceBrush}" CornerRadius="8" Padding="6,2"
@@ -91,7 +91,7 @@
                 <RectangleGeometry x:Name="RootClip" RadiusX="10" RadiusY="10"/>
             </Grid.Clip>
             <Grid.RowDefinitions>
-                <RowDefinition Height="48"/>
+                <RowDefinition Height="58"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
@@ -110,42 +110,45 @@
                 </Border>
                 <Border VerticalAlignment="Bottom" Height="1" Background="{StaticResource PanelDividerBrush}"
                         IsHitTestVisible="False"/>
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
-                    <Border Width="28" Height="28" CornerRadius="9" Background="{StaticResource AccentGradientBrush}">
-                        <Image x:Name="TitleLogo" Stretch="Uniform" Width="20" Height="20"
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="18,0,0,0">
+                    <Border Width="36" Height="36" CornerRadius="16" Background="{StaticResource AccentGradientBrush}">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="14" ShadowDepth="0" Opacity="0.55" Color="#8A22D3EE"/>
+                        </Border.Effect>
+                        <Image x:Name="TitleLogo" Stretch="Uniform" Width="24" Height="24"
                                HorizontalAlignment="Center" VerticalAlignment="Center"
                                RenderOptions.BitmapScalingMode="HighQuality"/>
                     </Border>
-                    <TextBlock Text="CFG2 Bot Hoster" FontSize="14" FontWeight="SemiBold"
-                               Foreground="{StaticResource TextBrush}" Margin="11,0,0,0" VerticalAlignment="Center"/>
-                    <Border Background="{StaticResource SurfaceBrush}" CornerRadius="8" Padding="7,2" Margin="9,0,0,0"
+                    <TextBlock Text="CFG2 Bot Hoster" FontSize="17" FontWeight="Bold"
+                               Foreground="{StaticResource TextBrush}" Margin="12,0,0,0" VerticalAlignment="Center"/>
+                    <Border Background="{StaticResource SurfaceBrush}" CornerRadius="10" Padding="8,3" Margin="10,0,0,0"
                             VerticalAlignment="Center">
-                        <TextBlock x:Name="VersionText" FontSize="10" FontWeight="SemiBold"
-                                   Foreground="{StaticResource TextTertiaryBrush}"/>
+                        <TextBlock x:Name="VersionText" FontSize="11.5" FontWeight="SemiBold"
+                                   Foreground="{StaticResource AccentTextBrush}"/>
                     </Border>
                 </StackPanel>
-                <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <Button x:Name="AdminBtn" Style="{StaticResource WindowControlButton}" Width="42" Height="48"
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
+                    <Button x:Name="AdminBtn" Style="{StaticResource WindowControlButton}"
                             ToolTip="Admin panel" Click="Admin_Click">
                         <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconShield}"
-                              Width="14" Height="14" Stroke="{StaticResource AccentTextBrush}"/>
+                              Width="15" Height="15" Stroke="{StaticResource AccentTextBrush}"/>
                     </Button>
-                    <Button x:Name="SettingsBtn" Style="{StaticResource WindowControlButton}" Width="42" Height="48"
+                    <Button x:Name="SettingsBtn" Style="{StaticResource WindowControlButton}"
                             ToolTip="Settings" Click="Settings_Click">
                         <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconSettings}"
-                              Width="14" Height="14" Stroke="{StaticResource TextSecondaryBrush}"/>
+                              Width="15" Height="15" Stroke="{StaticResource TextSecondaryBrush}"/>
                     </Button>
-                    <Button Style="{StaticResource WindowControlButton}" Width="46" Height="48"
+                    <Button Style="{StaticResource WindowControlButton}"
                             ToolTip="Minimize" Click="Minimize_Click">
                         <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconMinimize}"
                               Width="13" Height="13" Stroke="{StaticResource TextSecondaryBrush}"/>
                     </Button>
-                    <Button Style="{StaticResource WindowControlButton}" Width="46" Height="48"
+                    <Button Style="{StaticResource WindowControlButton}"
                             ToolTip="Maximize" Click="Maximize_Click">
                         <Path x:Name="MaxIcon" Style="{StaticResource StrokeIcon}" Data="{StaticResource IconMaximize}"
                               Width="12" Height="12" Stroke="{StaticResource TextSecondaryBrush}"/>
                     </Button>
-                    <Button Style="{StaticResource WindowCloseButton}" Width="46" Height="48"
+                    <Button Style="{StaticResource WindowCloseButton}"
                             ToolTip="Close" Click="Close_Click">
                         <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconClose}"
                               Width="13" Height="13" Stroke="{StaticResource TextSecondaryBrush}"/>
@@ -171,12 +174,12 @@
                     </Grid.RowDefinitions>
                     <Border HorizontalAlignment="Right" VerticalAlignment="Stretch" Width="1"
                             Background="{StaticResource PanelDividerBrush}" IsHitTestVisible="False"/>
-                    <StackPanel HorizontalAlignment="Center" Margin="0,14,0,0">
-                        <Border Width="36" Height="36" CornerRadius="11" Background="{StaticResource AccentGradientBrush}">
+                    <StackPanel HorizontalAlignment="Center" Margin="0,16,0,0">
+                        <Border Width="42" Height="42" CornerRadius="14" Background="{StaticResource AccentGradientBrush}">
                             <Border.Effect>
-                                <DropShadowEffect BlurRadius="12" ShadowDepth="0" Opacity="0.5" Color="#8A22D3EE"/>
+                                <DropShadowEffect BlurRadius="16" ShadowDepth="0" Opacity="0.6" Color="#8A22D3EE"/>
                             </Border.Effect>
-                            <Image x:Name="RailLogo" Stretch="Uniform" Width="24" Height="24"
+                            <Image x:Name="RailLogo" Stretch="Uniform" Width="28" Height="28"
                                    HorizontalAlignment="Center" VerticalAlignment="Center"
                                    RenderOptions.BitmapScalingMode="HighQuality"/>
                         </Border>
@@ -218,15 +221,15 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="Your bots" FontSize="15" FontWeight="Bold"
+                            <TextBlock Text="Your bots" FontSize="17" FontWeight="Bold"
                                        Foreground="{StaticResource TextBrush}" VerticalAlignment="Center"/>
-                            <Border Background="{StaticResource AccentSoftBrush}" CornerRadius="10" Padding="8,2"
-                                    Margin="9,0,0,0" VerticalAlignment="Center">
-                                <TextBlock x:Name="BotCountText" FontSize="10.5" FontWeight="Bold"
+                            <Border Background="{StaticResource AccentSoftBrush}" CornerRadius="16" Padding="9,3"
+                                    Margin="10,0,0,0" VerticalAlignment="Center">
+                                <TextBlock x:Name="BotCountText" FontSize="11" FontWeight="Bold"
                                            Foreground="{StaticResource AccentTextBrush}"/>
                             </Border>
                         </StackPanel>
-                        <Button x:Name="AddBotBtn" Grid.Column="1" Style="{StaticResource ModernButton}" Height="30" Padding="13,0"
+                        <Button x:Name="AddBotBtn" Grid.Column="1" Style="{StaticResource ModernButton}" Height="34" Padding="14,0"
                                 Click="AddBotToggle_Click">
                             <StackPanel Orientation="Horizontal">
                                 <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconPlus}"
@@ -240,7 +243,7 @@
                     <!-- Add bot panel -->
                     <Border Grid.Row="1" x:Name="AddPanel" Visibility="Collapsed"
                             Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"
-                            BorderThickness="1" CornerRadius="8" Margin="14,0,14,12" Padding="12">
+                            BorderThickness="1" CornerRadius="12" Margin="14,0,14,12" Padding="14">
                         <StackPanel>
                             <TextBlock Text="Bot Python file" Style="{StaticResource SectionHeader}" Margin="0,0,0,6"/>
                             <TextBlock Text="Pick the .py file with all your bot's logic."
@@ -396,7 +399,7 @@
                         <!-- Premium card -->
                         <Border x:Name="PremiumCard" Background="{StaticResource CardBrush}"
                                 BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
-                                CornerRadius="8" Margin="0,10,0,0" Padding="12">
+                                CornerRadius="12" Margin="0,10,0,0" Padding="14">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal">
                                     <Path x:Name="PremiumIcon" Style="{StaticResource StrokeIcon}" Data="{StaticResource IconCrown}"
@@ -444,15 +447,15 @@
                         </Grid.RowDefinitions>
                     <!-- Empty state: welcome dashboard -->
                     <StackPanel x:Name="EmptyState" VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="430">
-                        <Border Width="96" Height="96" CornerRadius="48" Background="{StaticResource AccentGradientBrush}">
+                        <Border Width="108" Height="108" CornerRadius="54" Background="{StaticResource AccentGradientBrush}">
                             <Border.Effect>
-                                <DropShadowEffect BlurRadius="26" ShadowDepth="0" Opacity="0.55" Color="#8A22D3EE"/>
+                                <DropShadowEffect BlurRadius="30" ShadowDepth="0" Opacity="0.6" Color="#8A22D3EE"/>
                             </Border.Effect>
-                            <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconBot}" Width="38" Height="38"
+                            <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconBot}" Width="44" Height="44"
                                   Stroke="{StaticResource OnAccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
-                        <TextBlock Text="No bot selected" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"
-                                   Foreground="{StaticResource TextBrush}" Margin="0,22,0,0"/>
+                        <TextBlock Text="No bot selected" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"
+                                   Foreground="{StaticResource TextBrush}" Margin="0,24,0,0"/>
                         <TextBlock Text="Pick a bot from the list, or add one with its token"
                                    FontSize="12.5" HorizontalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}"
                                    TextWrapping="Wrap" TextAlignment="Center" Margin="0,8,0,0"/>
@@ -479,7 +482,7 @@
                             <StackPanel Margin="26,18,26,10">
                                 <!-- Header card -->
                                 <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"
-                                        BorderThickness="1" CornerRadius="12" Padding="18">
+                                        BorderThickness="1" CornerRadius="16" Padding="18">
                                     <Border.ContextMenu>
                                         <ContextMenu Background="{DynamicResource BgElevatedBrush}" BorderBrush="{DynamicResource BorderBrush}">
                                             <MenuItem Header="Start / Stop" Click="StartStop_Click">
@@ -520,14 +523,14 @@
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
-                                        <Border Width="62" Height="62" CornerRadius="31" Padding="2"
+                                        <Border Width="70" Height="70" CornerRadius="35" Padding="2"
                                                 BorderBrush="{StaticResource AccentBorderBrush}" BorderThickness="2"
                                                 Background="{StaticResource SurfaceAltBrush}" VerticalAlignment="Center">
                                             <Border.Effect>
-                                                <DropShadowEffect BlurRadius="18" ShadowDepth="0" Opacity="0.45" Color="#6622D3EE"/>
+                                                <DropShadowEffect BlurRadius="20" ShadowDepth="0" Opacity="0.5" Color="#6622D3EE"/>
                                             </Border.Effect>
                                             <Grid>
-                                                <TextBlock x:Name="BotAvatarInitial" FontSize="22" FontWeight="Bold"
+                                                <TextBlock x:Name="BotAvatarInitial" FontSize="26" FontWeight="Bold"
                                                            Foreground="{StaticResource TextSecondaryBrush}"
                                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                 <Ellipse x:Name="BotAvatarEllipse">
@@ -538,11 +541,11 @@
                                                 </Ellipse>
                                             </Grid>
                                         </Border>
-                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="14,0,10,0">
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="16,0,10,0">
                                             <StackPanel Orientation="Horizontal">
-                                                <TextBlock x:Name="BotNameText" FontSize="19" FontWeight="Bold"
+                                                <TextBlock x:Name="BotNameText" FontSize="22" FontWeight="Bold"
                                                            Foreground="{StaticResource TextBrush}"
-                                                           TextTrimming="CharacterEllipsis" MaxWidth="220"/>
+                                                           TextTrimming="CharacterEllipsis" MaxWidth="240"/>
                                                 <Border x:Name="BotStatePill" Background="{StaticResource SurfaceAltBrush}"
                                                         CornerRadius="10" Padding="9,3" Margin="10,0,0,0" VerticalAlignment="Center">
                                                     <StackPanel Orientation="Horizontal">
@@ -635,7 +638,7 @@
 
                                 <!-- Presence card -->
                                 <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"
-                                        BorderThickness="1" CornerRadius="12" Margin="0,12,0,0" Padding="18">
+                                        BorderThickness="1" CornerRadius="16" Margin="0,12,0,0" Padding="18">
                                     <StackPanel>
                                         <TextBlock Text="PRESENCE" Style="{StaticResource SectionHeader}" Margin="0,0,0,10"/>
                                         <TextBlock Text="Your bot's status &amp; activity are set inside its Python code - Discord only allows the bot itself to change its presence."
@@ -651,7 +654,7 @@
 
                                 <!-- Options card -->
                                 <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"
-                                        BorderThickness="1" CornerRadius="12" Margin="0,12,0,0" Padding="18">
+                                        BorderThickness="1" CornerRadius="16" Margin="0,12,0,0" Padding="18">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
@@ -783,7 +786,7 @@
                         <StackPanel Margin="26,18,26,22">
 
                             <!-- Google sign-in -->
-                            <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"                                        BorderThickness="1" CornerRadius="12" Padding="18">
+                            <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"                                        BorderThickness="1" CornerRadius="16" Padding="18">
                                 <StackPanel>
                                     <TextBlock Text="ACCOUNT" Style="{StaticResource SectionHeader}" Margin="0,0,0,10"/>
                                     <StackPanel x:Name="GoogleSignedOutPanel">
@@ -829,7 +832,7 @@
 
                             <!-- Limits -->
                             <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"
-                                    BorderThickness="1" CornerRadius="12" Margin="0,12,0,0" Padding="18">
+                                    BorderThickness="1" CornerRadius="16" Margin="0,12,0,0" Padding="18">
                                 <StackPanel>
                                     <TextBlock Text="LIMITS" Style="{StaticResource SectionHeader}" Margin="0,0,0,10"/>
                                     <Grid>
@@ -872,7 +875,7 @@
 
                             <!-- Balance -->
                             <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"
-                                    BorderThickness="1" CornerRadius="12" Margin="0,12,0,0" Padding="18">
+                                    BorderThickness="1" CornerRadius="16" Margin="0,12,0,0" Padding="18">
                                 <StackPanel>
                                     <TextBlock Text="BALANCE" Style="{StaticResource SectionHeader}" Margin="0,0,0,10"/>
                                     <TextBlock x:Name="BalanceText" FontSize="24" FontWeight="Bold" Foreground="{StaticResource TextBrush}"/>
@@ -883,7 +886,7 @@
 
                             <!-- Notifications -->
                             <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"
-                                    BorderThickness="1" CornerRadius="12" Margin="0,12,0,0" Padding="18">
+                                    BorderThickness="1" CornerRadius="16" Margin="0,12,0,0" Padding="18">
                                 <StackPanel>
                                     <TextBlock Text="NOTIFICATIONS" Style="{StaticResource SectionHeader}" Margin="0,0,0,10"/>
                                     <ItemsControl x:Name="NotificationList">
@@ -919,11 +922,11 @@
                     <!-- Bottom status bar: bots / running / uptime overview -->
                     <Border Grid.Row="1" Background="{StaticResource BgElevatedBrush}"
                             BorderBrush="{StaticResource PanelDividerBrush}" BorderThickness="0,1,0,0"
-                            Padding="18,7" IsHitTestVisible="False">
+                            Padding="20,9" IsHitTestVisible="False">
                         <StackPanel Orientation="Horizontal">
-                            <Ellipse Width="6" Height="6" Fill="{StaticResource AccentBrush}" VerticalAlignment="Center"/>
-                            <TextBlock x:Name="StatusBarText" FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}"
-                                       Margin="8,0,0,0" TextTrimming="CharacterEllipsis"/>
+                            <Ellipse Width="7" Height="7" Fill="{StaticResource AccentBrush}" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="StatusBarText" FontSize="11.5" Foreground="{StaticResource TextTertiaryBrush}"
+                                       Margin="9,0,0,0" TextTrimming="CharacterEllipsis"/>
                         </StackPanel>
                     </Border>
                     </Grid>
@@ -935,7 +938,7 @@
                   Background="#66000000">
                 <Border Width="430" MaxHeight="540" VerticalAlignment="Center" HorizontalAlignment="Center"
                         Background="{StaticResource BgElevatedBrush}" BorderBrush="{StaticResource BorderStrongBrush}"
-                        BorderThickness="1" CornerRadius="12" Padding="22">
+                        BorderThickness="1" CornerRadius="16" Padding="22">
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel>
                         <TextBlock Text="Settings" FontSize="16" FontWeight="Bold"
@@ -1025,7 +1028,7 @@
             <Grid x:Name="AskStartupOverlay" Grid.RowSpan="2" Visibility="Collapsed" Background="#66000000">
                 <Border Width="400" VerticalAlignment="Center" HorizontalAlignment="Center"
                         Background="{StaticResource BgElevatedBrush}" BorderBrush="{StaticResource BorderStrongBrush}"
-                        BorderThickness="1" CornerRadius="12" Padding="22">
+                        BorderThickness="1" CornerRadius="16" Padding="22">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconPower}"
@@ -1053,7 +1056,7 @@
             <Grid x:Name="AdminCodeOverlay" Grid.RowSpan="2" Visibility="Collapsed" Background="#66000000">
                 <Border Width="340" VerticalAlignment="Center" HorizontalAlignment="Center"
                         Background="{StaticResource BgElevatedBrush}" BorderBrush="{StaticResource BorderStrongBrush}"
-                        BorderThickness="1" CornerRadius="12" Padding="20">
+                        BorderThickness="1" CornerRadius="16" Padding="20">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconShield}"
@@ -1088,7 +1091,7 @@
             <Grid x:Name="AdminOverlay" Grid.RowSpan="2" Visibility="Collapsed" Background="#66000000">
                 <Border Width="940" MinHeight="420" MaxHeight="600" VerticalAlignment="Center" HorizontalAlignment="Center"
                         Background="{StaticResource BgElevatedBrush}" BorderBrush="{StaticResource BorderStrongBrush}"
-                        BorderThickness="1" CornerRadius="12">
+                        BorderThickness="1" CornerRadius="16">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -1462,7 +1465,7 @@
             <Grid x:Name="EditorOverlay" Grid.RowSpan="2" Visibility="Collapsed" Background="#66000000">
                 <Border Width="820" MinHeight="380" MaxHeight="580" VerticalAlignment="Center" HorizontalAlignment="Center"
                         Background="{StaticResource BgElevatedBrush}" BorderBrush="{StaticResource BorderStrongBrush}"
-                        BorderThickness="1" CornerRadius="12">
+                        BorderThickness="1" CornerRadius="16">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -1580,7 +1583,7 @@
             <Grid x:Name="GoogleGateOverlay" Grid.RowSpan="2" Visibility="Collapsed" Background="#E6000000">
                 <Border Width="420" VerticalAlignment="Center" HorizontalAlignment="Center"
                         Background="{StaticResource BgElevatedBrush}" BorderBrush="{StaticResource BorderStrongBrush}"
-                        BorderThickness="1" CornerRadius="12" Padding="24">
+                        BorderThickness="1" CornerRadius="16" Padding="24">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <Border Width="26" Height="26" CornerRadius="6" Background="{StaticResource SurfaceAltBrush}">
