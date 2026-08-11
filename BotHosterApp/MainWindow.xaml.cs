@@ -1,8 +1,11 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Interop;
@@ -23,6 +26,8 @@ public partial class MainWindow : Window
     private BotEntry? _selected;
     private readonly Dictionary<BotEntry, string> _lastToastState = new();
     private readonly Dictionary<BotEntry, DateTime> _lastErrorToast = new();
+    private readonly Dictionary<BotEntry, TimeSpan> _lastCpu = new();
+    private ICollectionView? _botsView;
 
     private static readonly Brush InfoBrush = new SolidColorBrush(MediaColor.FromRgb(0xD4, 0xD4, 0xD8));
     private static readonly Brush WarnBrush = new SolidColorBrush(MediaColor.FromRgb(0xFE, 0xBB, 0x3D));
@@ -183,7 +188,9 @@ public partial class MainWindow : Window
         TelemetryService.Enabled = _settings.Telemetry;
 
         await _manager.LoadAsync();
-        BotsList.ItemsSource = _manager.Bots;
+        _botsView = CollectionViewSource.GetDefaultView(_manager.Bots);
+        _botsView.Filter = BotFilter;
+        BotsList.ItemsSource = _botsView;
         foreach (var b in _manager.Bots)
         {
             _ = LoadAvatarAsync(b);
@@ -259,11 +266,32 @@ public partial class MainWindow : Window
 
     private void RefreshSidebar()
     {
-        BotCountText.Text = $"{_manager.Bots.Count} hosted";
+        var online = _manager.Bots.Count(b => b.Running);
+        BotCountText.Text = $"{_manager.Bots.Count} hosted · {online} online";
+        var searching = !string.IsNullOrWhiteSpace(SearchBox.Text);
+        var visible = _botsView?.Cast<object>().Any() ?? false;
         NoBotsHint.Visibility = _manager.Bots.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        SearchNoMatch.Visibility = _manager.Bots.Count > 0 && searching && !visible ? Visibility.Visible : Visibility.Collapsed;
         // Items auto-update: adds/removes via ObservableCollection, state via
         // INotifyPropertyChanged. No Items.Refresh() here - a refresh storm
         // while a bot reconnects would cancel any context menu being opened.
+    }
+
+    private bool BotFilter(object o) =>
+        o is BotEntry b && (string.IsNullOrWhiteSpace(SearchBox.Text) ||
+                            b.Name.Contains(SearchBox.Text.Trim(), StringComparison.OrdinalIgnoreCase));
+
+    private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        SearchClearButton.Visibility = SearchBox.Text.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+        _botsView?.Refresh();
+        RefreshSidebar();
+    }
+
+    private void SearchClear_Click(object sender, RoutedEventArgs e)
+    {
+        SearchBox.Text = "";
+        SearchBox.Focus();
     }
 
     /// <summary>
@@ -305,10 +333,12 @@ public partial class MainWindow : Window
 
         BotNameText.Text = b.Name;
         BotAvatarInitial.Text = b.Initial;
-        BotAvatarImage.Source = b.AvatarImage;
+        SetAvatarBrush(b.AvatarImage);
         GuildsText.Text = b.GuildCountText;
         RestartsText.Text = b.RestartCount.ToString();
         UptimeText.Text = b.Running ? FormatTime(TimeSpan.FromSeconds(b.UptimeSecs)) : "—";
+        BotIdText.Text = b.Id == 0 ? "—" : b.Id.ToString();
+        ProcStatsText.Text = "—";
 
         BotStateDot.Fill = b.StateBrush;
         BotStateText.Text = b.StateText;
@@ -495,14 +525,78 @@ public partial class MainWindow : Window
         PresenceHint.Text = "Token copied to clipboard.";
     }
 
+    private void CopyInvite_Click(object sender, RoutedEventArgs e)
+    {
+        var b = _selected;
+        if (b == null) return;
+        if (b.Id == 0)
+        {
+            PresenceHint.Text = "Bot ID unknown yet - restart the bot so its info is fetched.";
+            return;
+        }
+        var url = $"https://discord.com/oauth2/authorize?client_id={b.Id}&scope=bot&permissions=8";
+        Clipboard.SetText(url);
+        PresenceHint.Text = "Invite link copied (Administrator permissions).";
+    }
+
+    private void SaveLog_Click(object sender, RoutedEventArgs e)
+    {
+        var b = _selected;
+        if (b == null || !_logs.TryGetValue(b, out var list) || list.Count == 0)
+        {
+            PresenceHint.Text = "No console output to save yet.";
+            return;
+        }
+        var safe = string.Concat(b.Name.Split(Path.GetInvalidFileNameChars()));
+        var dlg = new System.Windows.Forms.SaveFileDialog
+        {
+            FileName = $"{safe} {DateTime.Now:yyyy-MM-dd HH-mm}.log",
+            Filter = "Log files (*.log)|*.log|Text files (*.txt)|*.txt",
+            Title = $"Save console - {b.Name}",
+        };
+        if (dlg.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
+        try
+        {
+            var sb = new StringBuilder();
+            foreach (var (text, severity) in list)
+                sb.AppendLine($"[{severity}] {text}");
+            File.WriteAllText(dlg.FileName, sb.ToString());
+            PresenceHint.Text = $"Log saved to {dlg.FileName}";
+        }
+        catch (Exception ex)
+        {
+            PresenceHint.Text = $"Could not save log: {ex.Message}";
+        }
+    }
+
     /// <summary>
     /// Loads the bot avatar reliably: download the bytes off the UI thread,
     /// then decode from a stream (UriSource-based loading can silently fail
-    /// for HTTPS images on the UI thread).
+    /// for HTTPS images on the UI thread). Bots added before avatar support
+    /// have an empty URL, so re-fetch name/avatar/id from the token first.
     /// </summary>
     private async Task LoadAvatarAsync(BotEntry b)
     {
-        if (string.IsNullOrEmpty(b.AvatarUrl) || b.AvatarImage != null) return;
+        if (b.AvatarImage != null) return;
+
+        if (string.IsNullOrEmpty(b.AvatarUrl))
+        {
+            var info = await BotManager.FetchBotInfoAsync(b.Token);
+            if (info != null)
+            {
+                b.Name = info.Value.Name;
+                b.AvatarUrl = info.Value.Avatar;
+                b.Id = info.Value.Id;
+                await _manager.SaveAsync();
+                Dispatcher.BeginInvoke(() =>
+                {
+                    BotsList.Items.Refresh();
+                    if (_selected == b) RefreshSelectedView();
+                });
+            }
+        }
+        if (string.IsNullOrEmpty(b.AvatarUrl)) return;
+
         try
         {
             using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
@@ -518,13 +612,21 @@ public partial class MainWindow : Window
             Dispatcher.BeginInvoke(() =>
             {
                 BotsList.Items.Refresh();
-                if (_selected == b) BotAvatarImage.Source = bmp;
+                if (_selected == b) SetAvatarBrush(bmp);
             });
         }
         catch
         {
             b.AvatarImage = null;
         }
+    }
+
+    /// <summary>Paints the avatar into the header's circular crop.</summary>
+    private void SetAvatarBrush(ImageSource? src)
+    {
+        BotAvatarEllipse.Fill = src == null
+            ? null
+            : new ImageBrush(src) { Stretch = Stretch.UniformToFill };
     }
 
     // ================================================================== start / stop / presence
@@ -854,6 +956,26 @@ public partial class MainWindow : Window
                 : "—";
             if (_selected.Running)
                 GuildsText.Text = _selected.GuildCountText;
+            ProcStatsText.Text = _selected.Running ? SampleProcStats(_selected) : "—";
+        }
+    }
+
+    /// <summary>Live CPU % and memory of the bot's Python process.</summary>
+    private string SampleProcStats(BotEntry b)
+    {
+        try
+        {
+            var proc = b.Proc;
+            if (proc == null) return "—";
+            var cpuDelta = proc.TotalProcessorTime - _lastCpu.GetValueOrDefault(b);
+            _lastCpu[b] = proc.TotalProcessorTime;
+            var cpuPct = Math.Clamp((int)Math.Round(cpuDelta.TotalSeconds * 100), 0, 999);
+            var memMb = proc.WorkingSet64 / 1024.0 / 1024.0;
+            return $"CPU {cpuPct}% · {memMb:0} MB";
+        }
+        catch
+        {
+            return "—";
         }
     }
 
