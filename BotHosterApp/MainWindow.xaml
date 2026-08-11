@@ -1,4 +1,4 @@
-<Window x:Class="BotHosterApp.MainWindow"
+﻿<Window x:Class="BotHosterApp.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="CFG2 Bot Hoster"
@@ -22,24 +22,24 @@
                 <Grid.ContextMenu>
                     <ContextMenu Background="{DynamicResource BgElevatedBrush}" BorderBrush="{DynamicResource BorderBrush}">
                         <MenuItem Header="Start" Click="Ctx_Start">
-                            <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconPlay}" Width="11" Height="11" Stroke="{StaticResource OnlineBrush}"/></MenuItem.Icon>
+                            <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconPlay}" Width="11" Height="11" Stroke="{DynamicResource OnlineBrush}"/></MenuItem.Icon>
                         </MenuItem>
                         <MenuItem Header="Stop" Click="Ctx_Stop">
-                            <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconStop}" Width="11" Height="11" Stroke="{StaticResource DangerBrush}"/></MenuItem.Icon>
+                            <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconStop}" Width="11" Height="11" Stroke="{DynamicResource DangerBrush}"/></MenuItem.Icon>
                         </MenuItem>
                         <MenuItem Header="Restart" Click="Ctx_Restart">
-                            <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconRefresh}" Width="11" Height="11" Stroke="{StaticResource TextSecondaryBrush}"/></MenuItem.Icon>
+                            <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconRefresh}" Width="11" Height="11" Stroke="{DynamicResource TextSecondaryBrush}"/></MenuItem.Icon>
                         </MenuItem>
                         <Separator/>
                         <MenuItem Header="Copy token" Click="Ctx_CopyToken">
-                            <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconCopy}" Width="11" Height="11" Stroke="{StaticResource TextSecondaryBrush}"/></MenuItem.Icon>
+                            <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconCopy}" Width="11" Height="11" Stroke="{DynamicResource TextSecondaryBrush}"/></MenuItem.Icon>
                         </MenuItem>
                         <MenuItem Header="Open file location" Click="OpenFileLocation_Click">
-                            <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconFolder}" Width="11" Height="11" Stroke="{StaticResource TextSecondaryBrush}"/></MenuItem.Icon>
+                            <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconFolder}" Width="11" Height="11" Stroke="{DynamicResource TextSecondaryBrush}"/></MenuItem.Icon>
                         </MenuItem>
                         <Separator/>
                         <MenuItem Header="Remove" Click="Ctx_Remove">
-                            <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconTrash}" Width="11" Height="11" Stroke="{StaticResource DangerBrush}"/></MenuItem.Icon>
+                            <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconTrash}" Width="11" Height="11" Stroke="{DynamicResource DangerBrush}"/></MenuItem.Icon>
                         </MenuItem>
                     </ContextMenu>
                 </Grid.ContextMenu>
@@ -50,11 +50,11 @@
                 </Grid.ColumnDefinitions>
                 <Border Width="54" Height="54" CornerRadius="27" Padding="2"
                         BorderBrush="{Binding StateBrush}" BorderThickness="2"
-                        Background="{StaticResource SurfaceAltBrush}"
+                        Background="{DynamicResource SurfaceAltBrush}"
                         VerticalAlignment="Center">
                     <Grid>
                         <TextBlock Text="{Binding Initial}" FontSize="18" FontWeight="Bold"
-                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
                                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         <Ellipse>
                             <Ellipse.Fill>
@@ -66,27 +66,27 @@
                 </Border>
                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="12,0,6,0">
                     <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold"
-                               Foreground="{StaticResource TextBrush}"
+                               Foreground="{DynamicResource TextBrush}"
                                TextTrimming="CharacterEllipsis"/>
                     <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
                         <Ellipse Width="8" Height="8" Fill="{Binding StateBrush}" VerticalAlignment="Center"/>
                         <TextBlock Text="{Binding StateText}" FontSize="11.5"
-                                   Foreground="{StaticResource TextSecondaryBrush}" Margin="5,0,0,0"/>
+                                   Foreground="{DynamicResource TextSecondaryBrush}" Margin="5,0,0,0"/>
                         <TextBlock Text="{Binding UptimeText}" FontSize="11"
-                                   Foreground="{StaticResource AccentTextBrush}" Margin="7,0,0,0"/>
+                                   Foreground="{DynamicResource AccentTextBrush}" Margin="7,0,0,0"/>
                     </StackPanel>
                 </StackPanel>
-                <Border Grid.Column="2" Background="{StaticResource SurfaceBrush}" CornerRadius="8" Padding="6,2"
+                <Border Grid.Column="2" Background="{DynamicResource SurfaceBrush}" CornerRadius="8" Padding="6,2"
                         VerticalAlignment="Center" HorizontalAlignment="Right">
                     <TextBlock Text="{Binding GuildCountText}" FontSize="10.5" FontWeight="SemiBold"
-                               Foreground="{StaticResource TextTertiaryBrush}"/>
+                               Foreground="{DynamicResource TextTertiaryBrush}"/>
                 </Border>
             </Grid>
         </DataTemplate>
     </Window.Resources>
 
-    <Border x:Name="ChromeBorder" BorderBrush="{StaticResource WindowEdgeBrush}" BorderThickness="1" CornerRadius="10">
-        <Grid x:Name="RootGrid" Background="{StaticResource WindowBgBrush}">
+    <Border x:Name="ChromeBorder" BorderBrush="{DynamicResource WindowEdgeBrush}" BorderThickness="1" CornerRadius="10">
+        <Grid x:Name="RootGrid" Background="{DynamicResource WindowBgBrush}">
             <Grid.Clip>
                 <RectangleGeometry x:Name="RootClip" RadiusX="10" RadiusY="10"/>
             </Grid.Clip>
@@ -96,62 +96,62 @@
             </Grid.RowDefinitions>
 
             <!-- ======================== Titlebar ======================== -->
-            <Grid Grid.Row="0" Background="{StaticResource BgElevatedBrush}" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+            <Grid Grid.Row="0" Background="{DynamicResource BgElevatedBrush}" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <!-- Top accent strip: cyan -> blue gradient line -->
-                <Border Height="4" VerticalAlignment="Top" Background="{StaticResource AccentStripBrush}"
+                <Border Height="4" VerticalAlignment="Top" Background="{DynamicResource AccentStripBrush}"
                         IsHitTestVisible="False">
                     <Border.Effect>
-                        <DropShadowEffect BlurRadius="12" ShadowDepth="0" Opacity="0.6" Color="#6622D3EE"/>
+                        <DropShadowEffect BlurRadius="12" ShadowDepth="0" Opacity="0.6" Color="{DynamicResource ColorGlowDim}"/>
                     </Border.Effect>
                 </Border>
-                <Border VerticalAlignment="Bottom" Height="1" Background="{StaticResource PanelDividerBrush}"
+                <Border VerticalAlignment="Bottom" Height="1" Background="{DynamicResource PanelDividerBrush}"
                         IsHitTestVisible="False"/>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="18,0,0,0">
-                    <Border Width="36" Height="36" CornerRadius="16" Background="{StaticResource AccentGradientBrush}">
+                    <Border Width="36" Height="36" CornerRadius="16" Background="{DynamicResource AccentGradientBrush}">
                         <Border.Effect>
-                            <DropShadowEffect BlurRadius="14" ShadowDepth="0" Opacity="0.55" Color="#8A22D3EE"/>
+                            <DropShadowEffect BlurRadius="14" ShadowDepth="0" Opacity="0.55" Color="{DynamicResource ColorGlow}"/>
                         </Border.Effect>
                         <Image x:Name="TitleLogo" Stretch="Uniform" Width="24" Height="24"
                                HorizontalAlignment="Center" VerticalAlignment="Center"
                                RenderOptions.BitmapScalingMode="HighQuality"/>
                     </Border>
                     <TextBlock Text="CFG2 Bot Hoster" FontSize="17" FontWeight="Bold"
-                               Foreground="{StaticResource TextBrush}" Margin="12,0,0,0" VerticalAlignment="Center"/>
-                    <Border Background="{StaticResource SurfaceBrush}" CornerRadius="10" Padding="8,3" Margin="10,0,0,0"
+                               Foreground="{DynamicResource TextBrush}" Margin="12,0,0,0" VerticalAlignment="Center"/>
+                    <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="10" Padding="8,3" Margin="10,0,0,0"
                             VerticalAlignment="Center">
                         <TextBlock x:Name="VersionText" FontSize="11.5" FontWeight="SemiBold"
-                                   Foreground="{StaticResource AccentTextBrush}"/>
+                                   Foreground="{DynamicResource AccentTextBrush}"/>
                     </Border>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
                     <Button x:Name="AdminBtn" Style="{StaticResource WindowControlButton}"
                             ToolTip="Admin panel" Click="Admin_Click">
                         <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconShield}"
-                              Width="15" Height="15" Stroke="{StaticResource AccentTextBrush}"/>
+                              Width="15" Height="15" Stroke="{DynamicResource AccentTextBrush}"/>
                     </Button>
                     <Button x:Name="SettingsBtn" Style="{StaticResource WindowControlButton}"
                             ToolTip="Settings" Click="Settings_Click">
                         <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconSettings}"
-                              Width="15" Height="15" Stroke="{StaticResource TextSecondaryBrush}"/>
+                              Width="15" Height="15" Stroke="{DynamicResource TextSecondaryBrush}"/>
                     </Button>
                     <Button Style="{StaticResource WindowControlButton}"
                             ToolTip="Minimize" Click="Minimize_Click">
                         <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconMinimize}"
-                              Width="13" Height="13" Stroke="{StaticResource TextSecondaryBrush}"/>
+                              Width="13" Height="13" Stroke="{DynamicResource TextSecondaryBrush}"/>
                     </Button>
                     <Button Style="{StaticResource WindowControlButton}"
                             ToolTip="Maximize" Click="Maximize_Click">
                         <Path x:Name="MaxIcon" Style="{StaticResource StrokeIcon}" Data="{StaticResource IconMaximize}"
-                              Width="12" Height="12" Stroke="{StaticResource TextSecondaryBrush}"/>
+                              Width="12" Height="12" Stroke="{DynamicResource TextSecondaryBrush}"/>
                     </Button>
                     <Button Style="{StaticResource WindowCloseButton}"
                             ToolTip="Close" Click="Close_Click">
                         <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconClose}"
-                              Width="13" Height="13" Stroke="{StaticResource TextSecondaryBrush}"/>
+                              Width="13" Height="13" Stroke="{DynamicResource TextSecondaryBrush}"/>
                     </Button>
                 </StackPanel>
             </Grid>
@@ -166,18 +166,18 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- ============ Icon rail (activity bar) ============ -->
-                <Grid Grid.Column="0" Background="{StaticResource SidebarBgBrush}">
+                <Grid Grid.Column="0" Background="{DynamicResource SidebarBgBrush}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     <Border HorizontalAlignment="Right" VerticalAlignment="Stretch" Width="1"
-                            Background="{StaticResource PanelDividerBrush}" IsHitTestVisible="False"/>
+                            Background="{DynamicResource PanelDividerBrush}" IsHitTestVisible="False"/>
                     <StackPanel HorizontalAlignment="Center" Margin="0,16,0,0">
-                        <Border Width="42" Height="42" CornerRadius="14" Background="{StaticResource AccentGradientBrush}">
+                        <Border Width="42" Height="42" CornerRadius="14" Background="{DynamicResource AccentGradientBrush}">
                             <Border.Effect>
-                                <DropShadowEffect BlurRadius="16" ShadowDepth="0" Opacity="0.6" Color="#8A22D3EE"/>
+                                <DropShadowEffect BlurRadius="16" ShadowDepth="0" Opacity="0.6" Color="{DynamicResource ColorGlow}"/>
                             </Border.Effect>
                             <Image x:Name="RailLogo" Stretch="Uniform" Width="28" Height="28"
                                    HorizontalAlignment="Center" VerticalAlignment="Center"
@@ -188,25 +188,25 @@
                         <Button x:Name="RailBotsBtn" Style="{StaticResource RailIconActiveButton}" Tag="bots"
                                 Click="MainTab_Click" ToolTip="Bots" AutomationProperties.Name="Bots">
                             <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconBot}"
-                                  Width="17" Height="17" Stroke="{StaticResource AccentTextBrush}"/>
+                                  Width="17" Height="17" Stroke="{DynamicResource AccentTextBrush}"/>
                         </Button>
                         <Button x:Name="RailAccountBtn" Style="{StaticResource RailIconButton}" Tag="account"
                                 Click="MainTab_Click" ToolTip="Account" AutomationProperties.Name="Account" Margin="0,8,0,0">
                             <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconUser}"
-                                  Width="17" Height="17" Stroke="{StaticResource TextTertiaryBrush}"/>
+                                  Width="17" Height="17" Stroke="{DynamicResource TextTertiaryBrush}"/>
                         </Button>
                     </StackPanel>
                     <StackPanel Grid.Row="2" HorizontalAlignment="Center" Margin="0,0,0,14">
                         <Button Style="{StaticResource RailIconButton}" Click="AddBotToggle_Click" ToolTip="Add bot"
                                 AutomationProperties.Name="Add bot">
                             <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconPlus}"
-                                  Width="16" Height="16" Stroke="{StaticResource AccentTextBrush}"/>
+                                  Width="16" Height="16" Stroke="{DynamicResource AccentTextBrush}"/>
                         </Button>
                     </StackPanel>
                 </Grid>
 
                 <!-- ============ Sidebar ============ -->
-                <Grid Grid.Column="1" Background="{StaticResource SidebarBgBrush}">
+                <Grid Grid.Column="1" Background="{DynamicResource SidebarBgBrush}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
@@ -222,32 +222,32 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="Your bots" FontSize="17" FontWeight="Bold"
-                                       Foreground="{StaticResource TextBrush}" VerticalAlignment="Center"/>
-                            <Border Background="{StaticResource AccentSoftBrush}" CornerRadius="16" Padding="9,3"
+                                       Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
+                            <Border Background="{DynamicResource AccentSoftBrush}" CornerRadius="16" Padding="9,3"
                                     Margin="10,0,0,0" VerticalAlignment="Center">
                                 <TextBlock x:Name="BotCountText" FontSize="11" FontWeight="Bold"
-                                           Foreground="{StaticResource AccentTextBrush}"/>
+                                           Foreground="{DynamicResource AccentTextBrush}"/>
                             </Border>
                         </StackPanel>
                         <Button x:Name="AddBotBtn" Grid.Column="1" Style="{StaticResource ModernButton}" Height="34" Padding="14,0"
                                 Click="AddBotToggle_Click">
                             <StackPanel Orientation="Horizontal">
                                 <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconPlus}"
-                                      Width="11" Height="11" Stroke="{StaticResource OnAccentBrush}" VerticalAlignment="Center"/>
+                                      Width="11" Height="11" Stroke="{DynamicResource OnAccentBrush}" VerticalAlignment="Center"/>
                                 <TextBlock Text="Add bot" FontSize="11.5" FontWeight="SemiBold" Margin="6,0,0,0"
-                                           Foreground="{StaticResource OnAccentBrush}"/>
+                                           Foreground="{DynamicResource OnAccentBrush}"/>
                             </StackPanel>
                         </Button>
                     </Grid>
 
                     <!-- Add bot panel -->
                     <Border Grid.Row="1" x:Name="AddPanel" Visibility="Collapsed"
-                            Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"
+                            Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}"
                             BorderThickness="1" CornerRadius="12" Margin="14,0,14,12" Padding="14">
                         <StackPanel>
                             <TextBlock Text="Bot Python file" Style="{StaticResource SectionHeader}" Margin="0,0,0,6"/>
                             <TextBlock Text="Pick the .py file with all your bot's logic."
-                                       FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                                       FontSize="10.5" Foreground="{DynamicResource TextTertiaryBrush}" TextWrapping="Wrap" Margin="0,0,0,8"/>
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -260,21 +260,21 @@
                                 <Button x:Name="BrowseFileBtn" Grid.Column="1" Style="{StaticResource ModernButton}" Height="32"
                                         Padding="12,0" Margin="8,0,0,0" Click="AddBotBrowse_Click">
                                     <TextBlock Text="Browse…" FontSize="11.5" FontWeight="SemiBold"
-                                               Foreground="{StaticResource OnAccentBrush}"/>
+                                               Foreground="{DynamicResource OnAccentBrush}"/>
                                 </Button>
                                 <Button x:Name="BrowseFolderBtn" Grid.Column="2" Style="{StaticResource OutlineButton}" Height="32"
                                         Padding="12,0" Margin="8,0,0,0" Click="AddBotFolder_Click">
                                     <TextBlock Text="Folder…" FontSize="11.5" FontWeight="SemiBold"
-                                               Foreground="{StaticResource TextBrush}"/>
+                                               Foreground="{DynamicResource TextBrush}"/>
                                 </Button>
                             </Grid>
-                            <TextBlock x:Name="TokenFoundText" FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}"
+                            <TextBlock x:Name="TokenFoundText" FontSize="10.5" Foreground="{DynamicResource TextTertiaryBrush}"
                                        TextWrapping="Wrap" Margin="0,8,0,0"/>
                             <TextBox x:Name="TokenBox" Style="{StaticResource FieldTextBox}"
                                      Height="32" Margin="0,8,0,0" FontFamily="{StaticResource MonoFont}"
                                      FontSize="10.5"
                                      ToolTip="Paste your bot token manually if it wasn't found in the file"/>
-                            <CheckBox x:Name="AutoStartNewCheck" Content="Start immediately" Foreground="{StaticResource TextSecondaryBrush}"
+                            <CheckBox x:Name="AutoStartNewCheck" Content="Start immediately" Foreground="{DynamicResource TextSecondaryBrush}"
                                       FontSize="11.5" Margin="0,10,0,0" IsChecked="True"/>
                             <Grid Margin="0,12,0,0">
                                 <Grid.ColumnDefinitions>
@@ -286,17 +286,17 @@
                                         Click="AddBot_Click">
                                     <StackPanel Orientation="Horizontal">
                                         <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconCheck}"
-                                              Width="11" Height="11" Stroke="{StaticResource OnAccentBrush}" VerticalAlignment="Center"/>
+                                              Width="11" Height="11" Stroke="{DynamicResource OnAccentBrush}" VerticalAlignment="Center"/>
                                         <TextBlock Text="Add" FontSize="11.5" FontWeight="SemiBold" Margin="5,0,0,0"
-                                                   Foreground="{StaticResource OnAccentBrush}"/>
+                                                   Foreground="{DynamicResource OnAccentBrush}"/>
                                     </StackPanel>
                                 </Button>
                                 <Button Grid.Column="2" Style="{StaticResource GhostButton}" Height="30" Padding="10,0"
                                         Margin="8,0,0,0" Click="AddBotCancel_Click">
-                                    <TextBlock Text="Cancel" FontSize="11.5" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                    <TextBlock Text="Cancel" FontSize="11.5" Foreground="{DynamicResource TextSecondaryBrush}"/>
                                 </Button>
                             </Grid>
-                            <TextBlock x:Name="AddStatusText" FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}"
+                            <TextBlock x:Name="AddStatusText" FontSize="10.5" Foreground="{DynamicResource TextTertiaryBrush}"
                                        TextWrapping="Wrap" Margin="0,8,0,0"/>
                         </StackPanel>
                     </Border>
@@ -310,7 +310,7 @@
 
                         <!-- Search bots -->
                         <Grid Margin="14,0,14,10">
-                            <Border Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}"
+                            <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
                                     BorderThickness="1" CornerRadius="6" Height="30">
                                 <Grid Margin="8,0,4,0">
                                     <Grid.ColumnDefinitions>
@@ -319,16 +319,16 @@
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
                                     <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconSearch}" Width="11" Height="11"
-                                          Stroke="{StaticResource TextTertiaryBrush}" VerticalAlignment="Center"/>
+                                          Stroke="{DynamicResource TextTertiaryBrush}" VerticalAlignment="Center"/>
                                     <TextBox x:Name="SearchBox" Grid.Column="1" Background="Transparent" BorderThickness="0"
-                                             Foreground="{StaticResource TextBrush}" CaretBrush="{StaticResource TextBrush}"
+                                             Foreground="{DynamicResource TextBrush}" CaretBrush="{DynamicResource TextBrush}"
                                              FontSize="11.5" VerticalAlignment="Center" Margin="7,0,4,0"
                                              TextChanged="SearchBox_TextChanged" ToolTip="Search bots by name"/>
                                     <Button x:Name="SearchClearButton" Grid.Column="2" Visibility="Collapsed"
                                             Style="{StaticResource GhostButton}" Width="22" Height="22" Padding="0"
                                             Click="SearchClear_Click" ToolTip="Clear search">
                                         <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconClose}" Width="8" Height="8"
-                                              Stroke="{StaticResource TextTertiaryBrush}"/>
+                                              Stroke="{DynamicResource TextTertiaryBrush}"/>
                                     </Button>
                                 </Grid>
                             </Border>
@@ -343,19 +343,19 @@
                                      PreviewMouseRightButtonDown="BotsList_PreviewMouseRightButtonDown"/>
                             <StackPanel x:Name="NoBotsHint" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="20,60,20,0">
                                 <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconBot}" Width="26" Height="26"
-                                      Stroke="{StaticResource TextDisabledBrush}" HorizontalAlignment="Center"/>
+                                      Stroke="{DynamicResource TextDisabledBrush}" HorizontalAlignment="Center"/>
                                 <TextBlock Text="No bots yet" FontSize="12.5" FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextTertiaryBrush}" HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                                           Foreground="{DynamicResource TextTertiaryBrush}" HorizontalAlignment="Center" Margin="0,10,0,0"/>
                                 <TextBlock Text="Click Add bot and choose the bot's Python file"
-                                           FontSize="11" Foreground="{StaticResource TextDisabledBrush}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                           FontSize="11" Foreground="{DynamicResource TextDisabledBrush}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                             </StackPanel>
                             <StackPanel x:Name="SearchNoMatch" Visibility="Collapsed" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="20,60,20,0">
                                 <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconSearch}" Width="24" Height="24"
-                                      Stroke="{StaticResource TextDisabledBrush}" HorizontalAlignment="Center"/>
+                                      Stroke="{DynamicResource TextDisabledBrush}" HorizontalAlignment="Center"/>
                                 <TextBlock Text="No bots match" FontSize="12.5" FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextTertiaryBrush}" HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                                           Foreground="{DynamicResource TextTertiaryBrush}" HorizontalAlignment="Center" Margin="0,10,0,0"/>
                                 <TextBlock Text="Try a different name"
-                                           FontSize="11" Foreground="{StaticResource TextDisabledBrush}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                           FontSize="11" Foreground="{DynamicResource TextDisabledBrush}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                             </StackPanel>
                         </Grid>
                     </Grid>
@@ -366,9 +366,9 @@
                                 Height="30" Margin="0,0,0,10" Click="Update_Click">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                 <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconCloudDownload}"
-                                      Width="11" Height="11" Stroke="{StaticResource OnAccentBrush}" VerticalAlignment="Center"/>
+                                      Width="11" Height="11" Stroke="{DynamicResource OnAccentBrush}" VerticalAlignment="Center"/>
                                 <TextBlock x:Name="UpdateBtnText" Text="Update available" FontSize="11" FontWeight="SemiBold"
-                                           Margin="6,0,0,0" Foreground="{StaticResource OnAccentBrush}"/>
+                                           Margin="6,0,0,0" Foreground="{DynamicResource OnAccentBrush}"/>
                             </StackPanel>
                         </Button>
                         <Grid>
@@ -380,40 +380,40 @@
                                     Click="StartAll_Click">
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                     <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconPlay}" Width="10" Height="10"
-                                          Stroke="{StaticResource OnlineBrush}" VerticalAlignment="Center"/>
+                                          Stroke="{DynamicResource OnlineBrush}" VerticalAlignment="Center"/>
                                     <TextBlock Text="Start all" FontSize="11" FontWeight="SemiBold" Margin="6,0,0,0"
-                                               Foreground="{StaticResource TextBrush}"/>
+                                               Foreground="{DynamicResource TextBrush}"/>
                                 </StackPanel>
                             </Button>
                             <Button x:Name="StopAllBtn" Grid.Column="1" Style="{StaticResource OutlineButton}" Height="30" Margin="8,0,0,0"
                                     Click="StopAll_Click">
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                     <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconStop}" Width="10" Height="10"
-                                          Stroke="{StaticResource DangerBrush}" VerticalAlignment="Center"/>
+                                          Stroke="{DynamicResource DangerBrush}" VerticalAlignment="Center"/>
                                     <TextBlock Text="Stop all" FontSize="11" FontWeight="SemiBold" Margin="6,0,0,0"
-                                               Foreground="{StaticResource TextBrush}"/>
+                                               Foreground="{DynamicResource TextBrush}"/>
                                 </StackPanel>
                             </Button>
                         </Grid>
 
                         <!-- Premium card -->
-                        <Border x:Name="PremiumCard" Background="{StaticResource CardBrush}"
-                                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
+                        <Border x:Name="PremiumCard" Background="{DynamicResource CardBrush}"
+                                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
                                 CornerRadius="12" Margin="0,10,0,0" Padding="14">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal">
                                     <Path x:Name="PremiumIcon" Style="{StaticResource StrokeIcon}" Data="{StaticResource IconCrown}"
-                                          Width="14" Height="14" Stroke="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                          Width="14" Height="14" Stroke="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
                                     <TextBlock Text="Premium" FontSize="12" FontWeight="Bold" Margin="7,0,0,0"
-                                               Foreground="{StaticResource TextBrush}" VerticalAlignment="Center"/>
-                                    <Border x:Name="PremiumBadge" Visibility="Collapsed" Background="{StaticResource AccentSoftBrush}"
+                                               Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
+                                    <Border x:Name="PremiumBadge" Visibility="Collapsed" Background="{DynamicResource AccentSoftBrush}"
                                             CornerRadius="5" Padding="7,2" Margin="8,0,0,0" VerticalAlignment="Center">
                                         <TextBlock x:Name="PremiumBadgeText" Text="ACTIVE" FontSize="9.5" FontWeight="Bold"
-                                                   Foreground="{StaticResource AccentTextBrush}"/>
+                                                   Foreground="{DynamicResource AccentTextBrush}"/>
                                     </Border>
                                 </StackPanel>
                                 <TextBlock x:Name="PremiumHint" Text="Free hosts 1 bot. Unlock unlimited bots."
-                                           FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}"
+                                           FontSize="10.5" Foreground="{DynamicResource TextTertiaryBrush}"
                                            TextWrapping="Wrap" Margin="0,7,0,0"/>
                                 <Grid x:Name="KeyRow" Margin="0,10,0,0">
                                     <Grid.ColumnDefinitions>
@@ -426,20 +426,20 @@
                                     <Button x:Name="ActivateBtn" Grid.Column="1" Style="{StaticResource ModernButton}" Height="30" Margin="8,0,0,0" Padding="12,0"
                                             Click="Activate_Click">
                                         <TextBlock Text="Activate" FontSize="11" FontWeight="SemiBold"
-                                                   Foreground="{StaticResource OnAccentBrush}"/>
+                                                   Foreground="{DynamicResource OnAccentBrush}"/>
                                     </Button>
                                 </Grid>
-                                <TextBlock x:Name="KeyStatusText" FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}"
+                                <TextBlock x:Name="KeyStatusText" FontSize="10.5" Foreground="{DynamicResource TextTertiaryBrush}"
                                            TextWrapping="Wrap" Margin="0,7,0,0"/>
                             </StackPanel>
                         </Border>
                     </StackPanel>
                 </Grid>
 
-                <Border Grid.Column="2" Background="{StaticResource PanelDividerBrush}"/>
+                <Border Grid.Column="2" Background="{DynamicResource PanelDividerBrush}"/>
 
                 <!-- ============ Main panel ============ -->
-                <Grid Grid.Column="3" Background="{StaticResource WindowBgBrush}">
+                <Grid Grid.Column="3" Background="{DynamicResource WindowBgBrush}">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*"/>
@@ -447,25 +447,25 @@
                         </Grid.RowDefinitions>
                     <!-- Empty state: welcome dashboard -->
                     <StackPanel x:Name="EmptyState" VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="430">
-                        <Border Width="108" Height="108" CornerRadius="54" Background="{StaticResource AccentGradientBrush}">
+                        <Border Width="108" Height="108" CornerRadius="54" Background="{DynamicResource AccentGradientBrush}">
                             <Border.Effect>
-                                <DropShadowEffect BlurRadius="30" ShadowDepth="0" Opacity="0.6" Color="#8A22D3EE"/>
+                                <DropShadowEffect BlurRadius="30" ShadowDepth="0" Opacity="0.6" Color="{DynamicResource ColorGlow}"/>
                             </Border.Effect>
                             <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconBot}" Width="44" Height="44"
-                                  Stroke="{StaticResource OnAccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                  Stroke="{DynamicResource OnAccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <TextBlock Text="No bot selected" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"
-                                   Foreground="{StaticResource TextBrush}" Margin="0,24,0,0"/>
+                                   Foreground="{DynamicResource TextBrush}" Margin="0,24,0,0"/>
                         <TextBlock Text="Pick a bot from the list, or add one with its token"
-                                   FontSize="12.5" HorizontalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontSize="12.5" HorizontalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"
                                    TextWrapping="Wrap" TextAlignment="Center" Margin="0,8,0,0"/>
                         <Button Style="{StaticResource ModernButton}" Height="38" Padding="22,0" Margin="0,24,0,0"
                                 HorizontalAlignment="Center" Click="AddBotToggle_Click">
                             <StackPanel Orientation="Horizontal">
                                 <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconPlus}" Width="13" Height="13"
-                                      Stroke="{StaticResource OnAccentBrush}" VerticalAlignment="Center"/>
+                                      Stroke="{DynamicResource OnAccentBrush}" VerticalAlignment="Center"/>
                                 <TextBlock Text="Add bot" FontSize="12.5" FontWeight="SemiBold" Margin="7,0,0,0"
-                                           Foreground="{StaticResource OnAccentBrush}"/>
+                                           Foreground="{DynamicResource OnAccentBrush}"/>
                             </StackPanel>
                         </Button>
                     </StackPanel>
@@ -481,41 +481,41 @@
                                       ScrollViewer.CanContentScroll="True">
                             <StackPanel Margin="26,18,26,10">
                                 <!-- Header card -->
-                                <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"
+                                <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}"
                                         BorderThickness="1" CornerRadius="16" Padding="18">
                                     <Border.ContextMenu>
                                         <ContextMenu Background="{DynamicResource BgElevatedBrush}" BorderBrush="{DynamicResource BorderBrush}">
                                             <MenuItem Header="Start / Stop" Click="StartStop_Click">
-                                                <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconPlay}" Width="11" Height="11" Stroke="{StaticResource OnlineBrush}"/></MenuItem.Icon>
+                                                <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconPlay}" Width="11" Height="11" Stroke="{DynamicResource OnlineBrush}"/></MenuItem.Icon>
                                             </MenuItem>
                                             <MenuItem Header="Restart" Click="Restart_Click">
-                                                <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconRefresh}" Width="11" Height="11" Stroke="{StaticResource TextSecondaryBrush}"/></MenuItem.Icon>
+                                                <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconRefresh}" Width="11" Height="11" Stroke="{DynamicResource TextSecondaryBrush}"/></MenuItem.Icon>
                                             </MenuItem>
                                             <Separator/>
                                             <MenuItem Header="Edit code" Click="EditCode_Click">
-                                                <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconCode}" Width="11" Height="11" Stroke="{StaticResource TextSecondaryBrush}"/></MenuItem.Icon>
+                                                <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconCode}" Width="11" Height="11" Stroke="{DynamicResource TextSecondaryBrush}"/></MenuItem.Icon>
                                             </MenuItem>
                                             <MenuItem Header="Deploy 24/7" Click="Deploy247_Click">
-                                                <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconCloudDownload}" Width="11" Height="11" Stroke="{StaticResource AccentTextBrush}"/></MenuItem.Icon>
+                                                <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconCloudDownload}" Width="11" Height="11" Stroke="{DynamicResource AccentTextBrush}"/></MenuItem.Icon>
                                             </MenuItem>
                                             <MenuItem Header="Copy token" Click="CopyToken_Click">
-                                                <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconCopy}" Width="11" Height="11" Stroke="{StaticResource TextSecondaryBrush}"/></MenuItem.Icon>
+                                                <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconCopy}" Width="11" Height="11" Stroke="{DynamicResource TextSecondaryBrush}"/></MenuItem.Icon>
                                             </MenuItem>
                                             <MenuItem Header="Copy invite link" Click="CopyInvite_Click">
-                                                <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconLink}" Width="11" Height="11" Stroke="{StaticResource AccentTextBrush}"/></MenuItem.Icon>
+                                                <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconLink}" Width="11" Height="11" Stroke="{DynamicResource AccentTextBrush}"/></MenuItem.Icon>
                                             </MenuItem>
                                             <MenuItem Header="Open file location" Click="OpenFileLocation_Click">
-                                                <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconFolder}" Width="11" Height="11" Stroke="{StaticResource TextSecondaryBrush}"/></MenuItem.Icon>
+                                                <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconFolder}" Width="11" Height="11" Stroke="{DynamicResource TextSecondaryBrush}"/></MenuItem.Icon>
                                             </MenuItem>
                                             <Separator/>
                                             <MenuItem Header="Remove" Click="RemoveBot_Click">
-                                                <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconTrash}" Width="11" Height="11" Stroke="{StaticResource DangerBrush}"/></MenuItem.Icon>
+                                                <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconTrash}" Width="11" Height="11" Stroke="{DynamicResource DangerBrush}"/></MenuItem.Icon>
                                             </MenuItem>
                                         </ContextMenu>
                                     </Border.ContextMenu>
                                     <Grid>
                                         <!-- Gradient accent bar: hero touch -->
-                                        <Border Width="4" HorizontalAlignment="Left" Background="{StaticResource AccentGradientBrush}"
+                                        <Border Width="4" HorizontalAlignment="Left" Background="{DynamicResource AccentGradientBrush}"
                                                 CornerRadius="11,0,0,11" IsHitTestVisible="False"/>
                                         <Grid>
                                         <Grid.ColumnDefinitions>
@@ -527,14 +527,14 @@
                                             <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
                                         <Border Grid.Row="0" Grid.RowSpan="2" Width="70" Height="70" CornerRadius="35" Padding="2"
-                                                BorderBrush="{StaticResource AccentBorderBrush}" BorderThickness="2"
-                                                Background="{StaticResource SurfaceAltBrush}" VerticalAlignment="Center">
+                                                BorderBrush="{DynamicResource AccentBorderBrush}" BorderThickness="2"
+                                                Background="{DynamicResource SurfaceAltBrush}" VerticalAlignment="Center">
                                             <Border.Effect>
-                                                <DropShadowEffect BlurRadius="20" ShadowDepth="0" Opacity="0.5" Color="#6622D3EE"/>
+                                                <DropShadowEffect BlurRadius="20" ShadowDepth="0" Opacity="0.5" Color="{DynamicResource ColorGlowDim}"/>
                                             </Border.Effect>
                                             <Grid>
                                                 <TextBlock x:Name="BotAvatarInitial" FontSize="26" FontWeight="Bold"
-                                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                                           Foreground="{DynamicResource TextSecondaryBrush}"
                                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                 <Ellipse x:Name="BotAvatarEllipse">
                                                     <Ellipse.Fill>
@@ -547,14 +547,14 @@
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="16,0,10,0">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock x:Name="BotNameText" FontSize="22" FontWeight="Bold"
-                                                           Foreground="{StaticResource TextBrush}"
+                                                           Foreground="{DynamicResource TextBrush}"
                                                            TextTrimming="CharacterEllipsis" MaxWidth="520"/>
-                                                <Border x:Name="BotStatePill" Background="{StaticResource SurfaceAltBrush}"
+                                                <Border x:Name="BotStatePill" Background="{DynamicResource SurfaceAltBrush}"
                                                         CornerRadius="10" Padding="9,3" Margin="10,0,0,0" VerticalAlignment="Center">
                                                     <StackPanel Orientation="Horizontal">
                                                         <Ellipse x:Name="BotStateDot" Width="7" Height="7" VerticalAlignment="Center"/>
                                                         <TextBlock x:Name="BotStateText" FontSize="10.5" FontWeight="SemiBold"
-                                                                   Foreground="{StaticResource TextSecondaryBrush}" Margin="5,0,0,0"/>
+                                                                   Foreground="{DynamicResource TextSecondaryBrush}" Margin="5,0,0,0"/>
                                                     </StackPanel>
                                                 </Border>
                                             </StackPanel>
@@ -563,36 +563,36 @@
                                                     <StackPanel Orientation="Horizontal">
                                                         <TextBlock Text="Guilds" Style="{StaticResource TagChipText}"/>
                                                         <TextBlock x:Name="GuildsText" Text="—" FontSize="10.5" FontWeight="Bold"
-                                                                   Foreground="{StaticResource TextBrush}" Margin="5,0,0,0"/>
+                                                                   Foreground="{DynamicResource TextBrush}" Margin="5,0,0,0"/>
                                                     </StackPanel>
                                                 </Border>
                                                 <Border Style="{StaticResource TagChip}">
                                                     <StackPanel Orientation="Horizontal">
                                                         <TextBlock Text="Uptime" Style="{StaticResource TagChipText}"/>
                                                         <TextBlock x:Name="UptimeText" Text="—" FontSize="10.5" FontWeight="Bold"
-                                                                   Foreground="{StaticResource TextBrush}" Margin="5,0,0,0"/>
+                                                                   Foreground="{DynamicResource TextBrush}" Margin="5,0,0,0"/>
                                                     </StackPanel>
                                                 </Border>
                                                 <Border Style="{StaticResource TagChip}">
                                                     <StackPanel Orientation="Horizontal">
                                                         <TextBlock Text="Restarts" Style="{StaticResource TagChipText}"/>
                                                         <TextBlock x:Name="RestartsText" Text="0" FontSize="10.5" FontWeight="Bold"
-                                                                   Foreground="{StaticResource TextBrush}" Margin="5,0,0,0"/>
+                                                                   Foreground="{DynamicResource TextBrush}" Margin="5,0,0,0"/>
                                                     </StackPanel>
                                                 </Border>
                                                 <Border Style="{StaticResource TagChip}">
                                                     <StackPanel Orientation="Horizontal">
                                                         <TextBlock Text="ID" Style="{StaticResource TagChipText}"/>
                                                         <TextBlock x:Name="BotIdText" Text="—" FontSize="10.5" FontWeight="Bold"
-                                                                   Foreground="{StaticResource TextBrush}" Margin="5,0,0,0"/>
+                                                                   Foreground="{DynamicResource TextBrush}" Margin="5,0,0,0"/>
                                                     </StackPanel>
                                                 </Border>
                                                 <Border Style="{StaticResource TagChip}">
                                                     <StackPanel Orientation="Horizontal">
                                                         <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconZap}" Width="9" Height="9"
-                                                              Stroke="{StaticResource TextTertiaryBrush}" VerticalAlignment="Center"/>
+                                                              Stroke="{DynamicResource TextTertiaryBrush}" VerticalAlignment="Center"/>
                                                         <TextBlock x:Name="ProcStatsText" Text="—" FontSize="10.5" FontWeight="Bold"
-                                                                   Foreground="{StaticResource TextBrush}" Margin="5,0,0,0"/>
+                                                                   Foreground="{DynamicResource TextBrush}" Margin="5,0,0,0"/>
                                                     </StackPanel>
                                                 </Border>
                                             </WrapPanel>
@@ -602,36 +602,36 @@
                                                     Click="StartStop_Click">
                                                 <StackPanel Orientation="Horizontal">
                                                     <Path x:Name="StartStopIcon" Style="{StaticResource StrokeIcon}" Data="{StaticResource IconPlay}"
-                                                          Width="11" Height="11" Stroke="{StaticResource OnAccentBrush}" VerticalAlignment="Center"/>
+                                                          Width="11" Height="11" Stroke="{DynamicResource OnAccentBrush}" VerticalAlignment="Center"/>
                                                     <TextBlock x:Name="StartStopLabel" Text="Start" FontSize="12" FontWeight="SemiBold"
-                                                               Margin="7,0,0,0" Foreground="{StaticResource OnAccentBrush}"/>
+                                                               Margin="7,0,0,0" Foreground="{DynamicResource OnAccentBrush}"/>
                                                 </StackPanel>
                                             </Button>
                                             <Button Style="{StaticResource OutlineButton}" Height="36" Padding="12,0" Margin="8,0,0,0"
                                                     Click="Restart_Click">
                                                 <StackPanel Orientation="Horizontal">
                                                     <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconRefresh}"
-                                                          Width="11" Height="11" Stroke="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                                          Width="11" Height="11" Stroke="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
                                                     <TextBlock Text="Restart" FontSize="12" FontWeight="SemiBold" Margin="6,0,0,0"
-                                                               Foreground="{StaticResource TextBrush}"/>
+                                                               Foreground="{DynamicResource TextBrush}"/>
                                                 </StackPanel>
                                             </Button>
                                             <Button Style="{StaticResource OutlineButton}" Height="36" Padding="12,0" Margin="8,0,0,0"
                                                     Click="EditCode_Click">
                                                 <StackPanel Orientation="Horizontal">
                                                     <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconCode}"
-                                                          Width="11" Height="11" Stroke="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                                          Width="11" Height="11" Stroke="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
                                                     <TextBlock Text="Edit code" FontSize="12" FontWeight="SemiBold" Margin="6,0,0,0"
-                                                               Foreground="{StaticResource TextBrush}"/>
+                                                               Foreground="{DynamicResource TextBrush}"/>
                                                 </StackPanel>
                                             </Button>
                                             <Button Style="{StaticResource OutlineButton}" Height="36" Padding="12,0" Margin="8,0,0,0"
                                                     Click="Deploy247_Click">
                                                 <StackPanel Orientation="Horizontal">
                                                     <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconCloudDownload}"
-                                                          Width="11" Height="11" Stroke="{StaticResource AccentTextBrush}" VerticalAlignment="Center"/>
+                                                          Width="11" Height="11" Stroke="{DynamicResource AccentTextBrush}" VerticalAlignment="Center"/>
                                                     <TextBlock Text="Deploy 24/7" FontSize="12" FontWeight="SemiBold" Margin="6,0,0,0"
-                                                               Foreground="{StaticResource TextBrush}"/>
+                                                               Foreground="{DynamicResource TextBrush}"/>
                                                 </StackPanel>
                                             </Button>
                                         </StackPanel>
@@ -640,23 +640,23 @@
                                 </Border>
 
                                 <!-- Presence card -->
-                                <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"
+                                <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}"
                                         BorderThickness="1" CornerRadius="16" Margin="0,12,0,0" Padding="18">
                                     <StackPanel>
                                         <TextBlock Text="PRESENCE" Style="{StaticResource SectionHeader}" Margin="0,0,0,10"/>
                                         <TextBlock Text="Your bot's status &amp; activity are set inside its Python code - Discord only allows the bot itself to change its presence."
-                                                   FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,0,0,8"/>
-                                        <Border Background="{StaticResource SurfaceBrush}" CornerRadius="6" Padding="10">
-                                            <TextBlock FontFamily="{StaticResource MonoFont}" FontSize="10.5" Foreground="{StaticResource AccentTextBrush}"
+                                                   FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                                        <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="6" Padding="10">
+                                            <TextBlock FontFamily="{StaticResource MonoFont}" FontSize="10.5" Foreground="{DynamicResource AccentTextBrush}"
                                                        Text="await bot.change_presence(activity=discord.Game(name=&quot;your status&quot;))"
                                                        TextWrapping="Wrap"/>
                                         </Border>
-                                        <TextBlock x:Name="PresenceHint" FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}" Margin="0,9,0,0"/>
+                                        <TextBlock x:Name="PresenceHint" FontSize="10.5" Foreground="{DynamicResource TextTertiaryBrush}" Margin="0,9,0,0"/>
                                     </StackPanel>
                                 </Border>
 
                                 <!-- Options card -->
-                                <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"
+                                <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}"
                                         BorderThickness="1" CornerRadius="16" Margin="0,12,0,0" Padding="18">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
@@ -666,10 +666,10 @@
                                         <StackPanel>
                                             <TextBlock Text="OPTIONS" Style="{StaticResource SectionHeader}" Margin="0,0,0,10"/>
                                             <CheckBox x:Name="AutoStartCheck" Content="Start this bot when the app opens"
-                                                      Foreground="{StaticResource TextSecondaryBrush}" FontSize="11.5" Margin="0,0,0,8"
+                                                      Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11.5" Margin="0,0,0,8"
                                                       Checked="Option_Changed" Unchecked="Option_Changed"/>
                                             <CheckBox x:Name="AutoRestartCheck" Content="Auto-restart if the bot crashes or disconnects"
-                                                      Foreground="{StaticResource TextSecondaryBrush}" FontSize="11.5"
+                                                      Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11.5"
                                                       Checked="Option_Changed" Unchecked="Option_Changed"/>
                                         </StackPanel>
                                         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom">
@@ -677,27 +677,27 @@
                                                     Click="CopyToken_Click">
                                                 <StackPanel Orientation="Horizontal">
                                                     <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconCopy}"
-                                                          Width="10" Height="10" Stroke="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                                          Width="10" Height="10" Stroke="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
                                                     <TextBlock Text="Copy token" FontSize="11" FontWeight="SemiBold" Margin="6,0,0,0"
-                                                               Foreground="{StaticResource TextBrush}"/>
+                                                               Foreground="{DynamicResource TextBrush}"/>
                                                 </StackPanel>
                                             </Button>
                                             <Button Style="{StaticResource OutlineButton}" Height="30" Padding="12,0" Margin="8,0,0,0"
                                                     Click="CopyInvite_Click" ToolTip="Copy a Discord invite link for this bot (grants Administrator)">
                                                 <StackPanel Orientation="Horizontal">
                                                     <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconLink}"
-                                                          Width="10" Height="10" Stroke="{StaticResource AccentTextBrush}" VerticalAlignment="Center"/>
+                                                          Width="10" Height="10" Stroke="{DynamicResource AccentTextBrush}" VerticalAlignment="Center"/>
                                                     <TextBlock Text="Invite link" FontSize="11" FontWeight="SemiBold" Margin="6,0,0,0"
-                                                               Foreground="{StaticResource TextBrush}"/>
+                                                               Foreground="{DynamicResource TextBrush}"/>
                                                 </StackPanel>
                                             </Button>
                                             <Button Style="{StaticResource GhostButton}" Height="30" Padding="12,0" Margin="8,0,0,0"
                                                     Click="RemoveBot_Click">
                                                 <StackPanel Orientation="Horizontal">
                                                     <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconTrash}"
-                                                          Width="10" Height="10" Stroke="{StaticResource DangerBrush}" VerticalAlignment="Center"/>
+                                                          Width="10" Height="10" Stroke="{DynamicResource DangerBrush}" VerticalAlignment="Center"/>
                                                     <TextBlock Text="Remove" FontSize="11" FontWeight="SemiBold" Margin="6,0,0,0"
-                                                               Foreground="{StaticResource DangerBrush}"/>
+                                                               Foreground="{DynamicResource DangerBrush}"/>
                                                 </StackPanel>
                                             </Button>
                                         </StackPanel>
@@ -723,41 +723,41 @@
                                     <Ellipse Width="10" Height="10" Fill="#FEBC2E" Margin="0,0,4,0" VerticalAlignment="Center"/>
                                     <Ellipse Width="10" Height="10" Fill="#28C840" Margin="0,0,10,0" VerticalAlignment="Center"/>
                                     <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconTerminal}" Width="12" Height="12"
-                                          Stroke="{StaticResource TextTertiaryBrush}" VerticalAlignment="Center"/>
+                                          Stroke="{DynamicResource TextTertiaryBrush}" VerticalAlignment="Center"/>
                                     <TextBlock x:Name="ConsoleTitle" Text="Console" FontSize="12" FontWeight="SemiBold"
-                                               Foreground="{StaticResource TextBrush}" Margin="8,0,0,0" VerticalAlignment="Center"
+                                               Foreground="{DynamicResource TextBrush}" Margin="8,0,0,0" VerticalAlignment="Center"
                                                TextTrimming="CharacterEllipsis" MaxWidth="420"/>
                                 </StackPanel>
                                 <StackPanel Grid.Column="1" Orientation="Horizontal">
                                     <Button Style="{StaticResource GhostButton}" Height="26" Width="30" Padding="0"
                                             Click="RestartAll_Click" ToolTip="Restart all running bots">
                                         <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconRefresh}" Width="11" Height="11"
-                                              Stroke="{StaticResource AccentTextBrush}" VerticalAlignment="Center"/>
+                                              Stroke="{DynamicResource AccentTextBrush}" VerticalAlignment="Center"/>
                                     </Button>
                                     <Button x:Name="AutoScrollBtn" Style="{StaticResource GhostButton}" Height="26"
                                             Padding="9,0" Margin="8,0,0,0" Click="AutoScroll_Click"
                                             ToolTip="Follow new log lines automatically">
                                         <StackPanel Orientation="Horizontal">
                                             <Path x:Name="AutoScrollIcon" Style="{StaticResource StrokeIcon}" Data="{StaticResource IconLink}" Width="10" Height="10"
-                                                  Stroke="{StaticResource AccentTextBrush}" VerticalAlignment="Center"/>
-                                            <TextBlock x:Name="AutoScrollLabel" Text="Auto-scroll" FontSize="10.5" Foreground="{StaticResource AccentTextBrush}" Margin="5,0,0,0"/>
+                                                  Stroke="{DynamicResource AccentTextBrush}" VerticalAlignment="Center"/>
+                                            <TextBlock x:Name="AutoScrollLabel" Text="Auto-scroll" FontSize="10.5" Foreground="{DynamicResource AccentTextBrush}" Margin="5,0,0,0"/>
                                         </StackPanel>
                                     </Button>
                                     <Button Style="{StaticResource GhostButton}" Height="26" Padding="10,0" Margin="8,0,0,0"
                                             Click="SaveLog_Click" ToolTip="Save the console to a text file">
                                         <StackPanel Orientation="Horizontal">
                                             <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconDownload}" Width="10" Height="10"
-                                                  Stroke="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"/>
-                                            <TextBlock Text="Save log" FontSize="10.5" Foreground="{StaticResource TextSecondaryBrush}" Margin="5,0,0,0"/>
+                                                  Stroke="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                            <TextBlock Text="Save log" FontSize="10.5" Foreground="{DynamicResource TextSecondaryBrush}" Margin="5,0,0,0"/>
                                         </StackPanel>
                                     </Button>
                                     <Button Style="{StaticResource GhostButton}" Height="26" Padding="10,0" Margin="8,0,0,0"
                                             Click="ClearConsole_Click">
-                                        <TextBlock Text="Clear" FontSize="10.5" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                        <TextBlock Text="Clear" FontSize="10.5" Foreground="{DynamicResource TextSecondaryBrush}"/>
                                     </Button>
                                 </StackPanel>
                             </Grid>
-                            <Border Grid.Row="1" Background="#0A0A0A" BorderBrush="{StaticResource BorderBrush}"
+                            <Border Grid.Row="1" Background="#0A0A0A" BorderBrush="{DynamicResource BorderBrush}"
                                     BorderThickness="1" CornerRadius="10" Margin="0,8,0,0">
                                 <RichTextBox x:Name="ConsoleBox" IsReadOnly="True" BorderThickness="0" Background="Transparent"
                                              FontFamily="{StaticResource MonoFont}" FontSize="12"
@@ -766,10 +766,10 @@
                                     <RichTextBox.ContextMenu>
                                         <ContextMenu Background="{DynamicResource BgElevatedBrush}" BorderBrush="{DynamicResource BorderBrush}">
                                             <MenuItem Header="Copy all" Click="Console_CopyAll">
-                                                <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconCopy}" Width="11" Height="11" Stroke="{StaticResource TextSecondaryBrush}"/></MenuItem.Icon>
+                                                <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconCopy}" Width="11" Height="11" Stroke="{DynamicResource TextSecondaryBrush}"/></MenuItem.Icon>
                                             </MenuItem>
                                             <MenuItem Header="Clear console" Click="ClearConsole_Click">
-                                                <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconTrash}" Width="11" Height="11" Stroke="{StaticResource TextSecondaryBrush}"/></MenuItem.Icon>
+                                                <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconTrash}" Width="11" Height="11" Stroke="{DynamicResource TextSecondaryBrush}"/></MenuItem.Icon>
                                             </MenuItem>
                                         </ContextMenu>
                                     </RichTextBox.ContextMenu>
@@ -789,7 +789,7 @@
                         <StackPanel Margin="26,18,26,22">
 
                             <!-- Limits -->
-                            <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"
+                            <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}"
                                     BorderThickness="1" CornerRadius="16" Margin="0,12,0,0" Padding="18">
                                 <StackPanel>
                                     <TextBlock Text="LIMITS" Style="{StaticResource SectionHeader}" Margin="0,0,0,10"/>
@@ -806,51 +806,51 @@
                                             <RowDefinition Height="Auto"/>
                                             <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
-                                        <TextBlock Text="Feature" FontSize="10" FontWeight="Bold" Foreground="{StaticResource TextTertiaryBrush}" Margin="0,0,0,8"/>
-                                        <TextBlock Grid.Column="1" Text="Free" FontSize="10" FontWeight="Bold" Foreground="{StaticResource TextTertiaryBrush}" Margin="0,0,0,8"/>
-                                        <TextBlock Grid.Column="2" Text="Premium" FontSize="10" FontWeight="Bold" Foreground="{StaticResource TextTertiaryBrush}" Margin="0,0,0,8"/>
+                                        <TextBlock Text="Feature" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextTertiaryBrush}" Margin="0,0,0,8"/>
+                                        <TextBlock Grid.Column="1" Text="Free" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextTertiaryBrush}" Margin="0,0,0,8"/>
+                                        <TextBlock Grid.Column="2" Text="Premium" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextTertiaryBrush}" Margin="0,0,0,8"/>
 
-                                        <TextBlock Grid.Row="1" Text="Hosted bots" FontSize="11.5" Foreground="{StaticResource TextBrush}" Margin="0,0,0,8"/>
-                                        <TextBlock Grid.Row="1" Grid.Column="1" Text="1" FontSize="11.5" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,8"/>
-                                        <TextBlock Grid.Row="1" Grid.Column="2" Text="Unlimited" FontSize="11.5" Foreground="{StaticResource TextBrush}" Margin="0,0,0,8"/>
+                                        <TextBlock Grid.Row="1" Text="Hosted bots" FontSize="11.5" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,8"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="1" Text="1" FontSize="11.5" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,8"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="2" Text="Unlimited" FontSize="11.5" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,8"/>
 
-                                        <TextBlock Grid.Row="2" Text="Server management" FontSize="11.5" Foreground="{StaticResource TextBrush}" Margin="0,0,0,8"/>
-                                        <TextBlock Grid.Row="2" Grid.Column="1" Text="—" FontSize="11.5" Foreground="{StaticResource TextTertiaryBrush}" Margin="0,0,0,8"/>
-                                        <TextBlock Grid.Row="2" Grid.Column="2" Text="✓" FontSize="11.5" Foreground="{StaticResource OnlineBrush}" Margin="0,0,0,8"/>
+                                        <TextBlock Grid.Row="2" Text="Server management" FontSize="11.5" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,8"/>
+                                        <TextBlock Grid.Row="2" Grid.Column="1" Text="—" FontSize="11.5" Foreground="{DynamicResource TextTertiaryBrush}" Margin="0,0,0,8"/>
+                                        <TextBlock Grid.Row="2" Grid.Column="2" Text="✓" FontSize="11.5" Foreground="{DynamicResource OnlineBrush}" Margin="0,0,0,8"/>
 
-                                        <TextBlock Grid.Row="3" Text="Deploy 24/7 export" FontSize="11.5" Foreground="{StaticResource TextBrush}" Margin="0,0,0,8"/>
-                                        <TextBlock Grid.Row="3" Grid.Column="1" Text="—" FontSize="11.5" Foreground="{StaticResource TextTertiaryBrush}" Margin="0,0,0,8"/>
-                                        <TextBlock Grid.Row="3" Grid.Column="2" Text="✓" FontSize="11.5" Foreground="{StaticResource OnlineBrush}" Margin="0,0,0,8"/>
+                                        <TextBlock Grid.Row="3" Text="Deploy 24/7 export" FontSize="11.5" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,8"/>
+                                        <TextBlock Grid.Row="3" Grid.Column="1" Text="—" FontSize="11.5" Foreground="{DynamicResource TextTertiaryBrush}" Margin="0,0,0,8"/>
+                                        <TextBlock Grid.Row="3" Grid.Column="2" Text="✓" FontSize="11.5" Foreground="{DynamicResource OnlineBrush}" Margin="0,0,0,8"/>
 
-                                        <TextBlock Grid.Row="4" Text="Account balance" FontSize="11.5" Foreground="{StaticResource TextBrush}"/>
-                                        <TextBlock Grid.Row="4" Grid.Column="1" Text="$0.00" FontSize="11.5" Foreground="{StaticResource TextSecondaryBrush}"/>
-                                        <TextBlock Grid.Row="4" Grid.Column="2" Text="Key balance" FontSize="11.5" Foreground="{StaticResource TextBrush}"/>
+                                        <TextBlock Grid.Row="4" Text="Account balance" FontSize="11.5" Foreground="{DynamicResource TextBrush}"/>
+                                        <TextBlock Grid.Row="4" Grid.Column="1" Text="$0.00" FontSize="11.5" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                        <TextBlock Grid.Row="4" Grid.Column="2" Text="Key balance" FontSize="11.5" Foreground="{DynamicResource TextBrush}"/>
                                     </Grid>
-                                    <TextBlock x:Name="LimitsStatusText" FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}"
+                                    <TextBlock x:Name="LimitsStatusText" FontSize="10.5" Foreground="{DynamicResource TextTertiaryBrush}"
                                                TextWrapping="Wrap" Margin="0,12,0,0"/>
                                 </StackPanel>
                             </Border>
 
                             <!-- Balance -->
-                            <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"
+                            <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}"
                                     BorderThickness="1" CornerRadius="16" Margin="0,12,0,0" Padding="18">
                                 <StackPanel>
                                     <TextBlock Text="BALANCE" Style="{StaticResource SectionHeader}" Margin="0,0,0,10"/>
-                                    <TextBlock x:Name="BalanceText" FontSize="24" FontWeight="Bold" Foreground="{StaticResource TextBrush}"/>
-                                    <TextBlock x:Name="BalanceHint" FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}"
+                                    <TextBlock x:Name="BalanceText" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource TextBrush}"/>
+                                    <TextBlock x:Name="BalanceHint" FontSize="10.5" Foreground="{DynamicResource TextTertiaryBrush}"
                                                TextWrapping="Wrap" Margin="0,6,0,0"/>
                                 </StackPanel>
                             </Border>
 
                             <!-- Notifications -->
-                            <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"
+                            <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}"
                                     BorderThickness="1" CornerRadius="16" Margin="0,12,0,0" Padding="18">
                                 <StackPanel>
                                     <TextBlock Text="NOTIFICATIONS" Style="{StaticResource SectionHeader}" Margin="0,0,0,10"/>
                                     <ItemsControl x:Name="NotificationList">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <Border Background="{StaticResource SurfaceBrush}" CornerRadius="6"
+                                                <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="6"
                                                         Padding="10" Margin="0,0,0,6">
                                                     <Grid>
                                                         <Grid.ColumnDefinitions>
@@ -860,10 +860,10 @@
                                                         <Border Width="3" CornerRadius="2" Background="{Binding AccentBrush}" HorizontalAlignment="Left"/>
                                                         <StackPanel Grid.Column="1" Margin="8,0,0,0">
                                                             <TextBlock Text="{Binding Title}" FontSize="11.5" FontWeight="SemiBold"
-                                                                       Foreground="{StaticResource TextBrush}" TextTrimming="CharacterEllipsis"/>
-                                                            <TextBlock Text="{Binding Message}" FontSize="10.5" Foreground="{StaticResource TextSecondaryBrush}"
+                                                                       Foreground="{DynamicResource TextBrush}" TextTrimming="CharacterEllipsis"/>
+                                                            <TextBlock Text="{Binding Message}" FontSize="10.5" Foreground="{DynamicResource TextSecondaryBrush}"
                                                                        TextWrapping="Wrap" Margin="0,3,0,0"/>
-                                                            <TextBlock Text="{Binding TimeText}" FontSize="9.5" Foreground="{StaticResource TextTertiaryBrush}" Margin="0,4,0,0"/>
+                                                            <TextBlock Text="{Binding TimeText}" FontSize="9.5" Foreground="{DynamicResource TextTertiaryBrush}" Margin="0,4,0,0"/>
                                                         </StackPanel>
                                                     </Grid>
                                                 </Border>
@@ -871,19 +871,19 @@
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
                                     <TextBlock x:Name="NotificationsEmptyText" Text="No notifications yet." FontSize="11"
-                                               Foreground="{StaticResource TextTertiaryBrush}"/>
+                                               Foreground="{DynamicResource TextTertiaryBrush}"/>
                                 </StackPanel>
                             </Border>
                         </StackPanel>
                     </ScrollViewer>
 
                     <!-- Bottom status bar: bots / running / uptime overview -->
-                    <Border Grid.Row="1" Background="{StaticResource BgElevatedBrush}"
-                            BorderBrush="{StaticResource PanelDividerBrush}" BorderThickness="0,1,0,0"
+                    <Border Grid.Row="1" Background="{DynamicResource BgElevatedBrush}"
+                            BorderBrush="{DynamicResource PanelDividerBrush}" BorderThickness="0,1,0,0"
                             Padding="20,9" IsHitTestVisible="False">
                         <StackPanel Orientation="Horizontal">
-                            <Ellipse Width="7" Height="7" Fill="{StaticResource AccentBrush}" VerticalAlignment="Center"/>
-                            <TextBlock x:Name="StatusBarText" FontSize="11.5" Foreground="{StaticResource TextTertiaryBrush}"
+                            <Ellipse Width="7" Height="7" Fill="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="StatusBarText" FontSize="11.5" Foreground="{DynamicResource TextTertiaryBrush}"
                                        Margin="9,0,0,0" TextTrimming="CharacterEllipsis"/>
                         </StackPanel>
                     </Border>
@@ -895,54 +895,59 @@
             <Grid x:Name="SettingsOverlay" Grid.RowSpan="2" Visibility="Collapsed"
                   Background="#66000000">
                 <Border Width="430" MaxHeight="540" VerticalAlignment="Center" HorizontalAlignment="Center"
-                        Background="{StaticResource BgElevatedBrush}" BorderBrush="{StaticResource BorderStrongBrush}"
+                        Background="{DynamicResource BgElevatedBrush}" BorderBrush="{DynamicResource BorderStrongBrush}"
                         BorderThickness="1" CornerRadius="16" Padding="22">
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel>
                         <TextBlock Text="Settings" FontSize="16" FontWeight="Bold"
-                                   Foreground="{StaticResource TextBrush}"/>
+                                   Foreground="{DynamicResource TextBrush}"/>
                         <TextBlock Text="CFG2 Bot Hoster" FontSize="11"
-                                   Foreground="{StaticResource TextTertiaryBrush}" Margin="0,3,0,14"/>
+                                   Foreground="{DynamicResource TextTertiaryBrush}" Margin="0,3,0,14"/>
 
                         <TextBlock Text="GENERAL" Style="{StaticResource SectionHeader}" Margin="0,0,0,8"/>
                         <CheckBox x:Name="StartAllCheck" FontSize="12" Margin="0,0,0,8">
                             <TextBlock Text="Start all bots when the app opens" TextWrapping="Wrap"
-                                       Foreground="{StaticResource TextSecondaryBrush}"/>
+                                       Foreground="{DynamicResource TextSecondaryBrush}"/>
                         </CheckBox>
                         <CheckBox x:Name="AutoRestartNewCheck" FontSize="12" Margin="0,0,0,8">
                             <TextBlock Text="Auto-restart new bots by default" TextWrapping="Wrap"
-                                       Foreground="{StaticResource TextSecondaryBrush}"/>
+                                       Foreground="{DynamicResource TextSecondaryBrush}"/>
                         </CheckBox>
                         <CheckBox x:Name="UpdateCheck" FontSize="12" Margin="0,0,0,8">
                             <TextBlock Text="Check for updates on launch" TextWrapping="Wrap"
-                                       Foreground="{StaticResource TextSecondaryBrush}"/>
+                                       Foreground="{DynamicResource TextSecondaryBrush}"/>
                         </CheckBox>
                         <CheckBox x:Name="TelemetryCheck" FontSize="12" Margin="0,0,0,8">
                             <TextBlock Text="Send anonymous usage stats to the owner" TextWrapping="Wrap"
-                                       Foreground="{StaticResource TextSecondaryBrush}"/>
+                                       Foreground="{DynamicResource TextSecondaryBrush}"/>
                         </CheckBox>
                         <CheckBox x:Name="StartupCheck" FontSize="12" Margin="0,0,0,8">
                             <TextBlock Text="Launch on startup (24/7 background - starts hidden in the tray)" TextWrapping="Wrap"
-                                       Foreground="{StaticResource TextSecondaryBrush}"/>
+                                       Foreground="{DynamicResource TextSecondaryBrush}"/>
                         </CheckBox>
                         <CheckBox x:Name="TrayCheck" FontSize="12" Margin="0,0,0,14">
                             <TextBlock Text="Keep running in the tray when the window is closed" TextWrapping="Wrap"
-                                       Foreground="{StaticResource TextSecondaryBrush}"/>
+                                       Foreground="{DynamicResource TextSecondaryBrush}"/>
                         </CheckBox>
 
+                        <TextBlock Text="THEME" Style="{StaticResource SectionHeader}" Margin="0,14,0,8"/>
+                        <TextBlock Text="Changes apply instantly and are remembered next launch."
+                                   FontSize="10" Foreground="{DynamicResource TextTertiaryBrush}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                        <WrapPanel x:Name="ThemeList" Margin="0,0,0,4"/>
+
                         <TextBlock Text="24/7 POWER" Style="{StaticResource SectionHeader}" Margin="0,14,0,8"/>
-                        <TextBlock x:Name="LidStatusText" FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}"
+                        <TextBlock x:Name="LidStatusText" FontSize="10.5" Foreground="{DynamicResource TextTertiaryBrush}"
                                    TextWrapping="Wrap" Margin="0,0,0,8"/>
                         <Button Style="{StaticResource OutlineButton}" Height="30" Margin="0,0,0,4" Click="LidAction_Click">
                             <TextBlock Text="Set lid close = do nothing (AC power)" FontSize="10.5" FontWeight="SemiBold"
-                                       Foreground="{StaticResource TextBrush}"/>
+                                       Foreground="{DynamicResource TextBrush}"/>
                         </Button>
                         <TextBlock Text="Closing the lid normally puts the laptop to sleep, which pauses your bots. This keeps them running on AC power (needs administrator)."
-                                   FontSize="10" Foreground="{StaticResource TextTertiaryBrush}" TextWrapping="Wrap" Margin="0,0,0,14"/>
+                                   FontSize="10" Foreground="{DynamicResource TextTertiaryBrush}" TextWrapping="Wrap" Margin="0,0,0,14"/>
 
                         <TextBlock Text="BOTS RUN AS PYTHON PROCESSES" Style="{StaticResource SectionHeader}" Margin="0,16,0,8"/>
                         <TextBlock Text="Each bot is a .py file that the app runs with Python. Its commands, events and presence are all inside that file."
-                                   FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}" TextWrapping="Wrap" Margin="0,0,0,0"/>
+                                   FontSize="10.5" Foreground="{DynamicResource TextTertiaryBrush}" TextWrapping="Wrap" Margin="0,0,0,0"/>
 
                         <TextBlock Text="DATA" Style="{StaticResource SectionHeader}" Margin="0,16,0,8"/>
                         <Grid>
@@ -950,23 +955,23 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock x:Name="DataPathText" FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}"
+                            <TextBlock x:Name="DataPathText" FontSize="10.5" Foreground="{DynamicResource TextTertiaryBrush}"
                                        TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
                             <Button Grid.Column="1" Style="{StaticResource OutlineButton}" Height="28" Padding="10,0"
                                     Margin="10,0,0,0" Click="OpenDataFolder_Click">
                                 <TextBlock Text="Open folder" FontSize="10.5" FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextBrush}"/>
+                                           Foreground="{DynamicResource TextBrush}"/>
                             </Button>
                         </Grid>
 
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,22,0,0">
                             <Button Style="{StaticResource GhostButton}" Height="32" Padding="14,0" Click="SettingsClose_Click">
-                                <TextBlock Text="Cancel" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                <TextBlock Text="Cancel" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"/>
                             </Button>
                             <Button x:Name="SettingsSaveBtn" Style="{StaticResource ModernButton}" Height="32" Padding="18,0"
                                     Margin="10,0,0,0" Click="SettingsSave_Click">
                                 <TextBlock Text="Save" FontSize="12" FontWeight="SemiBold"
-                                           Foreground="{StaticResource OnAccentBrush}"/>
+                                           Foreground="{DynamicResource OnAccentBrush}"/>
                             </Button>
                         </StackPanel>
                     </StackPanel>
@@ -977,25 +982,25 @@
             <!-- ======================== Startup ask ======================== -->
             <Grid x:Name="AskStartupOverlay" Grid.RowSpan="2" Visibility="Collapsed" Background="#66000000">
                 <Border Width="400" VerticalAlignment="Center" HorizontalAlignment="Center"
-                        Background="{StaticResource BgElevatedBrush}" BorderBrush="{StaticResource BorderStrongBrush}"
+                        Background="{DynamicResource BgElevatedBrush}" BorderBrush="{DynamicResource BorderStrongBrush}"
                         BorderThickness="1" CornerRadius="16" Padding="22">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconPower}"
-                                  Width="16" Height="16" Stroke="{StaticResource AccentTextBrush}" VerticalAlignment="Center"/>
+                                  Width="16" Height="16" Stroke="{DynamicResource AccentTextBrush}" VerticalAlignment="Center"/>
                             <TextBlock Text="Run 24/7?" FontSize="15" FontWeight="Bold" Margin="8,0,0,0"
-                                       Foreground="{StaticResource TextBrush}" VerticalAlignment="Center"/>
+                                       Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
                         </StackPanel>
                         <TextBlock Text="Launch CFG2 Bot Hoster on startup so your bots stay online even when you close the window. It runs hidden in the system tray and keeps the PC awake while bots are running."
-                                   FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,8,0,16"/>
+                                   FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,8,0,16"/>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                             <Button Style="{StaticResource GhostButton}" Height="32" Padding="14,0" Click="AskStartupNo_Click">
-                                <TextBlock Text="No thanks" FontSize="11.5" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                <TextBlock Text="No thanks" FontSize="11.5" Foreground="{DynamicResource TextSecondaryBrush}"/>
                             </Button>
                             <Button x:Name="AskStartupYesBtn" Style="{StaticResource ModernButton}" Height="32" Padding="16,0"
                                     Margin="10,0,0,0" Click="AskStartupYes_Click">
                                 <TextBlock Text="Yes, run on startup" FontSize="11.5" FontWeight="SemiBold"
-                                           Foreground="{StaticResource OnAccentBrush}"/>
+                                           Foreground="{DynamicResource OnAccentBrush}"/>
                             </Button>
                         </StackPanel>
                     </StackPanel>
@@ -1005,38 +1010,38 @@
             <!-- ======================== Admin code prompt ======================== -->
             <Grid x:Name="AdminCodeOverlay" Grid.RowSpan="2" Visibility="Collapsed" Background="#66000000">
                 <Border Width="340" VerticalAlignment="Center" HorizontalAlignment="Center"
-                        Background="{StaticResource BgElevatedBrush}" BorderBrush="{StaticResource BorderStrongBrush}"
+                        Background="{DynamicResource BgElevatedBrush}" BorderBrush="{DynamicResource BorderStrongBrush}"
                         BorderThickness="1" CornerRadius="16" Padding="20">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconShield}"
-                                  Width="16" Height="16" Stroke="{StaticResource AccentTextBrush}" VerticalAlignment="Center"/>
+                                  Width="16" Height="16" Stroke="{DynamicResource AccentTextBrush}" VerticalAlignment="Center"/>
                             <TextBlock Text="Admin access" FontSize="15" FontWeight="Bold" Margin="8,0,0,0"
-                                       Foreground="{StaticResource TextBrush}" VerticalAlignment="Center"/>
+                                       Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
                         </StackPanel>
                         <TextBlock Text="Enter the admin code to unlock server management."
-                                   FontSize="11" Foreground="{StaticResource TextTertiaryBrush}" TextWrapping="Wrap" Margin="0,6,0,12"/>
+                                   FontSize="11" Foreground="{DynamicResource TextTertiaryBrush}" TextWrapping="Wrap" Margin="0,6,0,12"/>
                         <Grid Height="34">
                             <PasswordBox x:Name="AdminCodeBox"
-                                         Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}"
-                                         BorderThickness="1" Foreground="{StaticResource TextBrush}" CaretBrush="{StaticResource TextBrush}"
+                                         Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                                         BorderThickness="1" Foreground="{DynamicResource TextBrush}" CaretBrush="{DynamicResource TextBrush}"
                                          FontFamily="{StaticResource MonoFont}" FontSize="12" Padding="8,0"
                                          VerticalContentAlignment="Center"
                                          KeyDown="AdminCodeBox_KeyDown" PasswordChanged="AdminCodeBox_PasswordChanged"/>
                             <TextBlock x:Name="AdminCodePlaceholder" Text="Enter admin code…" FontSize="12"
-                                       Foreground="{StaticResource TextTertiaryBrush}" Margin="10,0,0,0"
+                                       Foreground="{DynamicResource TextTertiaryBrush}" Margin="10,0,0,0"
                                        VerticalAlignment="Center" IsHitTestVisible="False"/>
                         </Grid>
-                        <TextBlock x:Name="AdminCodeStatus" FontSize="10.5" Foreground="{StaticResource DangerBrush}"
+                        <TextBlock x:Name="AdminCodeStatus" FontSize="10.5" Foreground="{DynamicResource DangerBrush}"
                                    TextWrapping="Wrap" Margin="0,7,0,0"/>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
                             <Button Style="{StaticResource GhostButton}" Height="30" Padding="12,0" Click="AdminCodeCancel_Click">
-                                <TextBlock Text="Cancel" FontSize="11.5" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                <TextBlock Text="Cancel" FontSize="11.5" Foreground="{DynamicResource TextSecondaryBrush}"/>
                             </Button>
                             <Button x:Name="AdminCodeUnlockBtn" Style="{StaticResource ModernButton}" Height="30" Padding="16,0"
                                     Margin="10,0,0,0" Click="AdminCodeUnlock_Click">
                                 <TextBlock Text="Unlock" FontSize="11.5" FontWeight="SemiBold"
-                                           Foreground="{StaticResource OnAccentBrush}"/>
+                                           Foreground="{DynamicResource OnAccentBrush}"/>
                             </Button>
                         </StackPanel>
                     </StackPanel>
@@ -1046,7 +1051,7 @@
             <!-- ======================== Admin panel ======================== -->
             <Grid x:Name="AdminOverlay" Grid.RowSpan="2" Visibility="Collapsed" Background="#66000000">
                 <Border Width="940" MinHeight="420" MaxHeight="600" VerticalAlignment="Center" HorizontalAlignment="Center"
-                        Background="{StaticResource BgElevatedBrush}" BorderBrush="{StaticResource BorderStrongBrush}"
+                        Background="{DynamicResource BgElevatedBrush}" BorderBrush="{DynamicResource BorderStrongBrush}"
                         BorderThickness="1" CornerRadius="16">
                     <Grid>
                         <Grid.RowDefinitions>
@@ -1063,16 +1068,16 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel Orientation="Horizontal">
                                 <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconShield}"
-                                      Width="15" Height="15" Stroke="{StaticResource AccentTextBrush}" VerticalAlignment="Center"/>
-                                <TextBlock Text="Admin panel" FontSize="15" FontWeight="Bold" Foreground="{StaticResource TextBrush}"
+                                      Width="15" Height="15" Stroke="{DynamicResource AccentTextBrush}" VerticalAlignment="Center"/>
+                                <TextBlock Text="Admin panel" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextBrush}"
                                            Margin="8,0,0,0" VerticalAlignment="Center"/>
-                                <TextBlock x:Name="AdminBotText" FontSize="11" Foreground="{StaticResource TextTertiaryBrush}"
+                                <TextBlock x:Name="AdminBotText" FontSize="11" Foreground="{DynamicResource TextTertiaryBrush}"
                                            Margin="10,1,0,0" VerticalAlignment="Center"/>
                             </StackPanel>
                             <Button Grid.Column="1" Style="{StaticResource GhostButton}" Width="28" Height="28"
                                     Click="AdminClose_Click">
                                 <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconClose}"
-                                      Width="11" Height="11" Stroke="{StaticResource TextSecondaryBrush}"/>
+                                      Width="11" Height="11" Stroke="{DynamicResource TextSecondaryBrush}"/>
                             </Button>
                         </Grid>
 
@@ -1084,7 +1089,7 @@
                             </Grid.ColumnDefinitions>
 
                             <!-- Servers -->
-                            <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"
+                            <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}"
                                     BorderThickness="1" CornerRadius="8" Padding="8">
                                 <Grid>
                                     <Grid.RowDefinitions>
@@ -1105,8 +1110,8 @@
                                                     </Grid.ColumnDefinitions>
                                                     <StackPanel>
                                                         <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold"
-                                                                   Foreground="{StaticResource TextBrush}" TextTrimming="CharacterEllipsis"/>
-                                                        <TextBlock FontSize="10" Foreground="{StaticResource TextTertiaryBrush}" Margin="0,2,0,0">
+                                                                   Foreground="{DynamicResource TextBrush}" TextTrimming="CharacterEllipsis"/>
+                                                        <TextBlock FontSize="10" Foreground="{DynamicResource TextTertiaryBrush}" Margin="0,2,0,0">
                                                             <Run Text="{Binding Members, Mode=OneWay}"/><Run Text=" members"/>
                                                         </TextBlock>
                                                     </StackPanel>
@@ -1128,19 +1133,19 @@
                                 <StackPanel Orientation="Horizontal">
                                     <Button x:Name="TabChannelsBtn" Style="{StaticResource ModernButton}" Height="28" Padding="12,0"
                                             Click="AdminTab_Click" Tag="channels">
-                                        <TextBlock Text="Channels" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource OnAccentBrush}"/>
+                                        <TextBlock Text="Channels" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource OnAccentBrush}"/>
                                     </Button>
                                     <Button x:Name="TabMembersBtn" Style="{StaticResource OutlineButton}" Height="28" Padding="12,0" Margin="8,0,0,0"
                                             Click="AdminTab_Click" Tag="members">
-                                        <TextBlock Text="Members" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
+                                        <TextBlock Text="Members" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
                                     </Button>
                                     <Button x:Name="TabRolesBtn" Style="{StaticResource OutlineButton}" Height="28" Padding="12,0" Margin="8,0,0,0"
                                             Click="AdminTab_Click" Tag="roles">
-                                        <TextBlock Text="Roles" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
+                                        <TextBlock Text="Roles" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
                                     </Button>
                                     <Button x:Name="TabPermsBtn" Style="{StaticResource OutlineButton}" Height="28" Padding="12,0" Margin="8,0,0,0"
                                             Click="AdminTab_Click" Tag="perms">
-                                        <TextBlock Text="Bot permissions" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
+                                        <TextBlock Text="Bot permissions" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
                                     </Button>
                                 </StackPanel>
 
@@ -1150,7 +1155,7 @@
                                         <RowDefinition Height="*"/>
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
-                                    <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"
+                                    <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}"
                                             BorderThickness="1" CornerRadius="8">
                                         <ListBox x:Name="AdminChannelsList" Background="Transparent" BorderThickness="0"
                                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
@@ -1160,7 +1165,7 @@
                                             <ListBox.ContextMenu>
                                                 <ContextMenu Background="{DynamicResource BgElevatedBrush}" BorderBrush="{DynamicResource BorderBrush}">
                                                     <MenuItem Header="Delete channel" Click="AdminDeleteChannel_Click">
-                                                        <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconTrash}" Width="11" Height="11" Stroke="{StaticResource DangerBrush}"/></MenuItem.Icon>
+                                                        <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconTrash}" Width="11" Height="11" Stroke="{DynamicResource DangerBrush}"/></MenuItem.Icon>
                                                     </MenuItem>
                                                 </ContextMenu>
                                             </ListBox.ContextMenu>
@@ -1173,10 +1178,10 @@
                                                             <ColumnDefinition Width="Auto"/>
                                                         </Grid.ColumnDefinitions>
                                                         <TextBlock Text="{Binding TypeLabel}" FontSize="10" FontWeight="Bold"
-                                                                   Foreground="{StaticResource AccentTextBrush}" VerticalAlignment="Center" Width="52"/>
+                                                                   Foreground="{DynamicResource AccentTextBrush}" VerticalAlignment="Center" Width="52"/>
                                                         <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="12"
-                                                                   Foreground="{StaticResource TextBrush}" VerticalAlignment="Center" Margin="8,0,0,0" TextTrimming="CharacterEllipsis"/>
-                                                        <TextBlock Grid.Column="2" FontSize="10" Foreground="{StaticResource TextTertiaryBrush}" VerticalAlignment="Center">
+                                                                   Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center" Margin="8,0,0,0" TextTrimming="CharacterEllipsis"/>
+                                                        <TextBlock Grid.Column="2" FontSize="10" Foreground="{DynamicResource TextTertiaryBrush}" VerticalAlignment="Center">
                                                             <Run Text="{Binding PermCount, Mode=OneWay}"/><Run Text=" perms"/>
                                                         </TextBlock>
                                                     </Grid>
@@ -1185,22 +1190,22 @@
                                         </ListBox>
                                     </Border>
                                     <StackPanel Grid.Row="1" Margin="0,10,0,0">
-                                        <TextBlock x:Name="AdminChannelInfo" FontSize="10.5" Foreground="{StaticResource TextSecondaryBrush}"
+                                        <TextBlock x:Name="AdminChannelInfo" FontSize="10.5" Foreground="{DynamicResource TextSecondaryBrush}"
                                                    TextWrapping="Wrap" Margin="0,0,0,8"/>
                                         <StackPanel Orientation="Horizontal">
                                             <TextBox x:Name="AdminChannelNameBox" Style="{StaticResource FieldTextBox}" Height="30" Width="200"
                                                      FontSize="11"/>
                                             <Button x:Name="AdminRenameChannelBtn" Style="{StaticResource OutlineButton}" Height="30" Padding="10,0" Margin="8,0,0,0"
                                                     Click="AdminRenameChannel_Click">
-                                                <TextBlock Text="Rename" FontSize="10.5" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
+                                                <TextBlock Text="Rename" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
                                             </Button>
                                             <Button Style="{StaticResource ModernButton}" Height="30" Padding="10,0" Margin="8,0,0,0"
                                                     Click="AdminCreateChannel_Click">
-                                                <TextBlock Text="New channel" FontSize="10.5" FontWeight="SemiBold" Foreground="{StaticResource OnAccentBrush}"/>
+                                                <TextBlock Text="New channel" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource OnAccentBrush}"/>
                                             </Button>
                                             <Button Style="{StaticResource GhostButton}" Height="30" Padding="10,0" Margin="8,0,0,0"
                                                     Click="AdminDeleteChannel_Click">
-                                                <TextBlock Text="Delete channel" FontSize="10.5" FontWeight="SemiBold" Foreground="{StaticResource DangerBrush}"/>
+                                                <TextBlock Text="Delete channel" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource DangerBrush}"/>
                                             </Button>
                                         </StackPanel>
                                         <ItemsControl x:Name="AdminChannelPerms" Margin="0,8,0,0">
@@ -1224,7 +1229,7 @@
                                         <RowDefinition Height="*"/>
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
-                                    <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"
+                                    <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}"
                                             BorderThickness="1" CornerRadius="8">
                                         <ListBox x:Name="AdminMembersList" Background="Transparent" BorderThickness="0"
                                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
@@ -1234,10 +1239,10 @@
                                             <ListBox.ContextMenu>
                                                 <ContextMenu Background="{DynamicResource BgElevatedBrush}" BorderBrush="{DynamicResource BorderBrush}">
                                                     <MenuItem Header="Kick" Click="AdminKickMember_Click">
-                                                        <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconLogOut}" Width="11" Height="11" Stroke="{StaticResource WarnBrush}"/></MenuItem.Icon>
+                                                        <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconLogOut}" Width="11" Height="11" Stroke="{DynamicResource WarnBrush}"/></MenuItem.Icon>
                                                     </MenuItem>
                                                     <MenuItem Header="Ban" Click="AdminBanMember_Click">
-                                                        <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconBan}" Width="11" Height="11" Stroke="{StaticResource DangerBrush}"/></MenuItem.Icon>
+                                                        <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconBan}" Width="11" Height="11" Stroke="{DynamicResource DangerBrush}"/></MenuItem.Icon>
                                                     </MenuItem>
                                                 </ContextMenu>
                                             </ListBox.ContextMenu>
@@ -1251,13 +1256,13 @@
                                                         <StackPanel>
                                                             <StackPanel Orientation="Horizontal">
                                                                 <TextBlock Text="{Binding Username}" FontSize="12" FontWeight="SemiBold"
-                                                                           Foreground="{StaticResource TextBrush}" TextTrimming="CharacterEllipsis"/>
-                                                                <Border x:Name="BotTag" Visibility="{Binding BotTagVisible}" Background="{StaticResource AccentSoftBrush}"
+                                                                           Foreground="{DynamicResource TextBrush}" TextTrimming="CharacterEllipsis"/>
+                                                                <Border x:Name="BotTag" Visibility="{Binding BotTagVisible}" Background="{DynamicResource AccentSoftBrush}"
                                                                         CornerRadius="5" Padding="6,1" Margin="8,0,0,0">
-                                                                    <TextBlock Text="BOT" FontSize="8.5" FontWeight="Bold" Foreground="{StaticResource AccentTextBrush}"/>
+                                                                    <TextBlock Text="BOT" FontSize="8.5" FontWeight="Bold" Foreground="{DynamicResource AccentTextBrush}"/>
                                                                 </Border>
                                                             </StackPanel>
-                                                            <TextBlock FontSize="10" Foreground="{StaticResource TextTertiaryBrush}" Margin="0,2,0,0">
+                                                            <TextBlock FontSize="10" Foreground="{DynamicResource TextTertiaryBrush}" Margin="0,2,0,0">
                                                                 <Run Text="{Binding NickLine, Mode=OneWay}"/><Run Text="  ID "/><Run Text="{Binding Id, Mode=OneWay}"/>
                                                             </TextBlock>
                                                         </StackPanel>
@@ -1267,22 +1272,22 @@
                                         </ListBox>
                                     </Border>
                                     <StackPanel Grid.Row="1" Margin="0,10,0,0">
-                                        <TextBlock x:Name="AdminMemberInfo" FontSize="10.5" Foreground="{StaticResource TextSecondaryBrush}"
+                                        <TextBlock x:Name="AdminMemberInfo" FontSize="10.5" Foreground="{DynamicResource TextSecondaryBrush}"
                                                    TextWrapping="Wrap" Margin="0,0,0,8"/>
                                         <StackPanel Orientation="Horizontal">
                                             <TextBox x:Name="AdminTimeoutBox" Style="{StaticResource FieldTextBox}" Height="30" Width="90"
                                                      FontSize="11" ToolTip="Timeout minutes"/>
                                             <Button Style="{StaticResource OutlineButton}" Height="30" Padding="10,0" Margin="8,0,0,0"
                                                     Click="AdminTimeoutMember_Click">
-                                                <TextBlock Text="Timeout (min)" FontSize="10.5" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
+                                                <TextBlock Text="Timeout (min)" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
                                             </Button>
                                             <Button Style="{StaticResource OutlineButton}" Height="30" Padding="10,0" Margin="8,0,0,0"
                                                     Click="AdminKickMember_Click">
-                                                <TextBlock Text="Kick" FontSize="10.5" FontWeight="SemiBold" Foreground="{StaticResource WarnBrush}"/>
+                                                <TextBlock Text="Kick" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource WarnBrush}"/>
                                             </Button>
                                             <Button Style="{StaticResource GhostButton}" Height="30" Padding="10,0" Margin="8,0,0,0"
                                                     Click="AdminBanMember_Click">
-                                                <TextBlock Text="Ban" FontSize="10.5" FontWeight="SemiBold" Foreground="{StaticResource DangerBrush}"/>
+                                                <TextBlock Text="Ban" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource DangerBrush}"/>
                                             </Button>
                                         </StackPanel>
                                     </StackPanel>
@@ -1294,7 +1299,7 @@
                                         <ColumnDefinition Width="240"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"
+                                    <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}"
                                             BorderThickness="1" CornerRadius="8" Padding="8">
                                         <Grid>
                                             <Grid.RowDefinitions>
@@ -1309,7 +1314,7 @@
                                                 <ListBox.ContextMenu>
                                                     <ContextMenu Background="{DynamicResource BgElevatedBrush}" BorderBrush="{DynamicResource BorderBrush}">
                                                         <MenuItem Header="Delete role" Click="AdminDeleteRole_Click">
-                                                            <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconTrash}" Width="11" Height="11" Stroke="{StaticResource DangerBrush}"/></MenuItem.Icon>
+                                                            <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconTrash}" Width="11" Height="11" Stroke="{DynamicResource DangerBrush}"/></MenuItem.Icon>
                                                         </MenuItem>
                                                     </ContextMenu>
                                                 </ListBox.ContextMenu>
@@ -1323,8 +1328,8 @@
                                                             <Ellipse Width="8" Height="8" Fill="{Binding ColorBrush}" VerticalAlignment="Center"/>
                                                             <StackPanel Grid.Column="1" Margin="8,0,0,0">
                                                                 <TextBlock Text="{Binding Name}" FontSize="11.5" FontWeight="SemiBold"
-                                                                           Foreground="{StaticResource TextBrush}" TextTrimming="CharacterEllipsis"/>
-                                                                <TextBlock Text="{Binding PermCountText}" FontSize="9.5" Foreground="{StaticResource TextTertiaryBrush}" Margin="0,2,0,0"/>
+                                                                           Foreground="{DynamicResource TextBrush}" TextTrimming="CharacterEllipsis"/>
+                                                                <TextBlock Text="{Binding PermCountText}" FontSize="9.5" Foreground="{DynamicResource TextTertiaryBrush}" Margin="0,2,0,0"/>
                                                             </StackPanel>
                                                         </Grid>
                                                     </DataTemplate>
@@ -1335,21 +1340,21 @@
                                                 <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
                                                     <Button x:Name="AdminRenameRoleBtn" Style="{StaticResource OutlineButton}" Height="28" Padding="10,0"
                                                             Click="AdminRenameRole_Click">
-                                                        <TextBlock Text="Rename" FontSize="10.5" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
+                                                        <TextBlock Text="Rename" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
                                                     </Button>
                                                     <Button Style="{StaticResource ModernButton}" Height="28" Padding="10,0" Margin="8,0,0,0"
                                                             Click="AdminCreateRole_Click">
-                                                        <TextBlock Text="New role" FontSize="10.5" FontWeight="SemiBold" Foreground="{StaticResource OnAccentBrush}"/>
+                                                        <TextBlock Text="New role" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource OnAccentBrush}"/>
                                                     </Button>
                                                     <Button Style="{StaticResource GhostButton}" Height="28" Padding="10,0" Margin="8,0,0,0"
                                                             Click="AdminDeleteRole_Click">
-                                                        <TextBlock Text="Delete" FontSize="10.5" FontWeight="SemiBold" Foreground="{StaticResource DangerBrush}"/>
+                                                        <TextBlock Text="Delete" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource DangerBrush}"/>
                                                     </Button>
                                                 </StackPanel>
                                             </StackPanel>
                                         </Grid>
                                     </Border>
-                                    <Border Grid.Column="1" Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"
+                                    <Border Grid.Column="1" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}"
                                             BorderThickness="1" CornerRadius="8" Margin="12,0,0,0" Padding="12">
                                         <Grid>
                                             <Grid.RowDefinitions>
@@ -1359,15 +1364,15 @@
                                             </Grid.RowDefinitions>
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="Role permissions" FontSize="11" FontWeight="Bold"
-                                                           Foreground="{StaticResource TextBrush}"/>
-                                                <TextBlock x:Name="AdminRolePermStatus" FontSize="10" Foreground="{StaticResource TextTertiaryBrush}" Margin="8,0,0,0"/>
+                                                           Foreground="{DynamicResource TextBrush}"/>
+                                                <TextBlock x:Name="AdminRolePermStatus" FontSize="10" Foreground="{DynamicResource TextTertiaryBrush}" Margin="8,0,0,0"/>
                                             </StackPanel>
                                             <ScrollViewer Grid.Row="1" Margin="0,10,0,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                                                 <ItemsControl x:Name="AdminRolePermChecks">
                                                     <ItemsControl.ItemTemplate>
                                                         <DataTemplate>
                                                             <CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay}" Content="{Binding Label}"
-                                                                      Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" Margin="0,4,0,0"/>
+                                                                      Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11" Margin="0,4,0,0"/>
                                                         </DataTemplate>
                                                     </ItemsControl.ItemTemplate>
                                                 </ItemsControl>
@@ -1375,7 +1380,7 @@
                                             <Button x:Name="AdminSaveRolePermsBtn" Grid.Row="2" Style="{StaticResource ModernButton}" Height="30"
                                                     Margin="0,10,0,0" Click="AdminSaveRolePerms_Click">
                                                 <TextBlock Text="Save role permissions" FontSize="10.5" FontWeight="SemiBold"
-                                                           Foreground="{StaticResource OnAccentBrush}"/>
+                                                           Foreground="{DynamicResource OnAccentBrush}"/>
                                             </Button>
                                         </Grid>
                                     </Border>
@@ -1387,9 +1392,9 @@
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="*"/>
                                     </Grid.RowDefinitions>
-                                    <TextBlock x:Name="AdminPermsHint" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"
+                                    <TextBlock x:Name="AdminPermsHint" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"
                                                TextWrapping="Wrap" Margin="0,0,0,10"/>
-                                    <Border Grid.Row="1" Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"
+                                    <Border Grid.Row="1" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}"
                                             BorderThickness="1" CornerRadius="8" Padding="14">
                                         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                                             <ItemsControl x:Name="AdminPermsList">
@@ -1411,7 +1416,7 @@
                         </Grid>
 
                         <!-- Footer status -->
-                        <TextBlock x:Name="AdminStatusText" Grid.Row="2" FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}"
+                        <TextBlock x:Name="AdminStatusText" Grid.Row="2" FontSize="10.5" Foreground="{DynamicResource TextTertiaryBrush}"
                                    TextWrapping="Wrap" Margin="20,10,20,14"/>
                     </Grid>
                 </Border>
@@ -1420,7 +1425,7 @@
             <!-- ======================== Code editor overlay (last child = on top) ======================== -->
             <Grid x:Name="EditorOverlay" Grid.RowSpan="2" Visibility="Collapsed" Background="#66000000">
                 <Border Width="820" MinHeight="380" MaxHeight="580" VerticalAlignment="Center" HorizontalAlignment="Center"
-                        Background="{StaticResource BgElevatedBrush}" BorderBrush="{StaticResource BorderStrongBrush}"
+                        Background="{DynamicResource BgElevatedBrush}" BorderBrush="{DynamicResource BorderStrongBrush}"
                         BorderThickness="1" CornerRadius="16">
                     <Grid>
                         <Grid.RowDefinitions>
@@ -1438,17 +1443,17 @@
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal">
                                     <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconCode}"
-                                          Width="14" Height="14" Stroke="{StaticResource AccentTextBrush}" VerticalAlignment="Center"/>
+                                          Width="14" Height="14" Stroke="{DynamicResource AccentTextBrush}" VerticalAlignment="Center"/>
                                     <TextBlock x:Name="EditorTitle" Text="Edit code" FontSize="15" FontWeight="Bold"
-                                               Foreground="{StaticResource TextBrush}" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                               Foreground="{DynamicResource TextBrush}" Margin="8,0,0,0" VerticalAlignment="Center"/>
                                 </StackPanel>
-                                <TextBlock x:Name="EditorPathText" FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}"
+                                <TextBlock x:Name="EditorPathText" FontSize="10.5" Foreground="{DynamicResource TextTertiaryBrush}"
                                            TextTrimming="CharacterEllipsis" Margin="22,3,0,0"/>
                             </StackPanel>
                             <Button Grid.Column="1" Style="{StaticResource GhostButton}" Width="28" Height="28"
                                     Click="EditorClose_Click">
                                 <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconClose}"
-                                      Width="11" Height="11" Stroke="{StaticResource TextSecondaryBrush}"/>
+                                      Width="11" Height="11" Stroke="{DynamicResource TextSecondaryBrush}"/>
                             </Button>
                         </Grid>
 
@@ -1460,7 +1465,7 @@
                             </Grid.ColumnDefinitions>
 
                             <!-- Files -->
-                            <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"
+                            <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}"
                                     BorderThickness="1" CornerRadius="8" Padding="8">
                                 <Grid>
                                     <Grid.RowDefinitions>
@@ -1476,8 +1481,8 @@
                                             <DataTemplate>
                                                 <StackPanel Orientation="Horizontal" Margin="8,6">
                                                     <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconCode}"
-                                                          Width="11" Height="11" Stroke="{StaticResource AccentTextBrush}" VerticalAlignment="Center"/>
-                                                    <TextBlock Text="{Binding Name}" FontSize="11.5" Foreground="{StaticResource TextBrush}"
+                                                          Width="11" Height="11" Stroke="{DynamicResource AccentTextBrush}" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="{Binding Name}" FontSize="11.5" Foreground="{DynamicResource TextBrush}"
                                                                Margin="8,0,0,0" TextTrimming="CharacterEllipsis"/>
                                                 </StackPanel>
                                             </DataTemplate>
@@ -1487,7 +1492,7 @@
                             </Border>
 
                             <!-- Editor -->
-                            <Border Grid.Column="1" Background="#0A0A0A" BorderBrush="{StaticResource BorderBrush}"
+                            <Border Grid.Column="1" Background="#0A0A0A" BorderBrush="{DynamicResource BorderBrush}"
                                     BorderThickness="1" CornerRadius="8" Margin="12,0,0,0">
                                 <TextBox x:Name="CodeEditorBox" BorderThickness="0" Background="Transparent"
                                          FontFamily="{StaticResource MonoFont}" FontSize="12"
@@ -1505,28 +1510,28 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel>
-                                <TextBlock x:Name="EditorStatusText" FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}"
+                                <TextBlock x:Name="EditorStatusText" FontSize="10.5" Foreground="{DynamicResource TextTertiaryBrush}"
                                            TextWrapping="Wrap" VerticalAlignment="Center"/>
                                 <CheckBox x:Name="RestartAfterSaveCheck" Content="Restart bot after saving"
-                                          Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" Margin="0,6,0,0" IsChecked="True"/>
+                                          Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11" Margin="0,6,0,0" IsChecked="True"/>
                             </StackPanel>
                             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                                 <Button Style="{StaticResource OutlineButton}" Height="32" Padding="12,0"
                                         Click="EditorOpenFolder_Click">
                                     <TextBlock Text="Open folder" FontSize="11" FontWeight="SemiBold"
-                                               Foreground="{StaticResource TextBrush}"/>
+                                               Foreground="{DynamicResource TextBrush}"/>
                                 </Button>
                                 <Button Style="{StaticResource GhostButton}" Height="32" Padding="14,0" Margin="8,0,0,0"
                                         Click="EditorClose_Click">
-                                    <TextBlock Text="Cancel" FontSize="11.5" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                    <TextBlock Text="Cancel" FontSize="11.5" Foreground="{DynamicResource TextSecondaryBrush}"/>
                                 </Button>
                                 <Button x:Name="EditorSaveBtn" Style="{StaticResource ModernButton}" Height="32" Padding="18,0"
                                         Margin="10,0,0,0" Click="EditorSave_Click">
                                     <StackPanel Orientation="Horizontal">
                                         <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconCheck}"
-                                              Width="11" Height="11" Stroke="{StaticResource OnAccentBrush}" VerticalAlignment="Center"/>
+                                              Width="11" Height="11" Stroke="{DynamicResource OnAccentBrush}" VerticalAlignment="Center"/>
                                         <TextBlock Text="Save" FontSize="11.5" FontWeight="SemiBold" Margin="6,0,0,0"
-                                                   Foreground="{StaticResource OnAccentBrush}"/>
+                                                   Foreground="{DynamicResource OnAccentBrush}"/>
                                     </StackPanel>
                                 </Button>
                             </StackPanel>

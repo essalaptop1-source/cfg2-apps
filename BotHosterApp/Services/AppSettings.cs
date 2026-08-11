@@ -15,6 +15,7 @@ public sealed class AppSettings
     public bool Telemetry { get; set; } = true;
     public bool LaunchOnStartup { get; set; }
     public bool KeepInTray { get; set; } = true;
+    public string Theme { get; set; } = ThemeService.DefaultTheme;
 
     private const string StartupValueName = "CFG2BotHoster";
 

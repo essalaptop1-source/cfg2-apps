@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
@@ -46,6 +46,11 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         _startToTray = Environment.GetCommandLineArgs().Contains("--tray");
+
+        // Apply the saved theme before the window first paints, and build the
+        // settings swatches so the picker matches what is applied.
+        ThemeService.Apply(AppSettings.Load().Theme);
+        BuildThemeSwatches();
         RootGrid.SizeChanged += (_, e) =>
         {
             if (RootClip != null)
@@ -301,7 +306,7 @@ public partial class MainWindow : Window
             : "Free tier: 1 bot. Add more bots with a premium key (bottom of the sidebar).";
 
         // Balance
-        BalanceText.Foreground = (Brush)FindResource("TextBrush");
+        BalanceText.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
         if (!premium)
         {
             BalanceText.Text = "$0.00";
@@ -315,7 +320,7 @@ public partial class MainWindow : Window
         else
         {
             BalanceText.Text = LicenseService.Balance.ToString("C2");
-            BalanceText.Foreground = (Brush)FindResource(LicenseService.Balance > 0 ? "OnlineBrush" : "DangerBrush");
+            BalanceText.SetResourceReference(TextBlock.ForegroundProperty, LicenseService.Balance > 0 ? "OnlineBrush" : "DangerBrush");
             BalanceHint.Text = LicenseService.Balance > 0
                 ? "Spent balance comes off this amount. Contact the developer to top up."
                 : "Your balance is empty - contact the developer to top up.";
@@ -466,7 +471,7 @@ public partial class MainWindow : Window
         var running = b.Running;
         StartStopLabel.Text = running ? "Stop" : "Start";
         StartStopIcon.Data = (Geometry)FindResource(running ? "IconStop" : "IconPlay");
-        StartStopIcon.Stroke = (Brush)FindResource(running ? "DangerBrush" : "OnAccentBrush");
+        StartStopIcon.SetResourceReference(System.Windows.Shapes.Shape.StrokeProperty, running ? "DangerBrush" : "OnAccentBrush");
         StartStopBtn.Background = running ? (Brush)FindResource("DangerBrush") : (Brush)FindResource("AccentBrush");
 
         PresenceHint.Text = running ? "Set by the bot's Python code" : "Start the bot to apply its presence";
@@ -488,7 +493,7 @@ public partial class MainWindow : Window
         if (!_manager.CanAdd())
         {
             KeyStatusText.Text = "Free tier hosts 1 bot - activate premium for unlimited.";
-            KeyStatusText.Foreground = (Brush)FindResource("TextTertiaryBrush");
+            KeyStatusText.SetResourceReference(TextBlock.ForegroundProperty, "TextTertiaryBrush");
             return;
         }
         AddPanel.Visibility = Visibility.Visible;
@@ -549,7 +554,7 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             AddStatusText.Text = "Could not read folder: " + ex.Message;
-            AddStatusText.Foreground = (Brush)FindResource("DangerBrush");
+            AddStatusText.SetResourceReference(TextBlock.ForegroundProperty, "DangerBrush");
             return;
         }
         if (pyFiles.Count == 0)
@@ -564,7 +569,7 @@ public partial class MainWindow : Window
         AddStatusText.Text = pyFiles.Count == 1
             ? $"1 Python file in the folder."
             : $"Folder has {pyFiles.Count} Python files - all editable in the code editor.";
-        AddStatusText.Foreground = (Brush)FindResource("TextTertiaryBrush");
+        AddStatusText.SetResourceReference(TextBlock.ForegroundProperty, "TextTertiaryBrush");
     }
 
     private void SelectBotFile(string path)
@@ -575,12 +580,12 @@ public partial class MainWindow : Window
         if (token != null)
         {
             TokenFoundText.Text = "✓ Token found inside the file - no need to paste it.";
-            TokenFoundText.Foreground = (Brush)FindResource("OnlineBrush");
+            TokenFoundText.SetResourceReference(TextBlock.ForegroundProperty, "OnlineBrush");
         }
         else
         {
             TokenFoundText.Text = "No token found in the file - paste the bot token manually below.";
-            TokenFoundText.Foreground = (Brush)FindResource("WarnBrush");
+            TokenFoundText.SetResourceReference(TextBlock.ForegroundProperty, "WarnBrush");
         }
         AddStatusText.Text = "";
     }
@@ -1040,10 +1045,10 @@ public partial class MainWindow : Window
     {
         _autoScroll = !_autoScroll;
         if (AutoScrollIcon != null)
-            AutoScrollIcon.Stroke = (Brush)FindResource(_autoScroll ? "AccentTextBrush" : "TextTertiaryBrush");
+            AutoScrollIcon.SetResourceReference(System.Windows.Shapes.Shape.StrokeProperty, _autoScroll ? "AccentTextBrush" : "TextTertiaryBrush");
         if (AutoScrollLabel != null)
         {
-            AutoScrollLabel.Foreground = (Brush)FindResource(_autoScroll ? "AccentTextBrush" : "TextTertiaryBrush");
+            AutoScrollLabel.SetResourceReference(TextBlock.ForegroundProperty, _autoScroll ? "AccentTextBrush" : "TextTertiaryBrush");
             AutoScrollLabel.Text = _autoScroll ? "Auto-scroll" : "Paused";
         }
         if (_autoScroll)
@@ -1091,7 +1096,7 @@ public partial class MainWindow : Window
             PremiumBadge.Visibility = Visibility.Visible;
             PremiumBadgeText.Text = "ACTIVE";
             PremiumHint.Text = "Unlimited bots hosted. Thanks for supporting!";
-            PremiumIcon.Stroke = (Brush)FindResource("AccentTextBrush");
+            PremiumIcon.SetResourceReference(System.Windows.Shapes.Shape.StrokeProperty, "AccentTextBrush");
             KeyRow.Visibility = Visibility.Collapsed;
             KeyStatusText.Text = "";
         }
@@ -1099,7 +1104,7 @@ public partial class MainWindow : Window
         {
             PremiumBadge.Visibility = Visibility.Collapsed;
             PremiumHint.Text = "Free hosts 1 bot. Unlock unlimited bots.";
-            PremiumIcon.Stroke = (Brush)FindResource("TextSecondaryBrush");
+            PremiumIcon.SetResourceReference(System.Windows.Shapes.Shape.StrokeProperty, "TextSecondaryBrush");
             KeyRow.Visibility = Visibility.Visible;
             KeyStatusText.Text = "";
         }
@@ -1109,10 +1114,10 @@ public partial class MainWindow : Window
     {
         ActivateBtn.IsEnabled = false;
         KeyStatusText.Text = "Checking key…";
-        KeyStatusText.Foreground = (Brush)FindResource("TextTertiaryBrush");
+        KeyStatusText.SetResourceReference(TextBlock.ForegroundProperty, "TextTertiaryBrush");
         var (ok, msg) = await LicenseService.TryActivateAsync(KeyBox.Text);
         KeyStatusText.Text = msg;
-        KeyStatusText.Foreground = (Brush)FindResource(ok ? "OnlineBrush" : "DangerBrush");
+        KeyStatusText.SetResourceReference(TextBlock.ForegroundProperty, ok ? "OnlineBrush" : "DangerBrush");
         ActivateBtn.IsEnabled = true;
         if (ok) ApplyPremiumState();
     }
@@ -1410,6 +1415,76 @@ public partial class MainWindow : Window
     // ================================================================== settings
 
     private static AppSettings _settings = new();
+
+    private void BuildThemeSwatches()
+    {
+        ThemeList.Children.Clear();
+        foreach (var name in ThemeService.Themes)
+        {
+            var accent = ThemeService.PeekAccent(name);
+            var selected = name == ThemeService.Current;
+
+            var btn = new Button
+            {
+                Tag = name,
+                Style = (Style)FindResource("SwatchButton"),
+                Background = selected ? (Brush)FindResource("AccentSoftBrush") : Brushes.Transparent,
+                BorderBrush = selected ? (Brush)FindResource("AccentBorderBrush") : Brushes.Transparent,
+                HorizontalContentAlignment = HorizontalAlignment.Center,
+            };
+            btn.Click += Theme_Click;
+
+            var panel = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            panel.Children.Add(new Border
+            {
+                Width = 18,
+                Height = 18,
+                CornerRadius = new CornerRadius(9),
+                Background = new SolidColorBrush(accent),
+                VerticalAlignment = VerticalAlignment.Center,
+            });
+            panel.Children.Add(new TextBlock
+            {
+                Text = name,
+                FontSize = 12,
+                FontWeight = selected ? FontWeights.SemiBold : FontWeights.Normal,
+                Foreground = (Brush)FindResource(selected ? "TextBrush" : "TextSecondaryBrush"),
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(8, 0, 0, 0),
+            });
+            if (selected)
+            {
+                panel.Children.Add(new System.Windows.Shapes.Path
+                {
+                    Style = (Style)FindResource("StrokeIcon"),
+                    Data = (Geometry)FindResource("IconCheck"),
+                    Width = 11,
+                    Height = 11,
+                    Stroke = (Brush)FindResource("AccentTextBrush"),
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Margin = new Thickness(7, 0, 0, 0),
+                });
+            }
+
+            btn.Content = panel;
+            ThemeList.Children.Add(btn);
+        }
+    }
+
+    private void Theme_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string name }) return;
+        if (!ThemeService.IsValid(name)) return;
+        ThemeService.Apply(name);
+        _settings.Theme = name;
+        _settings.Save();
+        BuildThemeSwatches();
+        ToastService.Show("Theme applied", $"{name} theme is active.");
+    }
 
     private void Settings_Click(object sender, RoutedEventArgs e)
     {

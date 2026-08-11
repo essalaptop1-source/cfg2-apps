@@ -58,7 +58,7 @@ public sealed record ToastEntry(string Title, string Message, bool IsError, Date
     public string TimeText => Time.ToString("HH:mm:ss");
     public Brush AccentBrush => new SolidColorBrush(IsError
         ? MediaColor.FromRgb(0xE8, 0x11, 0x23)
-        : MediaColor.FromRgb(0x8B, 0x5C, 0xF6));
+        : ThemeService.Accent);
 }
 
 internal sealed class ToastWindow : Window
@@ -77,8 +77,9 @@ internal sealed class ToastWindow : Window
         ResizeMode = ResizeMode.NoResize;
         ShowActivated = false;
 
-        var accent = new SolidColorBrush(MediaColor.FromRgb(
-            (byte)(isError ? 0xE8 : 0x8B), (byte)(isError ? 0x11 : 0x5C), (byte)(isError ? 0x23 : 0xF6)));
+        var accent = new SolidColorBrush(isError
+            ? MediaColor.FromRgb(0xE8, 0x11, 0x23)
+            : ThemeService.Accent);
 
         var border = new Border
         {
