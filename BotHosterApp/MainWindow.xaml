@@ -570,6 +570,16 @@
                         <CheckBox x:Name="TrayCheck" Content="Keep running in the tray when the window is closed"
                                   Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,14"/>
 
+                        <TextBlock Text="24/7 POWER" Style="{StaticResource SectionHeader}" Margin="0,14,0,8"/>
+                        <TextBlock x:Name="LidStatusText" FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}"
+                                   TextWrapping="Wrap" Margin="0,0,0,8"/>
+                        <Button Style="{StaticResource OutlineButton}" Height="30" Margin="0,0,0,4" Click="LidAction_Click">
+                            <TextBlock Text="Set lid close = do nothing (AC power)" FontSize="10.5" FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextBrush}"/>
+                        </Button>
+                        <TextBlock Text="Closing the lid normally puts the laptop to sleep, which pauses your bots. This keeps them running on AC power (needs administrator)."
+                                   FontSize="10" Foreground="{StaticResource TextTertiaryBrush}" TextWrapping="Wrap" Margin="0,0,0,14"/>
+
                         <TextBlock Text="BOTS RUN AS PYTHON PROCESSES" Style="{StaticResource SectionHeader}" Margin="0,14,0,8"/>
                         <TextBlock Text="Each bot is a .py file that the app runs with Python. Its commands, events and presence are all inside that file."
                                    FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}" TextWrapping="Wrap" Margin="0,0,0,0"/>

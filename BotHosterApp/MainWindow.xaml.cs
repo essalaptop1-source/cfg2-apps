@@ -856,7 +856,86 @@ public partial class MainWindow : Window
         StartupCheck.IsChecked = _settings.LaunchOnStartup;
         TrayCheck.IsChecked = _settings.KeepInTray;
         DataPathText.Text = System.IO.Path.Combine(AppPaths.LocalDataDir, "bot_hoster_bots.json");
+        LidStatusText.Text = ReadLidAction();
         SettingsOverlay.Visibility = Visibility.Visible;
+    }
+
+    /// <summary>Reads the AC-power lid-close action (0=do nothing, 1=sleep,
+    /// 2=hibernate, 3=shut down). Desktops/VMs have no lid setting.</summary>
+    private static string ReadLidAction()
+    {
+        try
+        {
+            var psi = new ProcessStartInfo("powercfg", "-q SCHEME_CURRENT SUB_BUTTONS LIDACTION")
+            {
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true,
+            };
+            using var p = Process.Start(psi);
+            if (p == null) return "Lid setting not available on this PC.";
+            var output = p.StandardOutput.ReadToEnd() + p.StandardError.ReadToEnd();
+            p.WaitForExit(3000);
+            var m = System.Text.RegularExpressions.Regex.Match(
+                output, @"Current AC Power Setting Index:\s*(0x[0-9a-fA-F]+)");
+            if (!m.Success) return "Lid setting not available on this PC (no laptop lid).";
+            return m.Groups[1].Value switch
+            {
+                "0x00000000" => "Lid close (AC): Do nothing - bots stay up when the lid closes ✓",
+                "0x00000001" => "Lid close (AC): Sleep - bots pause when the lid closes",
+                "0x00000002" => "Lid close (AC): Hibernate - bots pause when the lid closes",
+                "0x00000003" => "Lid close (AC): Shut down - bots stop when the lid closes",
+                _ => "Lid close (AC): " + m.Groups[1].Value,
+            };
+        }
+        catch
+        {
+            return "Lid setting not available on this PC.";
+        }
+    }
+
+    /// <summary>Sets the AC lid-close action to "Do nothing" via powercfg.
+    /// Elevates with a UAC prompt since power settings are admin-only.</summary>
+    private async void LidAction_Click(object sender, RoutedEventArgs e)
+    {
+        LidStatusText.Text = "Requesting administrator permission...";
+        await Task.Run(() =>
+        {
+            try
+            {
+                var psi = new ProcessStartInfo("powercfg")
+                {
+                    UseShellExecute = true,
+                    Verb = "runas",
+                    CreateNoWindow = true,
+                };
+                psi.ArgumentList.Add("/setacvalueindex");
+                psi.ArgumentList.Add("SCHEME_CURRENT");
+                psi.ArgumentList.Add("SUB_BUTTONS");
+                psi.ArgumentList.Add("LIDACTION");
+                psi.ArgumentList.Add("0");
+                using (var p = Process.Start(psi))
+                    p?.WaitForExit(30000);
+
+                var psi2 = new ProcessStartInfo("powercfg")
+                {
+                    UseShellExecute = true,
+                    Verb = "runas",
+                    CreateNoWindow = true,
+                };
+                psi2.ArgumentList.Add("/setactive");
+                psi2.ArgumentList.Add("SCHEME_CURRENT");
+                using (var p2 = Process.Start(psi2))
+                    p2?.WaitForExit(30000);
+            }
+            catch (System.ComponentModel.Win32Exception)
+            {
+                // User declined the UAC prompt.
+            }
+            catch { }
+        });
+        LidStatusText.Text = ReadLidAction();
     }
 
     private void SettingsClose_Click(object sender, RoutedEventArgs e) =>
