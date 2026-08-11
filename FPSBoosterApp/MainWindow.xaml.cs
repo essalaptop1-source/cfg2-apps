@@ -49,6 +49,9 @@ public partial class MainWindow : Window
         // Report this launch (device / IP / HWID / premium status) - never blocks.
         _ = Task.Run(TelemetryService.ReportLaunchAsync);
 
+        // Real FPS counter from the graphics driver (needs admin - we are elevated).
+        FrameCounterService.Start();
+
         InitStats();
         _statsTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _statsTimer.Tick += StatsTimer_Tick;
@@ -525,8 +528,10 @@ public partial class MainWindow : Window
                 var cpu = 100.0 * (_monitoredGame.TotalProcessorTime - _lastGameCpu).TotalSeconds
                           / elapsed / Environment.ProcessorCount;
                 var memMb = _monitoredGame.WorkingSet64 / 1048576.0;
-                GameStatsText.Text =
-                    $"{_monitoredGame.ProcessName}: CPU {Math.Clamp(cpu, 0, 100):F0}%  ·  {memMb:F0} MB";
+                var fps = FrameCounterService.GetFps(_monitoredGame.Id);
+                GameStatsText.Text = fps >= 0
+                    ? $"{_monitoredGame.ProcessName}: {fps} FPS · CPU {Math.Clamp(cpu, 0, 100):F0}% · {memMb:F0} MB"
+                    : $"{_monitoredGame.ProcessName}: CPU {Math.Clamp(cpu, 0, 100):F0}%  ·  {memMb:F0} MB";
             }
             _lastGameSample = now;
             _lastGameCpu = _monitoredGame.TotalProcessorTime;

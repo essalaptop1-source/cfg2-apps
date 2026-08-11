@@ -2,8 +2,8 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
-using System.Windows.Interop;
 using System.Windows.Threading;
+using FPSBoosterApp.Services;
 
 namespace FPSBoosterApp;
 
@@ -19,11 +19,11 @@ public partial class OverlayWindow : Window
     private Process? _fixed;          // game chosen in the booster (null = follow foreground)
     private Process? _target;
     private IntPtr _targetHwnd;
-    private ulong _lastFrame;
     private DateTime _lastFrameTime;
-    private bool _haveBaseline;
+    private ulong _lastDwmFrame;
     private int _dwmStrikes;
-    private bool _dwmUnavailable;   // DWM frame counter not available on this machine
+    private bool _dwmUnavailable;     // DWM frame counter not available on this machine
+    private double _lastCpuPct;        // last computed CPU% (used by the FPS estimate)
 
     public OverlayWindow()
     {
@@ -64,7 +64,6 @@ public partial class OverlayWindow : Window
             // CPU % and RAM
             var now = DateTime.UtcNow;
             var elapsed = (now - _lastFrameTime).TotalSeconds;
-            var cpu = 0.0;
             try
             {
                 process.Refresh();
@@ -75,10 +74,13 @@ public partial class OverlayWindow : Window
                     return;
                 }
                 if (elapsed > 0)
-                    cpu = 100.0 * (process.TotalProcessorTime - _lastCpu).TotalSeconds
-                          / elapsed / Environment.ProcessorCount;
-                _lastCpu = process.TotalProcessorTime;
-                CpuText.Text = $"CPU {Math.Clamp(cpu, 0, 100):F0}%";
+                {
+                    var cpu = 100.0 * (process.TotalProcessorTime - _lastCpu).TotalSeconds
+                              / elapsed / Environment.ProcessorCount;
+                    _lastCpu = process.TotalProcessorTime;
+                    _lastCpuPct = Math.Clamp(cpu, 0, 100);
+                    CpuText.Text = $"CPU {_lastCpuPct:F0}%";
+                }
                 RamText.Text = $"RAM {process.WorkingSet64 / 1048576.0:F0} MB";
             }
             catch
@@ -86,33 +88,23 @@ public partial class OverlayWindow : Window
                 // process vanished between resolve and refresh
             }
 
-            // FPS: prefer the real DWM frame counter for the game's window; when it
-            // is unavailable (deprecated API, fails on many Windows 10/11 builds)
-            // fall back to a CPU-based estimate, marked with '~'.
-            var hwnd = _targetHwnd;
-            if (!_dwmUnavailable && hwnd != IntPtr.Zero && elapsed > 0.4)
+            // FPS - three tiers, most accurate first:
+            //   1) ETW frame count from the graphics driver (needs admin, works on most PCs)
+            //   2) DWM frame counter for the game window (deprecated API, works on some)
+            //   3) CPU-based estimate, marked with '~' (works everywhere, rough for GPU-bound games)
+            var fps = FrameCounterService.GetFps(process.Id);
+            if (fps >= 0)
             {
-                var info = new DWM_TIMING_INFO { cbSize = (uint)Marshal.SizeOf<DWM_TIMING_INFO>() };
-                if (DwmGetCompositionTimingInfo(hwnd, ref info) == 0 && info.cFrame > 0)
-                {
-                    _dwmStrikes = 0;
-                    if (_haveBaseline && info.cFrame >= _lastFrame)
-                    {
-                        var fps = (info.cFrame - _lastFrame) / elapsed;
-                        FpsText.Text = $"{fps:F0}";
-                    }
-                    _lastFrame = info.cFrame;
-                    _haveBaseline = true;
-                }
-                else if (++_dwmStrikes >= 3)
-                {
-                    _dwmUnavailable = true; // switch to the estimate from now on
-                }
+                FpsText.Text = $"{fps}";
             }
-            if (_dwmUnavailable && cpu > 0)
+            else if (!_dwmUnavailable && _targetHwnd != IntPtr.Zero && elapsed > 0.4 && TryDwmFps(elapsed, out var dwmFps))
             {
-                var est = 5 + Math.Clamp(cpu, 0, 100) * 1.6; // monotonic CPU-based guess
-                FpsText.Text = $"~{Math.Min(est, 240):F0}";
+                FpsText.Text = $"{dwmFps}";
+            }
+            else
+            {
+                _dwmUnavailable = true;
+                FpsText.Text = EstimateFps();
             }
             _lastFrameTime = now;
         }
@@ -123,6 +115,35 @@ public partial class OverlayWindow : Window
     }
 
     private TimeSpan _lastCpu;
+
+    /// <summary>Real FPS from the DWM composition frame counter for the game window.</summary>
+    private bool TryDwmFps(double elapsed, out double fps)
+    {
+        fps = 0;
+        var info = new DWM_TIMING_INFO { cbSize = (uint)Marshal.SizeOf<DWM_TIMING_INFO>() };
+        if (DwmGetCompositionTimingInfo(_targetHwnd, ref info) != 0 || info.cFrame == 0)
+        {
+            if (++_dwmStrikes >= 3) _dwmUnavailable = true;
+            return false;
+        }
+        _dwmStrikes = 0;
+        if (_lastDwmFrame == 0 || info.cFrame < _lastDwmFrame)
+        {
+            _lastDwmFrame = info.cFrame;
+            return false;
+        }
+        fps = (info.cFrame - _lastDwmFrame) / elapsed;
+        _lastDwmFrame = info.cFrame;
+        return true;
+    }
+
+    /// <summary>CPU-based estimate, monotonic, capped - clearly marked with '~'.</summary>
+    private string EstimateFps()
+    {
+        if (_lastCpuPct <= 0) return "--";
+        var est = 5 + _lastCpuPct * 1.6; // monotonic guess for CPU-bound games
+        return $"~{Math.Min(est, 240):F0}";
+    }
 
     private Process? ResolveTarget()
     {
@@ -176,8 +197,6 @@ public partial class OverlayWindow : Window
 
     private void ResetBaseline()
     {
-        _haveBaseline = false;
-        _lastFrame = 0;
         _lastFrameTime = DateTime.UtcNow;
         _lastCpu = TimeSpan.Zero;
     }
