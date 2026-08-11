@@ -18,12 +18,19 @@ public static class ToastService
     private const double Width = 340;
     private const double Margin = 16;
     private const double Gap = 8;
+    private const int HistoryMax = 30;
+
+    /// <summary>Recent notifications shown in the Account tab (newest first).</summary>
+    public static readonly System.Collections.ObjectModel.ObservableCollection<ToastEntry> History = new();
 
     /// <summary>Call from the UI thread.</summary>
     public static void Show(string title, string message, bool isError = false)
     {
         Application.Current?.Dispatcher.BeginInvoke(() =>
         {
+            History.Insert(0, new ToastEntry(title, message, isError, DateTime.Now));
+            while (History.Count > HistoryMax) History.RemoveAt(History.Count - 1);
+
             var toast = new ToastWindow(title, message, isError);
             Position(toast);
             Open.Add(toast);
@@ -43,6 +50,14 @@ public static class ToastService
         toast.Left = x;
         toast.Top = y;
     }
+}
+
+public sealed record ToastEntry(string Title, string Message, bool IsError, DateTime Time)
+{
+    public string TimeText => Time.ToString("HH:mm:ss");
+    public Brush AccentBrush => new SolidColorBrush(IsError
+        ? MediaColor.FromRgb(0xE8, 0x11, 0x23)
+        : MediaColor.FromRgb(0x58, 0x65, 0xF2));
 }
 
 internal sealed class ToastWindow : Window

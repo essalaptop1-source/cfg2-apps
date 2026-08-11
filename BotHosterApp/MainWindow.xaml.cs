@@ -187,6 +187,9 @@ public partial class MainWindow : Window
         _settings = AppSettings.Load();
         TelemetryService.Enabled = _settings.Telemetry;
 
+        GoogleAuthService.LoadSession();
+        NotificationList.ItemsSource = ToastService.History;
+
         await _manager.LoadAsync();
         _botsView = CollectionViewSource.GetDefaultView(_manager.Bots);
         _botsView.Filter = BotFilter;
@@ -209,9 +212,132 @@ public partial class MainWindow : Window
         if (_settings.CheckUpdates)
             _ = CheckForUpdateAsync();
 
+        // Balance notification for premium users whose key has an explicit balance.
+        if (LicenseService.IsPremiumActive && LicenseService.HasBalance && LicenseService.Balance <= 0)
+            ToastService.Show("Balance empty", "Your premium balance is $0.00 - ask the developer to top it up.", isError: true);
+
         // Ask once per open while startup mode is off.
         if (!_settings.LaunchOnStartup)
             AskStartupOverlay.Visibility = Visibility.Visible;
+
+        // Google login gate (only when the developer enabled it).
+        if (_settings.RequireGoogleLogin && !GoogleAuthService.IsSignedIn)
+        {
+            GateLogo.Source = App.TryLoadLogo();
+            GoogleGateOverlay.Visibility = Visibility.Visible;
+        }
+    }
+
+    // ================================================================== main tabs / account
+
+    private void MainTab_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string tab }) return;
+        var isBots = tab == "bots";
+        TabBotsBtn.Style = (Style)FindResource(isBots ? "ModernButton" : "OutlineButton");
+        TabAccountBtn.Style = (Style)FindResource(isBots ? "OutlineButton" : "ModernButton");
+        AccountPanel.Visibility = isBots ? Visibility.Collapsed : Visibility.Visible;
+        if (isBots)
+        {
+            ShowBotsView();
+        }
+        else
+        {
+            EmptyState.Visibility = Visibility.Collapsed;
+            BotView.Visibility = Visibility.Collapsed;
+            RefreshAccountView();
+        }
+    }
+
+    private void ShowBotsView()
+    {
+        EmptyState.Visibility = _selected == null ? Visibility.Visible : Visibility.Collapsed;
+        BotView.Visibility = _selected == null ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    private void RefreshAccountView()
+    {
+        var premium = LicenseService.IsPremiumActive;
+        var g = GoogleAuthService.Current;
+
+        // Sign-in card
+        GoogleSignedOutPanel.Visibility = g == null ? Visibility.Visible : Visibility.Collapsed;
+        GoogleSignedInPanel.Visibility = g == null ? Visibility.Collapsed : Visibility.Visible;
+        if (g != null)
+        {
+            GoogleNameText.Text = string.IsNullOrWhiteSpace(g.Name) ? "Google user" : g.Name;
+            GoogleEmailText.Text = string.IsNullOrWhiteSpace(g.Email) ? "Signed in via Google" : g.Email;
+            GoogleAvatarEllipse.Fill = string.IsNullOrWhiteSpace(g.Picture)
+                ? null
+                : new ImageBrush(new BitmapImage(new Uri(g.Picture))) { Stretch = Stretch.UniformToFill };
+        }
+        if (GoogleGateOverlay.Visibility == Visibility.Visible && GoogleAuthService.IsSignedIn)
+            GoogleGateOverlay.Visibility = Visibility.Collapsed;
+
+        // Limits
+        LimitsStatusText.Text = premium
+            ? "Premium is active on this device. All limits are unlocked."
+            : "Free tier: 1 bot. Add more bots with a premium key (bottom of the sidebar).";
+
+        // Balance
+        BalanceText.Foreground = (Brush)FindResource("TextBrush");
+        if (!premium)
+        {
+            BalanceText.Text = "$0.00";
+            BalanceHint.Text = "Free tier has no balance. Activate a premium key to use balance.";
+        }
+        else if (!LicenseService.HasBalance)
+        {
+            BalanceText.Text = "—";
+            BalanceHint.Text = "No balance is set on this key. The developer can add \"|balance:50\" to your key line in keys.txt.";
+        }
+        else
+        {
+            BalanceText.Text = LicenseService.Balance.ToString("C2");
+            BalanceText.Foreground = (Brush)FindResource(LicenseService.Balance > 0 ? "OnlineBrush" : "DangerBrush");
+            BalanceHint.Text = LicenseService.Balance > 0
+                ? "Spent balance comes off this amount. Contact the developer to top up."
+                : "Your balance is empty - contact the developer to top up.";
+        }
+
+        // Notifications
+        NotificationsEmptyText.Visibility = ToastService.History.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private async void GoogleSignIn_Click(object sender, RoutedEventArgs e)
+    {
+        var clientId = _settings.GoogleClientId;
+        if (string.IsNullOrWhiteSpace(clientId))
+        {
+            var notice = "Google sign-in isn't configured by the developer yet - they need to add a Google Cloud Client ID in Settings (GOOGLE / DEVELOPER section).";
+            if (GoogleStatusText != null)
+            {
+                GoogleStatusText.Text = notice;
+                GoogleStatusText.Foreground = (Brush)FindResource("WarnBrush");
+            }
+            if (GateStatusText != null) GateStatusText.Text = notice;
+            return;
+        }
+        GoogleSignInBtn.IsEnabled = false;
+        GateSignInBtn.IsEnabled = false;
+        GoogleStatusText.Text = "Opening Google…";
+        var (ok, msg, profile) = await GoogleAuthService.SignInAsync(clientId, _settings.GoogleClientSecret);
+        GoogleSignInBtn.IsEnabled = true;
+        GateSignInBtn.IsEnabled = true;
+        GoogleStatusText.Text = msg;
+        GoogleStatusText.Foreground = (Brush)FindResource(ok ? "OnlineBrush" : "DangerBrush");
+        GateStatusText.Text = msg;
+        if (ok && profile != null)
+        {
+            ToastService.Show("Signed in", $"Welcome, {profile.Name}!");
+            RefreshAccountView();
+        }
+    }
+
+    private void GoogleSignOut_Click(object sender, RoutedEventArgs e)
+    {
+        GoogleAuthService.SignOut();
+        RefreshAccountView();
     }
 
     private void AskStartupYes_Click(object sender, RoutedEventArgs e)
@@ -301,13 +427,26 @@ public partial class MainWindow : Window
     /// </summary>
     private void BotsList_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
     {
+        SelectRowUnderCursor(sender, e);
+    }
+
+    /// <summary>Right-click selects the row under the cursor first, so the
+    /// context menu always acts on the right item (admin lists).</summary>
+    private void AdminList_SelectRow(object sender, MouseButtonEventArgs e)
+    {
+        SelectRowUnderCursor(sender, e);
+    }
+
+    private static void SelectRowUnderCursor(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not ListBox list) return;
         var src = e.OriginalSource as DependencyObject;
         while (src != null && src is not ListBoxItem)
             src = System.Windows.Media.VisualTreeHelper.GetParent(src);
         if (src is ListBoxItem lbi)
         {
             lbi.IsSelected = true;
-            BotsList.SelectedItem = lbi.DataContext;
+            list.SelectedItem = lbi.DataContext;
             lbi.Focus();
         }
     }
@@ -315,15 +454,9 @@ public partial class MainWindow : Window
     private void BotsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         _selected = BotsList.SelectedItem as BotEntry;
-        if (_selected == null)
-        {
-            EmptyState.Visibility = Visibility.Visible;
-            BotView.Visibility = Visibility.Collapsed;
-            return;
-        }
-        EmptyState.Visibility = Visibility.Collapsed;
-        BotView.Visibility = Visibility.Visible;
-        RefreshSelectedView();
+        if (AccountPanel.Visibility == Visibility.Visible) return;
+        ShowBotsView();
+        if (_selected != null) RefreshSelectedView();
     }
 
     private void RefreshSelectedView()
@@ -1090,6 +1223,9 @@ public partial class MainWindow : Window
         TelemetryCheck.IsChecked = _settings.Telemetry;
         StartupCheck.IsChecked = _settings.LaunchOnStartup;
         TrayCheck.IsChecked = _settings.KeepInTray;
+        RequireGoogleCheck.IsChecked = _settings.RequireGoogleLogin;
+        GoogleClientIdBox.Text = _settings.GoogleClientId;
+        GoogleClientSecretBox.Text = _settings.GoogleClientSecret;
         DataPathText.Text = System.IO.Path.Combine(AppPaths.LocalDataDir, "bot_hoster_bots.json");
         LidStatusText.Text = ReadLidAction();
         SettingsOverlay.Visibility = Visibility.Visible;
@@ -1184,6 +1320,9 @@ public partial class MainWindow : Window
         _settings.Telemetry = TelemetryCheck.IsChecked == true;
         _settings.LaunchOnStartup = StartupCheck.IsChecked == true;
         _settings.KeepInTray = TrayCheck.IsChecked == true;
+        _settings.RequireGoogleLogin = RequireGoogleCheck.IsChecked == true;
+        _settings.GoogleClientId = GoogleClientIdBox.Text.Trim();
+        _settings.GoogleClientSecret = GoogleClientSecretBox.Text.Trim();
         AppSettings.SetLaunchOnStartup(_settings.LaunchOnStartup);
         _settings.Save();
         TelemetryService.Enabled = _settings.Telemetry;
