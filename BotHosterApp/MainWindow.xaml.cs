@@ -29,6 +29,13 @@ public partial class MainWindow : Window
     private static readonly Brush ErrorBrush = new SolidColorBrush(MediaColor.FromRgb(0xF8, 0x71, 0x71));
     private static readonly Brush DimBrush = new SolidColorBrush(MediaColor.FromRgb(0x71, 0x71, 0x7A));
 
+    private sealed class GuildEntry
+    {
+        public required ulong Id { get; init; }
+        public required string Name { get; init; }
+        public required int Members { get; init; }
+    }
+
     public MainWindow()
     {
         InitializeComponent();
@@ -60,7 +67,11 @@ public partial class MainWindow : Window
             Dispatcher.BeginInvoke(() =>
             {
                 RefreshSidebar();
-                if (entry == _selected) RefreshSelectedView();
+                if (entry == _selected)
+                {
+                    RefreshSelectedView();
+                    RefreshServers();
+                }
             });
         };
         _ = TelemetryService.ReportLaunchAsync();
@@ -136,7 +147,27 @@ public partial class MainWindow : Window
     {
         BotCountText.Text = $"{_manager.Bots.Count} hosted";
         NoBotsHint.Visibility = _manager.Bots.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-        BotsList.Items.Refresh();
+        // Items auto-update: adds/removes via ObservableCollection, state via
+        // INotifyPropertyChanged. No Items.Refresh() here - a refresh storm
+        // while a bot reconnects would cancel any context menu being opened.
+    }
+
+    /// <summary>
+    /// Selects the item under the cursor on the FIRST right-click, so the
+    /// context menu opens reliably instead of the press being eaten by
+    /// selection handling.
+    /// </summary>
+    private void BotsList_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        var src = e.OriginalSource as DependencyObject;
+        while (src != null && src is not ListBoxItem)
+            src = System.Windows.Media.VisualTreeHelper.GetParent(src);
+        if (src is ListBoxItem lbi)
+        {
+            lbi.IsSelected = true;
+            BotsList.SelectedItem = lbi.DataContext;
+            lbi.Focus();
+        }
     }
 
     private void BotsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -197,6 +228,57 @@ public partial class MainWindow : Window
         AutoRestartCheck.IsChecked = b.AutoRestart;
         ConsoleTitle.Text = $"Console - {b.Name}";
         RebuildConsole();
+        RefreshServers();
+    }
+
+    // ================================================================== servers
+
+    private void RefreshServers()
+    {
+        if (ServersList == null || _selected == null) return;
+        var b = _selected;
+        var guilds = _manager.GetGuilds(b);
+        ServersCountText.Text = $"{guilds.Count}";
+        if (guilds.Count == 0)
+        {
+            ServersList.ItemsSource = null;
+            ServersHint.Text = b.Running
+                ? "This bot is not in any servers yet - invite it somewhere."
+                : "Start the bot to see the servers it is in.";
+            return;
+        }
+        ServersHint.Text = "";
+        ServersList.ItemsSource = guilds.Select(g => new GuildEntry
+        {
+            Id = g.Id,
+            Name = g.Name,
+            Members = g.Members,
+        }).ToList();
+    }
+
+    private void RefreshServers_Click(object sender, RoutedEventArgs e) => RefreshServers();
+
+    private async void LeaveServer_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: ulong guildId } btn || _selected == null) return;
+        var b = _selected;
+        var guilds = _manager.GetGuilds(b);
+        var name = guilds.FirstOrDefault(g => g.Id == guildId).Name ?? "this server";
+        var confirm = MessageBox.Show(
+            $"Make \"{b.Name}\" leave \"{name}\"?\n\nThe bot will be removed from this server.",
+            "Leave server", MessageBoxButton.OKCancel, MessageBoxImage.Warning);
+        if (confirm != MessageBoxResult.OK) return;
+
+        var (ok, msg) = await _manager.LeaveGuildAsync(b, guildId);
+        if (ok)
+        {
+            PresenceHint.Text = msg;
+            RefreshServers();
+        }
+        else
+        {
+            PresenceHint.Text = "Could not leave: " + msg;
+        }
     }
 
     // ================================================================== add / remove

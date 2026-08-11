@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -14,8 +15,10 @@ using MediaColor = System.Windows.Media.Color;
 namespace BotHosterApp.Services;
 
 /// <summary>A single hosted bot: its token, settings and live client state.</summary>
-public sealed class BotEntry
+public sealed class BotEntry : INotifyPropertyChanged
 {
+    public event PropertyChangedEventHandler? PropertyChanged;
+    private void Raise(string prop) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
     public string Token { get; set; } = "";
     public string Name { get; set; } = "Unnamed bot";
     public string AvatarUrl { get; set; } = "";
@@ -30,8 +33,21 @@ public sealed class BotEntry
     // Live state (not persisted)
     [JsonIgnore] public DiscordSocketClient? Client { get; set; }
     [JsonIgnore] public bool Running { get; set; }
-    [JsonIgnore] public string LiveState { get; set; } = "offline"; // connecting | online | offline | reconnecting
-    [JsonIgnore] public int GuildCount { get; set; }
+
+    private string _liveState = "offline";
+    [JsonIgnore] public string LiveState // connecting | online | offline | reconnecting
+    {
+        get => _liveState;
+        set { _liveState = value; Raise(nameof(StateText)); Raise(nameof(StateBrush)); }
+    }
+
+    private int _guildCount;
+    [JsonIgnore] public int GuildCount
+    {
+        get => _guildCount;
+        set { _guildCount = value; Raise(nameof(GuildCountText)); }
+    }
+
     [JsonIgnore] public DateTime StartedAt { get; set; }
     [JsonIgnore] public int UptimeSecs { get; set; }
     [JsonIgnore] public int RestartCount { get; set; }
@@ -307,6 +323,43 @@ public sealed class BotManager
         foreach (var b in Bots.ToList())
             if (b.Running)
                 await StopAsync(b);
+    }
+
+    /// <summary>The guilds the bot is currently in (requires the bot to be online).</summary>
+    public List<(ulong Id, string Name, int Members)> GetGuilds(BotEntry entry)
+    {
+        var result = new List<(ulong Id, string Name, int Members)>();
+        var client = entry.Client;
+        if (client?.ConnectionState == ConnectionState.Connected)
+        {
+            foreach (var g in client.Guilds)
+                result.Add((g.Id, g.Name, g.MemberCount));
+            result.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
+        }
+        return result;
+    }
+
+    /// <summary>Makes the bot leave (remove itself from) a server.</summary>
+    public async Task<(bool Ok, string Msg)> LeaveGuildAsync(BotEntry entry, ulong guildId)
+    {
+        var client = entry.Client;
+        if (client?.ConnectionState != ConnectionState.Connected)
+            return (false, "Bot is not connected.");
+        try
+        {
+            var guild = client.GetGuild(guildId);
+            if (guild == null) return (false, "Server not found.");
+            await guild.LeaveAsync();
+            entry.GuildCount = client.Guilds.Count;
+            Log(entry, $"Left server: {guild.Name}", LogSeverity.Info);
+            StateChanged?.Invoke(entry);
+            return (true, $"Left {guild.Name}");
+        }
+        catch (Exception ex)
+        {
+            Log(entry, $"Failed to leave server: {ex.Message}", LogSeverity.Error);
+            return (false, ex.Message);
+        }
     }
 
     /// <summary>Applies the entry's configured presence to a live client.</summary>

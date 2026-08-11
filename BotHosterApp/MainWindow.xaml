@@ -120,82 +120,6 @@
                 </StackPanel>
             </Grid>
 
-            <!-- ======================== Settings overlay ======================== -->
-            <Grid x:Name="SettingsOverlay" Grid.RowSpan="2" Visibility="Collapsed"
-                  Background="#66000000">
-                <Border Width="430" VerticalAlignment="Center" HorizontalAlignment="Center"
-                        Background="{StaticResource BgElevatedBrush}" BorderBrush="{StaticResource BorderStrongBrush}"
-                        BorderThickness="1" CornerRadius="12" Padding="22">
-                    <StackPanel>
-                        <TextBlock Text="Settings" FontSize="16" FontWeight="Bold"
-                                   Foreground="{StaticResource TextBrush}"/>
-                        <TextBlock Text="CFG2 Bot Hoster" FontSize="11"
-                                   Foreground="{StaticResource TextTertiaryBrush}" Margin="0,3,0,14"/>
-
-                        <TextBlock Text="GENERAL" Style="{StaticResource SectionHeader}" Margin="0,0,0,8"/>
-                        <CheckBox x:Name="StartAllCheck" Content="Start all bots when the app opens"
-                                  Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,8"/>
-                        <CheckBox x:Name="AutoRestartNewCheck" Content="Auto-restart new bots by default"
-                                  Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,8"/>
-                        <CheckBox x:Name="UpdateCheck" Content="Check for updates on launch"
-                                  Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,8"/>
-                        <CheckBox x:Name="TelemetryCheck" Content="Send anonymous usage stats to the owner"
-                                  Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,14"/>
-
-                        <TextBlock Text="DEFAULT PRESENCE FOR NEW BOTS" Style="{StaticResource SectionHeader}" Margin="0,0,0,8"/>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <ComboBox x:Name="DefStatusCombo" Style="{StaticResource ModernComboBox}" Height="30">
-                                <ComboBoxItem Content="Online"/>
-                                <ComboBoxItem Content="Idle"/>
-                                <ComboBoxItem Content="Do Not Disturb"/>
-                                <ComboBoxItem Content="Invisible"/>
-                            </ComboBox>
-                            <ComboBox x:Name="DefActivityCombo" Grid.Column="1" Style="{StaticResource ModernComboBox}" Height="30" Margin="8,0,0,0">
-                                <ComboBoxItem Content="Playing"/>
-                                <ComboBoxItem Content="Watching"/>
-                                <ComboBoxItem Content="Listening to"/>
-                                <ComboBoxItem Content="Competing in"/>
-                                <ComboBoxItem Content="Streaming"/>
-                                <ComboBoxItem Content="Custom status"/>
-                            </ComboBox>
-                            <TextBox x:Name="DefActivityTextBox" Grid.Column="2" Style="{StaticResource FieldTextBox}"
-                                     Height="30" Margin="8,0,0,0" FontSize="11"/>
-                        </Grid>
-
-                        <TextBlock Text="DATA" Style="{StaticResource SectionHeader}" Margin="0,16,0,8"/>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock x:Name="DataPathText" FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}"
-                                       TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
-                            <Button Grid.Column="1" Style="{StaticResource OutlineButton}" Height="28" Padding="10,0"
-                                    Margin="10,0,0,0" Click="OpenDataFolder_Click">
-                                <TextBlock Text="Open folder" FontSize="10.5" FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextBrush}"/>
-                            </Button>
-                        </Grid>
-
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,22,0,0">
-                            <Button Style="{StaticResource GhostButton}" Height="32" Padding="14,0" Click="SettingsClose_Click">
-                                <TextBlock Text="Cancel" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"/>
-                            </Button>
-                            <Button x:Name="SettingsSaveBtn" Style="{StaticResource ModernButton}" Height="32" Padding="18,0"
-                                    Margin="10,0,0,0" Click="SettingsSave_Click">
-                                <TextBlock Text="Save" FontSize="12" FontWeight="SemiBold"
-                                           Foreground="{StaticResource OnAccentBrush}"/>
-                            </Button>
-                        </StackPanel>
-                    </StackPanel>
-                </Border>
-            </Grid>
-
             <!-- ======================== Body ======================== -->
             <Grid Grid.Row="1">
                 <Grid.ColumnDefinitions>
@@ -277,7 +201,8 @@
                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                  ItemContainerStyle="{StaticResource RowItem}"
                                  ItemTemplate="{StaticResource BotItemTemplate}"
-                                 SelectionChanged="BotsList_SelectionChanged"/>
+                                 SelectionChanged="BotsList_SelectionChanged"
+                                 PreviewMouseRightButtonDown="BotsList_PreviewMouseRightButtonDown"/>
                         <StackPanel x:Name="NoBotsHint" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="20,60,20,0">
                             <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconBot}" Width="26" Height="26"
                                   Stroke="{StaticResource TextDisabledBrush}" HorizontalAlignment="Center"/>
@@ -384,11 +309,12 @@
                     <!-- Bot view -->
                     <Grid x:Name="BotView" Visibility="Collapsed" Margin="0">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="3*"/>
+                            <RowDefinition Height="2*"/>
                         </Grid.RowDefinitions>
 
-                        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Disabled">
+                        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                                      ScrollViewer.CanContentScroll="True">
                             <StackPanel Margin="22,20,22,8">
                                 <!-- Header card -->
                                 <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"
@@ -558,6 +484,60 @@
                                         </StackPanel>
                                     </Grid>
                                 </Border>
+
+                                <!-- Servers card -->
+                                <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"
+                                        BorderThickness="1" CornerRadius="10" Margin="0,12,0,0" Padding="16">
+                                    <StackPanel>
+                                        <Grid Margin="0,0,0,10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="SERVERS" Style="{StaticResource SectionHeader}" VerticalAlignment="Center"/>
+                                                <TextBlock x:Name="ServersCountText" FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}"
+                                                           Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                            <Button Grid.Column="1" Style="{StaticResource GhostButton}" Height="26" Padding="10,0"
+                                                    Click="RefreshServers_Click">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconRefresh}"
+                                                          Width="10" Height="10" Stroke="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="Refresh" FontSize="10.5" Foreground="{StaticResource TextSecondaryBrush}" Margin="5,0,0,0"/>
+                                                </StackPanel>
+                                            </Button>
+                                        </Grid>
+                                        <TextBlock x:Name="ServersHint" FontSize="11" Foreground="{StaticResource TextTertiaryBrush}"
+                                                   TextWrapping="Wrap" Margin="0,0,0,8"/>
+                                        <ListBox x:Name="ServersList" Height="150" Background="Transparent" BorderThickness="0"
+                                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                                 ItemContainerStyle="{StaticResource RowItem}">
+                                            <ListBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid Margin="10,7">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <StackPanel VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold"
+                                                                       Foreground="{StaticResource TextBrush}" TextTrimming="CharacterEllipsis"/>
+                                                            <TextBlock FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}" Margin="0,2,0,0">
+                                                                <Run Text="{Binding Members}"/><Run Text=" members"/>
+                                                            </TextBlock>
+                                                        </StackPanel>
+                                                        <Button Grid.Column="1" Style="{StaticResource GhostButton}" Height="26" Padding="10,0"
+                                                                VerticalAlignment="Center" Tag="{Binding Id}" Click="LeaveServer_Click">
+                                                            <TextBlock Text="Leave" FontSize="10.5" FontWeight="SemiBold"
+                                                                       Foreground="{StaticResource DangerBrush}"/>
+                                                        </Button>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ListBox.ItemTemplate>
+                                        </ListBox>
+                                    </StackPanel>
+                                </Border>
                             </StackPanel>
                         </ScrollViewer>
 
@@ -609,6 +589,82 @@
                         </Grid>
                     </Grid>
                 </Grid>
+            </Grid>
+
+            <!-- ======================== Settings overlay (last child = on top) ======================== -->
+            <Grid x:Name="SettingsOverlay" Grid.RowSpan="2" Visibility="Collapsed"
+                  Background="#66000000">
+                <Border Width="430" VerticalAlignment="Center" HorizontalAlignment="Center"
+                        Background="{StaticResource BgElevatedBrush}" BorderBrush="{StaticResource BorderStrongBrush}"
+                        BorderThickness="1" CornerRadius="12" Padding="22">
+                    <StackPanel>
+                        <TextBlock Text="Settings" FontSize="16" FontWeight="Bold"
+                                   Foreground="{StaticResource TextBrush}"/>
+                        <TextBlock Text="CFG2 Bot Hoster" FontSize="11"
+                                   Foreground="{StaticResource TextTertiaryBrush}" Margin="0,3,0,14"/>
+
+                        <TextBlock Text="GENERAL" Style="{StaticResource SectionHeader}" Margin="0,0,0,8"/>
+                        <CheckBox x:Name="StartAllCheck" Content="Start all bots when the app opens"
+                                  Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,8"/>
+                        <CheckBox x:Name="AutoRestartNewCheck" Content="Auto-restart new bots by default"
+                                  Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,8"/>
+                        <CheckBox x:Name="UpdateCheck" Content="Check for updates on launch"
+                                  Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,8"/>
+                        <CheckBox x:Name="TelemetryCheck" Content="Send anonymous usage stats to the owner"
+                                  Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,14"/>
+
+                        <TextBlock Text="DEFAULT PRESENCE FOR NEW BOTS" Style="{StaticResource SectionHeader}" Margin="0,0,0,8"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <ComboBox x:Name="DefStatusCombo" Style="{StaticResource ModernComboBox}" Height="30">
+                                <ComboBoxItem Content="Online"/>
+                                <ComboBoxItem Content="Idle"/>
+                                <ComboBoxItem Content="Do Not Disturb"/>
+                                <ComboBoxItem Content="Invisible"/>
+                            </ComboBox>
+                            <ComboBox x:Name="DefActivityCombo" Grid.Column="1" Style="{StaticResource ModernComboBox}" Height="30" Margin="8,0,0,0">
+                                <ComboBoxItem Content="Playing"/>
+                                <ComboBoxItem Content="Watching"/>
+                                <ComboBoxItem Content="Listening to"/>
+                                <ComboBoxItem Content="Competing in"/>
+                                <ComboBoxItem Content="Streaming"/>
+                                <ComboBoxItem Content="Custom status"/>
+                            </ComboBox>
+                            <TextBox x:Name="DefActivityTextBox" Grid.Column="2" Style="{StaticResource FieldTextBox}"
+                                     Height="30" Margin="8,0,0,0" FontSize="11"/>
+                        </Grid>
+
+                        <TextBlock Text="DATA" Style="{StaticResource SectionHeader}" Margin="0,16,0,8"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="DataPathText" FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}"
+                                       TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                            <Button Grid.Column="1" Style="{StaticResource OutlineButton}" Height="28" Padding="10,0"
+                                    Margin="10,0,0,0" Click="OpenDataFolder_Click">
+                                <TextBlock Text="Open folder" FontSize="10.5" FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextBrush}"/>
+                            </Button>
+                        </Grid>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,22,0,0">
+                            <Button Style="{StaticResource GhostButton}" Height="32" Padding="14,0" Click="SettingsClose_Click">
+                                <TextBlock Text="Cancel" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"/>
+                            </Button>
+                            <Button x:Name="SettingsSaveBtn" Style="{StaticResource ModernButton}" Height="32" Padding="18,0"
+                                    Margin="10,0,0,0" Click="SettingsSave_Click">
+                                <TextBlock Text="Save" FontSize="12" FontWeight="SemiBold"
+                                           Foreground="{StaticResource OnAccentBrush}"/>
+                            </Button>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
             </Grid>
         </Grid>
     </Border>
