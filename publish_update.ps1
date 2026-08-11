@@ -2,10 +2,9 @@
 #  publish_update.ps1 - build and ship a new version of a CFG2 app
 #
 #  Usage:
-#    powershell -ExecutionPolicy Bypass -File publish_update.ps1 -Version 1.2.0 [-App embed|recorder] [-Repo owner/repo] [-Url https://host/app.exe] [-Notes "what changed"]
+#    powershell -ExecutionPolicy Bypass -File publish_update.ps1 -Version 1.2.0 [-Repo owner/repo] [-Url https://host/app.exe] [-Notes "what changed"]
 #
 #  -Version  required - bumps the csproj <Version> and builds the single-file exe
-#  -App      optional - which app: embed (default) or recorder
 #  -Repo     optional - your GitHub repo (owner/repo). When set, the script
 #            uploads the exe as a GitHub release (tag v<Version>) automatically.
 #  -Url      optional - a direct URL where the exe will be hosted. The script
@@ -16,7 +15,6 @@
 # ============================================================
 param(
     [Parameter(Mandatory = $true)][string]$Version,
-    [ValidateSet("embed", "recorder")][string]$App = "embed",
     [string]$Repo = "",
     [string]$Url = "",
     [string]$Notes = ""
@@ -25,18 +23,9 @@ $ErrorActionPreference = "Stop"
 
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 
-switch ($App) {
-    "embed" {
-        $csproj = Join-Path $root "Configuration2App\Configuration2App.csproj"
-        $assemblyName = "CFG2 Embed sender"
-        $outDir = Join-Path $root "..\Cfg2 apps\CFG2 embed sender"
-    }
-    "recorder" {
-        $csproj = Join-Path $root "FPSBoosterApp\FPSBoosterApp.csproj"
-        $assemblyName = "CFG2 Recorder"
-        $outDir = Join-Path $root "..\Cfg2 apps\CFG2 Recorder"
-    }
-}
+$csproj = Join-Path $root "Configuration2App\Configuration2App.csproj"
+$assemblyName = "CFG2 Embed sender"
+$outDir = Join-Path $root "..\Cfg2 apps\CFG2 embed sender"
 New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 
 # 1) Bump the version
@@ -44,7 +33,7 @@ $content = Get-Content $csproj -Raw
 if ($content -notmatch "<Version>$([regex]::Escape($Version))</Version>") {
     $content = $content -replace '<Version>[^<]*</Version>', "<Version>$Version</Version>"
     Set-Content -Path $csproj -Value $content -NoNewline -Encoding UTF8
-    Write-Host "Bumped <Version> to $Version ($App)"
+    Write-Host "Bumped <Version> to $Version"
 }
 
 # 2) Publish the single-file exe (native-lib extraction fix is baked into csproj)
@@ -60,25 +49,6 @@ try {
 $exe = Join-Path $outDir "$assemblyName.exe"
 if (-not (Test-Path $exe)) { throw "Publish failed: exe not found at $exe" }
 Write-Host "Built: $exe"
-
-# 2b) Recorder ships ffmpeg.exe (its capture engine) next to the exe.
-if ($App -eq "recorder") {
-    $ffDir = Join-Path $outDir "ffmpeg"
-    $ffExe = Join-Path $outDir "ffmpeg.exe"
-    if (-not (Test-Path $ffExe)) {
-        Write-Host "ffmpeg.exe missing - downloading the essentials build (one-time)..."
-        $cache = Join-Path $root "ffmpeg_cache"
-        $zip = Join-Path $cache "ffmpeg.zip"
-        New-Item -ItemType Directory -Force -Path $cache | Out-Null
-        if (-not (Test-Path $zip)) {
-            Invoke-WebRequest -Uri "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip" -OutFile $zip
-        }
-        Expand-Archive -Path $zip -DestinationPath $cache -Force
-        $inner = Get-ChildItem $cache -Directory | Where-Object { $_.Name -like "ffmpeg-*" } | Select-Object -First 1
-        Copy-Item (Join-Path $inner.FullName "bin\ffmpeg.exe") $ffExe -Force
-        Write-Host "Copied ffmpeg.exe next to the exe."
-    }
-}
 
 # 3) Ship it
 if ($Repo) {
