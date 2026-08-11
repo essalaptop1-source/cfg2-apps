@@ -21,6 +21,8 @@ public partial class MainWindow : Window
     private readonly Dictionary<BotEntry, List<(string Text, LogSeverity Severity)>> _logs = new();
     private readonly DispatcherTimer _ticker = new() { Interval = TimeSpan.FromSeconds(1) };
     private BotEntry? _selected;
+    private readonly Dictionary<BotEntry, string> _lastToastState = new();
+    private readonly Dictionary<BotEntry, DateTime> _lastErrorToast = new();
 
     private static readonly Brush InfoBrush = new SolidColorBrush(MediaColor.FromRgb(0xD4, 0xD4, 0xD8));
     private static readonly Brush WarnBrush = new SolidColorBrush(MediaColor.FromRgb(0xFE, 0xBB, 0x3D));
@@ -64,6 +66,17 @@ public partial class MainWindow : Window
                 list.Add((text, severity));
                 if (list.Count > 2000) list.RemoveRange(0, list.Count - 2000);
                 if (entry == _selected) AppendConsole(text, severity);
+
+                // Toast on bot errors, throttled so a traceback doesn't spam.
+                if (severity == LogSeverity.Error)
+                {
+                    var last = _lastErrorToast.GetValueOrDefault(entry);
+                    if (DateTime.UtcNow - last > TimeSpan.FromSeconds(20))
+                    {
+                        _lastErrorToast[entry] = DateTime.UtcNow;
+                        ToastService.Show("Bot error", $"{entry.Name}: {text}", isError: true);
+                    }
+                }
             });
         };
         _manager.StateChanged += entry =>
@@ -73,6 +86,28 @@ public partial class MainWindow : Window
                 RefreshSidebar();
                 if (entry == _selected)
                     RefreshSelectedView();
+
+                // Toast notifications: small cards in the top-right corner, a
+                // bit below the top edge and above the taskbar. They show even
+                // when the window is hidden in the tray (24/7 mode). Toasts
+                // fire on actual state transitions only, so a bot that is
+                // merely re-invoked in the same state stays quiet.
+                var prev = _lastToastState.GetValueOrDefault(entry);
+                if (prev == entry.LiveState) return;
+                _lastToastState[entry] = entry.LiveState;
+                switch (entry.LiveState)
+                {
+                    case "running":
+                        ToastService.Show("Bot online", $"{entry.Name} connected to Discord.");
+                        break;
+                    case "restarting":
+                        ToastService.Show("Bot crashed", $"{entry.Name} stopped responding - restarting it...", isError: true);
+                        break;
+                    case "offline":
+                        if (!entry.Running)
+                            ToastService.Show("Bot stopped", $"{entry.Name} is no longer running.");
+                        break;
+                }
             });
         };
         _ = TelemetryService.ReportLaunchAsync();
@@ -638,6 +673,84 @@ public partial class MainWindow : Window
         if (Directory.Exists(dir))
         {
             try { Process.Start(new ProcessStartInfo(dir) { UseShellExecute = true }); } catch { }
+        }
+    }
+
+    /// <summary>
+    /// Exports the bot as a ready-to-run folder so it can be hosted on any
+    /// always-on machine (a spare PC, a friend's PC, or a cheap VPS) - that is
+    /// what actually keeps it running while this PC is off.
+    /// </summary>
+    private void Deploy247_Click(object sender, RoutedEventArgs e)
+    {
+        var b = _selected;
+        if (b == null) return;
+        if (string.IsNullOrWhiteSpace(b.PythonPath) || !File.Exists(b.PythonPath))
+        {
+            MessageBox.Show("This bot has no Python file to export.",
+                "Deploy 24/7", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        using var dlg = new System.Windows.Forms.FolderBrowserDialog
+        {
+            Description = "Choose where to export the 24/7 package",
+            ShowNewFolderButton = true,
+        };
+        if (dlg.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
+
+        try
+        {
+            var safeName = string.Concat(b.Name.Where(ch => char.IsLetterOrDigit(ch) || ch is ' ' or '-' or '_')).Trim();
+            if (safeName.Length == 0) safeName = "bot";
+            var dest = Path.Combine(dlg.SelectedPath, safeName + " 24-7");
+            Directory.CreateDirectory(dest);
+
+            var srcDir = Path.GetDirectoryName(b.PythonPath) ?? "";
+            var files = Directory.Exists(srcDir)
+                ? Directory.EnumerateFiles(srcDir, "*.py", SearchOption.AllDirectories).ToList()
+                : new List<string> { b.PythonPath };
+            foreach (var f in files)
+            {
+                var rel = Path.GetRelativePath(srcDir, f);
+                var target = Path.Combine(dest, rel);
+                Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+                File.Copy(f, target, true);
+            }
+
+            var mainName = Path.GetFileName(b.PythonPath);
+            File.WriteAllText(Path.Combine(dest, "run.bat"),
+                "@echo off\r\ncd /d %~dp0\r\npython -u \"" + mainName + "\"\r\n");
+
+            File.WriteAllText(Path.Combine(dest, "README - how to run 24-7.txt"),
+                $"24/7 package for \"{b.Name}\"\r\n" +
+                "================================\r\n" +
+                "This folder contains the bot's Python files. To run it somewhere\r\n" +
+                "ALWAYS ON (so it stays online even when this PC is off), pick one:\r\n\r\n" +
+                "OPTION A - ANOTHER PC (easiest)\r\n" +
+                "1. Copy this folder to any PC that stays on (a spare PC, friend's PC...).\r\n" +
+                "2. Install Python from python.org (tick \"Add to PATH\") and run:\r\n" +
+                "      pip install discord.py\r\n" +
+                "3. Double-click run.bat. Done - the bot is online 24/7 there.\r\n\r\n" +
+                "OPTION B - CHEAP/FREE SERVER (VPS)\r\n" +
+                "1. Create a free Oracle Cloud VM or a ~$4/mo VPS (Linux).\r\n" +
+                "2. Upload this folder, install python3 + discord.py.\r\n" +
+                "3. Start it with:  nohup python3 -u \"" + mainName + "\" &\r\n" +
+                "The bot keeps running as long as the server is up (months at a time).\r\n\r\n" +
+                "OPTION C - THIS APP ON ANOTHER PC\r\n" +
+                "Install CFG2 Bot Hoster on the always-on PC, add the bot from this\r\n" +
+                "folder (Browse... -> pick " + mainName + "), and enable 'Launch on\r\n" +
+                "startup' in Settings. Same as Option A but with the full panel.\r\n\r\n" +
+                "Note: the token is inside " + mainName + " - keep this folder private.\r\n");
+
+            ToastService.Show("Deployed 24/7", $"{b.Name} exported to {dest}");
+            PresenceHint.Text = $"24/7 package exported to {dest}";
+            try { Process.Start(new ProcessStartInfo(dest) { UseShellExecute = true }); } catch { }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show("Could not export: " + ex.Message,
+                "Deploy 24/7", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
