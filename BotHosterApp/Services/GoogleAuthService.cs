@@ -32,6 +32,21 @@ public static class GoogleAuthService
     private const int LoopbackPort = 52621;
     private static string SessionPath => Path.Combine(AppPaths.LocalDataDir, "bot_hoster_google.json");
 
+    // ============ DEVELOPER: one-time Google Cloud setup (takes ~2 minutes) ============
+    // 1. Go to https://console.cloud.google.com/apis/credentials
+    // 2. Create credentials -> OAuth client ID -> type "Desktop app".
+    // 3. Under "Authorized redirect URIs" add:  http://localhost:52621/
+    // 4. Paste the Client ID (and the Client Secret, if Google shows one) below.
+    //
+    // This is the ONLY thing that needs configuring - it is compiled into the
+    // app, so end users just click "Sign in with Google" and it works.
+    // No settings screen is needed.
+    public const string ClientId = "";
+    public const string ClientSecret = "";
+
+    /// <summary>True once the developer has pasted a real Client ID.</summary>
+    public static bool IsConfigured => !string.IsNullOrWhiteSpace(ClientId);
+
     public static GoogleProfile? Current { get; private set; }
 
     public static bool IsSignedIn => Current != null;
@@ -70,6 +85,17 @@ public static class GoogleAuthService
 
     /// <summary>Runs the loopback sign-in. Returns (ok, message, profile).</summary>
     public static async Task<(bool Ok, string Msg, GoogleProfile? Profile)> SignInAsync(string clientId, string clientSecret)
+    {
+        return await SignInCoreAsync(clientId, clientSecret);
+    }
+
+    /// <summary>Runs the loopback sign-in using the compiled-in credentials.</summary>
+    public static async Task<(bool Ok, string Msg, GoogleProfile? Profile)> SignInAsync()
+    {
+        return await SignInCoreAsync(ClientId, ClientSecret);
+    }
+
+    private static async Task<(bool Ok, string Msg, GoogleProfile? Profile)> SignInCoreAsync(string clientId, string clientSecret)
     {
         var redirect = $"http://localhost:{LoopbackPort}/";
         using var listener = new HttpListener();

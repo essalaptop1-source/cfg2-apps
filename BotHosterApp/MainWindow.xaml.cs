@@ -220,11 +220,20 @@ public partial class MainWindow : Window
         if (!_settings.LaunchOnStartup)
             AskStartupOverlay.Visibility = Visibility.Visible;
 
-        // Google login gate (only when the developer enabled it).
+        // Google login gate (only when the developer enabled it AND it's configured).
         if (_settings.RequireGoogleLogin && !GoogleAuthService.IsSignedIn)
         {
-            GateLogo.Source = App.TryLoadLogo();
-            GoogleGateOverlay.Visibility = Visibility.Visible;
+            if (GoogleAuthService.IsConfigured)
+            {
+                GateLogo.Source = App.TryLoadLogo();
+                GoogleGateOverlay.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                ToastService.Show("Google sign-in not configured",
+                    "Require Google login is on but no Client ID is compiled in yet - see GoogleAuthService.cs.",
+                    isError: true);
+            }
         }
     }
 
@@ -234,8 +243,8 @@ public partial class MainWindow : Window
     {
         if (sender is not Button { Tag: string tab }) return;
         var isBots = tab == "bots";
-        TabBotsBtn.Style = (Style)FindResource(isBots ? "ModernButton" : "OutlineButton");
-        TabAccountBtn.Style = (Style)FindResource(isBots ? "OutlineButton" : "ModernButton");
+        TabBotsBtn.Style = (Style)FindResource(isBots ? "ModernButton" : "GhostButton");
+        TabAccountBtn.Style = (Style)FindResource(isBots ? "GhostButton" : "ModernButton");
         AccountPanel.Visibility = isBots ? Visibility.Collapsed : Visibility.Visible;
         if (isBots)
         {
@@ -306,10 +315,9 @@ public partial class MainWindow : Window
 
     private async void GoogleSignIn_Click(object sender, RoutedEventArgs e)
     {
-        var clientId = _settings.GoogleClientId;
-        if (string.IsNullOrWhiteSpace(clientId))
+        if (!GoogleAuthService.IsConfigured)
         {
-            var notice = "Google sign-in isn't configured by the developer yet - they need to add a Google Cloud Client ID in Settings (GOOGLE / DEVELOPER section).";
+            var notice = "Google sign-in needs a one-time setup by the developer: create a free OAuth Client ID at console.cloud.google.com/apis/credentials (type: Desktop app, redirect http://localhost:52621/) and paste it into GoogleAuthService.cs. It's compiled in, so end users never configure anything.";
             if (GoogleStatusText != null)
             {
                 GoogleStatusText.Text = notice;
@@ -321,7 +329,7 @@ public partial class MainWindow : Window
         GoogleSignInBtn.IsEnabled = false;
         GateSignInBtn.IsEnabled = false;
         GoogleStatusText.Text = "Opening Google…";
-        var (ok, msg, profile) = await GoogleAuthService.SignInAsync(clientId, _settings.GoogleClientSecret);
+        var (ok, msg, profile) = await GoogleAuthService.SignInAsync();
         GoogleSignInBtn.IsEnabled = true;
         GateSignInBtn.IsEnabled = true;
         GoogleStatusText.Text = msg;
@@ -393,7 +401,7 @@ public partial class MainWindow : Window
     private void RefreshSidebar()
     {
         var online = _manager.Bots.Count(b => b.Running);
-        BotCountText.Text = $"{_manager.Bots.Count} hosted · {online} online";
+        BotCountText.Text = $"{_manager.Bots.Count} · {online} online";
         var searching = !string.IsNullOrWhiteSpace(SearchBox.Text);
         var visible = _botsView?.Cast<object>().Any() ?? false;
         NoBotsHint.Visibility = _manager.Bots.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -1224,8 +1232,6 @@ public partial class MainWindow : Window
         StartupCheck.IsChecked = _settings.LaunchOnStartup;
         TrayCheck.IsChecked = _settings.KeepInTray;
         RequireGoogleCheck.IsChecked = _settings.RequireGoogleLogin;
-        GoogleClientIdBox.Text = _settings.GoogleClientId;
-        GoogleClientSecretBox.Text = _settings.GoogleClientSecret;
         DataPathText.Text = System.IO.Path.Combine(AppPaths.LocalDataDir, "bot_hoster_bots.json");
         LidStatusText.Text = ReadLidAction();
         SettingsOverlay.Visibility = Visibility.Visible;
@@ -1321,8 +1327,6 @@ public partial class MainWindow : Window
         _settings.LaunchOnStartup = StartupCheck.IsChecked == true;
         _settings.KeepInTray = TrayCheck.IsChecked == true;
         _settings.RequireGoogleLogin = RequireGoogleCheck.IsChecked == true;
-        _settings.GoogleClientId = GoogleClientIdBox.Text.Trim();
-        _settings.GoogleClientSecret = GoogleClientSecretBox.Text.Trim();
         AppSettings.SetLaunchOnStartup(_settings.LaunchOnStartup);
         _settings.Save();
         TelemetryService.Enabled = _settings.Telemetry;

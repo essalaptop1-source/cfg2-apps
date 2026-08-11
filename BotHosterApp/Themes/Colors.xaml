@@ -69,6 +69,17 @@
 
     <SolidColorBrush x:Key="WindowEdgeBrush" Color="{StaticResource ColorBorderStrong}"/>
 
+    <!-- Window background: subtle vertical depth instead of flat black -->
+    <LinearGradientBrush x:Key="WindowBgBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#111115" Offset="0"/>
+        <GradientStop Color="#0C0C0F" Offset="0.55"/>
+        <GradientStop Color="#08080A" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="SidebarBgBrush" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#141418" Offset="0"/>
+        <GradientStop Color="#0F0F13" Offset="1"/>
+    </LinearGradientBrush>
+
     <!-- ============ Gradients ============ -->
     <LinearGradientBrush x:Key="AccentGradientBrush" StartPoint="0,0" EndPoint="1,1">
         <GradientStop Color="#5865F2" Offset="0"/>
