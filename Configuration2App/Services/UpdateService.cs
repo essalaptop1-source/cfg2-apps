@@ -26,6 +26,13 @@ public static class UpdateService
     /// </summary>
     public const string DefaultRepo = "essalaptop1-source/cfg2-apps";
 
+    /// <summary>
+    /// Releases are tagged per app in the shared repo (embed-v1.2.0,
+    /// hoster-v1.0.0, ...) so one repo can feed every CFG2 app without them
+    /// ever downloading each other's binaries.
+    /// </summary>
+    private const string TagPrefix = "embed-v";
+
     private static readonly HttpClient Http = CreateClient();
 
     private static HttpClient CreateClient()
@@ -46,24 +53,45 @@ public static class UpdateService
         {
             try
             {
-                var url = $"https://api.github.com/repos/{repo}/releases/latest";
+                var url = $"https://api.github.com/repos/{repo}/releases?per_page=50";
                 using var resp = await Http.GetAsync(url).ConfigureAwait(false);
                 if (!resp.IsSuccessStatusCode) return null;
-                var json = JObject.Parse(await resp.Content.ReadAsStringAsync().ConfigureAwait(false));
-                var version = ParseVersion((string?)json["tag_name"]);
+                var arr = JArray.Parse(await resp.Content.ReadAsStringAsync().ConfigureAwait(false));
                 // GitHub's CLI stores assets with spaces replaced by dots
                 // (CFG2 Embed sender.exe -> CFG2.Embed.sender.exe), so compare
                 // normalized names to stay immune to that.
                 var exeName = NormalizeName(Path.GetFileName(Environment.ProcessPath ?? ""));
-                var assets = json["assets"] as JArray;
-                var asset = assets?.FirstOrDefault(a =>
-                               NormalizeName((string?)a["name"] ?? "") == exeName)
-                           ?? assets?.FirstOrDefault();
-                var downloadUrl = (string?)asset?["browser_download_url"];
-                if (version == null || string.IsNullOrWhiteSpace(downloadUrl)) return null;
-                return version > LocalVersion
-                    ? new UpdateInfo(version.ToString(3), downloadUrl, (string?)json["body"])
-                    : null;
+
+                UpdateInfo? best = null;
+                foreach (var json in arr)
+                {
+                    var tag = (string?)json["tag_name"] ?? "";
+                    if (!tag.StartsWith(TagPrefix, StringComparison.OrdinalIgnoreCase)) continue;
+                    var version = ParseVersion(tag[TagPrefix.Length..]);
+                    if (version == null) continue;
+
+                    var assets = json["assets"] as JArray;
+                    string? downloadUrl = null;
+                    if (assets != null)
+                    {
+                        foreach (var a in assets)
+                        {
+                            if (NormalizeName((string?)a["name"] ?? "") == exeName)
+                            {
+                                downloadUrl = (string?)a["browser_download_url"];
+                                break;
+                            }
+                        }
+                    }
+                    if (string.IsNullOrWhiteSpace(downloadUrl)) continue; // never grab another app's exe
+
+                    var candidate = new UpdateInfo(version.ToString(3), downloadUrl, (string?)json["body"]);
+                    if (best == null || version > Version.Parse(best.Version)) best = candidate;
+                }
+
+                if (best == null) return null;
+                var v = Version.Parse(best.Version);
+                return v > LocalVersion ? best : null;
             }
             catch
             {

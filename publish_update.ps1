@@ -2,9 +2,10 @@
 #  publish_update.ps1 - build and ship a new version of a CFG2 app
 #
 #  Usage:
-#    powershell -ExecutionPolicy Bypass -File publish_update.ps1 -Version 1.2.0 [-Repo owner/repo] [-Url https://host/app.exe] [-Notes "what changed"]
+#    powershell -ExecutionPolicy Bypass -File publish_update.ps1 -Version 1.2.0 [-App embed|hoster] [-Repo owner/repo] [-Url https://host/app.exe] [-Notes "what changed"]
 #
 #  -Version  required - bumps the csproj <Version> and builds the single-file exe
+#  -App      optional - which app: embed (default) or hoster
 #  -Repo     optional - your GitHub repo (owner/repo). When set, the script
 #            uploads the exe as a GitHub release (tag v<Version>) automatically.
 #  -Url      optional - a direct URL where the exe will be hosted. The script
@@ -15,6 +16,7 @@
 # ============================================================
 param(
     [Parameter(Mandatory = $true)][string]$Version,
+    [ValidateSet("embed", "hoster")][string]$App = "embed",
     [string]$Repo = "",
     [string]$Url = "",
     [string]$Notes = ""
@@ -23,9 +25,22 @@ $ErrorActionPreference = "Stop"
 
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 
-$csproj = Join-Path $root "Configuration2App\Configuration2App.csproj"
-$assemblyName = "CFG2 Embed sender"
-$outDir = Join-Path $root "..\Cfg2 apps\CFG2 embed sender"
+switch ($App) {
+    "embed" {
+        $csproj = Join-Path $root "Configuration2App\Configuration2App.csproj"
+        $assemblyName = "CFG2 Embed sender"
+        $outDir = Join-Path $root "..\Cfg2 apps\CFG2 embed sender"
+        $tagPrefix = "embed"
+    }
+    "hoster" {
+        $csproj = Join-Path $root "BotHosterApp\BotHosterApp.csproj"
+        $assemblyName = "CFG2 Bot Hoster"
+        $outDir = Join-Path $root "..\Cfg2 apps\CFG2 Bot Hoster"
+        $tagPrefix = "hoster"
+    }
+}
+# Per-app tag so several CFG2 apps can share one repo: hoster-v1.0.0, embed-v1.2.0
+$tag = "$tagPrefix-v$Version"
 New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 
 # 1) Bump the version
@@ -55,25 +70,25 @@ if ($Repo) {
     $notes = if ($Notes) { $Notes } else { "Version $Version of $assemblyName." }
     if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
         Write-Host "GitHub CLI not found - publish the release manually:" -ForegroundColor Yellow
-        Write-Host "  gh release create v$Version `"$exe`" --repo $Repo --title `"v$Version`" --notes `"$notes`""
+        Write-Host "  gh release create $tag `"$exe`" --repo $Repo --title `"$tag`" --notes `"$notes`""
         exit 0
     }
     $prevEap = $ErrorActionPreference
     $ErrorActionPreference = "SilentlyContinue"
-    gh release view "v$Version" --repo $Repo --json tagName 2>$null | Out-Null
+    gh release view "$tag" --repo $Repo --json tagName 2>$null | Out-Null
     $exists = ($LASTEXITCODE -eq 0)
     if ($exists) {
-        Write-Host "Release v$Version already exists - updating its asset."
-        gh release upload "v$Version" $exe --repo $Repo --clobber 2>$null
+        Write-Host "Release $tag already exists - updating its asset."
+        gh release upload "$tag" $exe --repo $Repo --clobber 2>$null
         $ok = ($LASTEXITCODE -eq 0)
     } else {
-        Write-Host "Creating GitHub release v$Version ..."
-        gh release create "v$Version" $exe --repo $Repo --title "v$Version" --notes $notes 2>$null
+        Write-Host "Creating GitHub release $tag ..."
+        gh release create "$tag" $exe --repo $Repo --title "$tag" --notes $notes 2>$null
         $ok = ($LASTEXITCODE -eq 0)
     }
     $ErrorActionPreference = $prevEap
     if ($ok) {
-        Write-Host "Published: https://github.com/$Repo/releases/tag/v$Version" -ForegroundColor Green
+        Write-Host "Published: https://github.com/$Repo/releases/tag/$tag" -ForegroundColor Green
         Write-Host "Users' apps will detect v$Version on their next launch."
     } else {
         Write-Host "Release step failed (tag name collision?). Run it manually:" -ForegroundColor Yellow

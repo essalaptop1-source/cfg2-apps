@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <AssemblyTitle>CFG2 Bot Hoster</AssemblyTitle>
+    <AssemblyDescription>Host and manage multiple Discord bots from one app</AssemblyDescription>
+    <Product>CFG2 Bot Hoster</Product>
+    <Version>1.0.0</Version>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <!-- Single-file WPF on Windows 10 crashes with DllNotFoundException in
+         SetWindowLongPtrWndProc unless native libraries are force-extracted. -->
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Discord.Net" Version="3.17.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Themes\Colors.xaml" />
+    <Resource Include="Themes\Icons.xaml" />
+    <Resource Include="Themes\Styles.xaml" />
+    <Resource Include="Assets\app.ico" />
+  </ItemGroup>
+
+</Project>
