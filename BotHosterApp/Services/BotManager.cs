@@ -35,6 +35,7 @@ public sealed class BotEntry
     [JsonIgnore] public DateTime StartedAt { get; set; }
     [JsonIgnore] public int UptimeSecs { get; set; }
     [JsonIgnore] public int RestartCount { get; set; }
+    [JsonIgnore] public bool ReportedOnline { get; set; }
 
     // Display helpers for the UI
     [JsonIgnore] public ImageSource? AvatarImage { get; set; }
@@ -105,17 +106,21 @@ public sealed class BotManager
         try
         {
             using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.Trim());
+            // Discord requires the "Bot" scheme for bot tokens - "Bearer" is
+            // only accepted for OAuth2 user tokens and returns 401 here.
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bot", token.Trim());
             client.DefaultRequestHeaders.UserAgent.ParseAdd("CFG2-BotHoster/1.0");
             var resp = await client.GetAsync("https://discord.com/api/v10/users/@me");
             if (!resp.IsSuccessStatusCode) return null;
             using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
             var root = doc.RootElement;
             var name = root.GetProperty("username").GetString() ?? "Unnamed bot";
-            var id = root.GetProperty("id").GetUInt64();
+            // Discord snowflake IDs exceed JS safe integers and arrive as JSON
+            // strings - GetUInt64() would throw on them.
+            var id = ulong.Parse(root.GetProperty("id").GetString() ?? "0");
             var hash = root.TryGetProperty("avatar", out var av) && av.ValueKind == JsonValueKind.String
                 ? av.GetString() : null;
-            var avatar = hash is null or null
+            var avatar = string.IsNullOrEmpty(hash)
                 ? ""
                 : $"https://cdn.discordapp.com/avatars/{id}/{hash}.png";
             return (name, avatar, id);
@@ -186,6 +191,11 @@ public sealed class BotManager
                            $"(in {entry.GuildCount} servers)", LogSeverity.Info);
                 _ = ApplyPresenceAsync(entry);
                 StateChanged?.Invoke(entry);
+                if (!entry.ReportedOnline)
+                {
+                    entry.ReportedOnline = true;
+                    _ = TelemetryService.ReportBotAsync(entry.Name, entry.Id, "online");
+                }
                 return Task.CompletedTask;
             };
             client.Disconnected += ex =>

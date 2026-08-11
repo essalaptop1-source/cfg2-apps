@@ -9,6 +9,11 @@
         Background="{StaticResource BgBrush}"
         FontFamily="{StaticResource AppFont}"
         UseLayoutRounding="True">
+    <!-- WindowChrome with a zero glass frame removes DWM's white non-client
+         border line at the top of frameless windows, while keeping resizing. -->
+    <WindowChrome.WindowChrome>
+        <WindowChrome GlassFrameThickness="0" CornerRadius="0" ResizeBorderThickness="6" CaptionHeight="0"/>
+    </WindowChrome.WindowChrome>
     <Window.Resources>
         <!-- Bot list item template -->
         <DataTemplate x:Key="BotItemTemplate">

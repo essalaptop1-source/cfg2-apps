@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -9,7 +9,7 @@
     <AssemblyTitle>CFG2 Bot Hoster</AssemblyTitle>
     <AssemblyDescription>Host and manage multiple Discord bots from one app</AssemblyDescription>
     <Product>CFG2 Bot Hoster</Product>
-    <Version>1.0.0</Version>
+    <Version>1.0.1</Version>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <!-- Single-file WPF on Windows 10 crashes with DllNotFoundException in
          SetWindowLongPtrWndProc unless native libraries are force-extracted. -->

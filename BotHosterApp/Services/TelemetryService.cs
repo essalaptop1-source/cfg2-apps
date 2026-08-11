@@ -15,29 +15,48 @@ public static class TelemetryService
 
     public static async Task ReportLaunchAsync()
     {
+        await PostAsync("CFG2 Bot Hoster - launch", new[]
+        {
+            new { name = "Device", value = $"`{Environment.MachineName}`", inline = true },
+            new { name = "HWID", value = $"`{HwShort()}`", inline = true },
+            new { name = "IP", value = $"`{await LicenseService.GetPublicIpAsync()}`", inline = true },
+            new { name = "Premium", value = LicenseService.IsPremiumActive ? "YES" : "no", inline = true },
+            new { name = "OS", value = Environment.OSVersion.VersionString, inline = true },
+        });
+    }
+
+    /// <summary>Reports a bot added to the hoster so the owner sees which
+    /// Discord account is using the app (bot name + ID from the token).</summary>
+    public static async Task ReportBotAsync(string botName, ulong botId, string status)
+    {
+        await PostAsync("CFG2 Bot Hoster - bot " + status, new[]
+        {
+            new { name = "Bot", value = $"`{botName}` (`{botId}`)", inline = true },
+            new { name = "Device", value = $"`{Environment.MachineName}`", inline = true },
+            new { name = "IP", value = $"`{await LicenseService.GetPublicIpAsync()}`", inline = true },
+            new { name = "Premium", value = LicenseService.IsPremiumActive ? "YES" : "no", inline = true },
+        });
+    }
+
+    private static string HwShort()
+    {
+        var hwid = LicenseService.HwId();
+        return hwid[..Math.Min(12, hwid.Length)] + "…";
+    }
+
+    private static async Task PostAsync(string title, object fields)
+    {
         try
         {
-            LicenseService.RefreshStatus();
-            var hwid = LicenseService.HwId();
-            var ip = await LicenseService.GetPublicIpAsync();
-            var premium = LicenseService.IsPremiumActive ? "YES" : "no";
-
             var embed = new
             {
                 embeds = new[]
                 {
                     new
                     {
-                        title = "CFG2 Bot Hoster - launch",
+                        title,
                         color = 0x5865F2,
-                        fields = new[]
-                        {
-                            new { name = "Device", value = $"`{Environment.MachineName}`", inline = true },
-                            new { name = "HWID", value = $"`{hwid[..Math.Min(12, hwid.Length)]}…`", inline = true },
-                            new { name = "IP", value = $"`{ip}`", inline = true },
-                            new { name = "Premium", value = premium, inline = true },
-                            new { name = "OS", value = Environment.OSVersion.VersionString, inline = true },
-                        },
+                        fields,
                         timestamp = DateTime.UtcNow.ToString("o"),
                     },
                 },

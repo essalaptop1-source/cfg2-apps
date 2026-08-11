@@ -239,6 +239,7 @@ public partial class MainWindow : Window
             return;
         }
 
+        _ = TelemetryService.ReportBotAsync(entry.Name, entry.Id, "added");
         LoadAvatar(entry);
         LogTo(entry, "Bot added", LogSeverity.Info);
         AddPanel.Visibility = Visibility.Collapsed;
