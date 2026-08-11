@@ -1,23 +1,23 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- ============ Base Monochrome Palette (blue-tinted dark) ============ -->
-    <Color x:Key="ColorBg">#0A0D14</Color>
-    <Color x:Key="ColorBgElevated">#11151F</Color>
-    <Color x:Key="ColorSurface">#181D29</Color>
-    <Color x:Key="ColorSurfaceAlt">#232A38</Color>
-    <Color x:Key="ColorSurfaceHover">#232A38</Color>
-    <Color x:Key="ColorSurfaceActive">#2C3444</Color>
-    <Color x:Key="ColorCard">#121724</Color>
-    <Color x:Key="ColorBorder">#252C3A</Color>
-    <Color x:Key="ColorBorderStrong">#3A4356</Color>
-    <Color x:Key="ColorDivider">#1C2230</Color>
-    <Color x:Key="ColorPanelDivider">#1E2431</Color>
-    <Color x:Key="ColorSidebarActive">#171C28</Color>
+    <!-- ============ Base Monochrome Palette (full black) ============ -->
+    <Color x:Key="ColorBg">#0A0A0A</Color>
+    <Color x:Key="ColorBgElevated">#101010</Color>
+    <Color x:Key="ColorSurface">#181818</Color>
+    <Color x:Key="ColorSurfaceAlt">#262626</Color>
+    <Color x:Key="ColorSurfaceHover">#262626</Color>
+    <Color x:Key="ColorSurfaceActive">#303030</Color>
+    <Color x:Key="ColorCard">#121212</Color>
+    <Color x:Key="ColorBorder">#262626</Color>
+    <Color x:Key="ColorBorderStrong">#3D3D3D</Color>
+    <Color x:Key="ColorDivider">#1B1B1B</Color>
+    <Color x:Key="ColorPanelDivider">#1E1E1E</Color>
+    <Color x:Key="ColorSidebarActive">#151515</Color>
     <Color x:Key="ColorText">#FFFFFF</Color>
-    <Color x:Key="ColorTextSecondary">#A6B0C3</Color>
-    <Color x:Key="ColorTextTertiary">#74809A</Color>
-    <Color x:Key="ColorTextDisabled">#5A6478</Color>
+    <Color x:Key="ColorTextSecondary">#A1A1AA</Color>
+    <Color x:Key="ColorTextTertiary">#71717A</Color>
+    <Color x:Key="ColorTextDisabled">#5C5C66</Color>
     <Color x:Key="ColorAccent">#22D3EE</Color>
     <Color x:Key="ColorAccentHover">#67E8F9</Color>
     <Color x:Key="ColorAccentPressed">#06B6D4</Color>
@@ -69,18 +69,18 @@
 
     <SolidColorBrush x:Key="WindowEdgeBrush" Color="{StaticResource ColorBorderStrong}"/>
 
-    <!-- Window background: blue-tinted vertical depth instead of flat black -->
+    <!-- Window background: pure black vertical depth -->
     <LinearGradientBrush x:Key="WindowBgBrush" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#121722" Offset="0"/>
-        <GradientStop Color="#0C101A" Offset="0.55"/>
-        <GradientStop Color="#070A10" Offset="1"/>
+        <GradientStop Color="#111111" Offset="0"/>
+        <GradientStop Color="#0B0B0B" Offset="0.55"/>
+        <GradientStop Color="#050505" Offset="1"/>
     </LinearGradientBrush>
     <LinearGradientBrush x:Key="SidebarBgBrush" StartPoint="0,0" EndPoint="1,0">
-        <GradientStop Color="#141926" Offset="0"/>
-        <GradientStop Color="#0E121C" Offset="1"/>
+        <GradientStop Color="#0E0E0E" Offset="0"/>
+        <GradientStop Color="#080808" Offset="1"/>
     </LinearGradientBrush>
 
-    <!-- ============ Gradients ============ -->
+    <!-- ============ Gradients (cyan identity) ============ -->
     <LinearGradientBrush x:Key="AccentGradientBrush" StartPoint="0,0" EndPoint="1,1">
         <GradientStop Color="#22D3EE" Offset="0"/>
         <GradientStop Color="#3B82F6" Offset="1"/>

@@ -39,18 +39,19 @@
                     </ContextMenu>
                 </Grid.ContextMenu>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="44"/>
+                    <ColumnDefinition Width="50"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="30"/>
                 </Grid.ColumnDefinitions>
-                <Border Width="40" Height="40" CornerRadius="20"
+                <Border Width="46" Height="46" CornerRadius="23" Padding="2"
+                        BorderBrush="{Binding StateBrush}" BorderThickness="2"
                         Background="{StaticResource SurfaceAltBrush}"
                         VerticalAlignment="Center">
                     <Grid>
                         <TextBlock Text="{Binding Initial}" FontSize="15" FontWeight="Bold"
                                    Foreground="{StaticResource TextSecondaryBrush}"
                                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        <Ellipse Width="40" Height="40">
+                        <Ellipse>
                             <Ellipse.Fill>
                                 <ImageBrush ImageSource="{Binding AvatarImage}" Stretch="UniformToFill"
                                             RenderOptions.BitmapScalingMode="HighQuality"/>
@@ -502,13 +503,17 @@
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
-                                        <Border Width="56" Height="56" CornerRadius="28"
+                                        <Border Width="62" Height="62" CornerRadius="31" Padding="2"
+                                                BorderBrush="{StaticResource AccentBorderBrush}" BorderThickness="2"
                                                 Background="{StaticResource SurfaceAltBrush}" VerticalAlignment="Center">
+                                            <Border.Effect>
+                                                <DropShadowEffect BlurRadius="18" ShadowDepth="0" Opacity="0.45" Color="#6622D3EE"/>
+                                            </Border.Effect>
                                             <Grid>
                                                 <TextBlock x:Name="BotAvatarInitial" FontSize="22" FontWeight="Bold"
                                                            Foreground="{StaticResource TextSecondaryBrush}"
                                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                <Ellipse x:Name="BotAvatarEllipse" Width="56" Height="56">
+                                                <Ellipse x:Name="BotAvatarEllipse">
                                                     <Ellipse.Fill>
                                                         <ImageBrush ImageSource="{Binding AvatarImage}" Stretch="UniformToFill"
                                                                     RenderOptions.BitmapScalingMode="HighQuality"/>
@@ -691,6 +696,9 @@
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Orientation="Horizontal">
+                                    <Ellipse Width="10" Height="10" Fill="#FF5F57" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                    <Ellipse Width="10" Height="10" Fill="#FEBC2E" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                    <Ellipse Width="10" Height="10" Fill="#28C840" Margin="0,0,10,0" VerticalAlignment="Center"/>
                                     <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconTerminal}" Width="12" Height="12"
                                           Stroke="{StaticResource TextTertiaryBrush}" VerticalAlignment="Center"/>
                                     <TextBlock x:Name="ConsoleTitle" Text="Console" FontSize="12" FontWeight="SemiBold"
@@ -712,11 +720,11 @@
                                     </Button>
                                 </StackPanel>
                             </Grid>
-                            <Border Grid.Row="1" Background="#0E1420" BorderBrush="{StaticResource BorderBrush}"
+                            <Border Grid.Row="1" Background="#0A0A0A" BorderBrush="{StaticResource BorderBrush}"
                                     BorderThickness="1" CornerRadius="10" Margin="0,8,0,0">
                                 <RichTextBox x:Name="ConsoleBox" IsReadOnly="True" BorderThickness="0" Background="Transparent"
                                              FontFamily="{StaticResource MonoFont}" FontSize="12"
-                                             Foreground="#CBD5E1" VerticalScrollBarVisibility="Auto"
+                                             Foreground="#E4E4E7" VerticalScrollBarVisibility="Auto"
                                              Padding="12">
                                     <RichTextBox.ContextMenu>
                                         <ContextMenu Background="{DynamicResource BgElevatedBrush}" BorderBrush="{DynamicResource BorderBrush}">
@@ -1478,7 +1486,7 @@
                             </Border>
 
                             <!-- Editor -->
-                            <Border Grid.Column="1" Background="#0E1420" BorderBrush="{StaticResource BorderBrush}"
+                            <Border Grid.Column="1" Background="#0A0A0A" BorderBrush="{StaticResource BorderBrush}"
                                     BorderThickness="1" CornerRadius="8" Margin="12,0,0,0">
                                 <TextBox x:Name="CodeEditorBox" BorderThickness="0" Background="Transparent"
                                          FontFamily="{StaticResource MonoFont}" FontSize="12"
