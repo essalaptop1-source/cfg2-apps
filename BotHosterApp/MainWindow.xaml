@@ -164,10 +164,29 @@
                             Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"
                             BorderThickness="1" CornerRadius="8" Margin="14,0,14,12" Padding="12">
                         <StackPanel>
-                            <TextBlock Text="Bot token" Style="{StaticResource SectionHeader}" Margin="0,0,0,6"/>
+                            <TextBlock Text="Bot Python file" Style="{StaticResource SectionHeader}" Margin="0,0,0,6"/>
+                            <TextBlock Text="Pick the .py file with all your bot's logic."
+                                       FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="BotFileBox" Style="{StaticResource FieldTextBox}"
+                                         Height="32" IsReadOnly="True" FontSize="10.5"
+                                         ToolTip="The Python file that contains your bot"/>
+                                <Button x:Name="BrowseFileBtn" Grid.Column="1" Style="{StaticResource ModernButton}" Height="32"
+                                        Padding="12,0" Margin="8,0,0,0" Click="AddBotBrowse_Click">
+                                    <TextBlock Text="Browse…" FontSize="11.5" FontWeight="SemiBold"
+                                               Foreground="{StaticResource OnAccentBrush}"/>
+                                </Button>
+                            </Grid>
+                            <TextBlock x:Name="TokenFoundText" FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}"
+                                       TextWrapping="Wrap" Margin="0,8,0,0"/>
                             <TextBox x:Name="TokenBox" Style="{StaticResource FieldTextBox}"
-                                     Height="32" FontFamily="{StaticResource MonoFont}"
-                                     ToolTip="Paste your bot token from the Discord Developer Portal"/>
+                                     Height="32" Margin="0,8,0,0" FontFamily="{StaticResource MonoFont}"
+                                     FontSize="10.5"
+                                     ToolTip="Paste your bot token manually if it wasn't found in the file"/>
                             <CheckBox x:Name="AutoStartNewCheck" Content="Start immediately" Foreground="{StaticResource TextSecondaryBrush}"
                                       FontSize="11.5" Margin="0,10,0,0" IsChecked="True"/>
                             <Grid Margin="0,12,0,0">
@@ -208,7 +227,7 @@
                                   Stroke="{StaticResource TextDisabledBrush}" HorizontalAlignment="Center"/>
                             <TextBlock Text="No bots yet" FontSize="12.5" FontWeight="SemiBold"
                                        Foreground="{StaticResource TextTertiaryBrush}" HorizontalAlignment="Center" Margin="0,10,0,0"/>
-                            <TextBlock Text="Click Add bot and paste a token"
+                            <TextBlock Text="Click Add bot and choose the bot's Python file"
                                        FontSize="11" Foreground="{StaticResource TextDisabledBrush}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                         </StackPanel>
                     </Grid>
@@ -401,47 +420,14 @@
                                         BorderThickness="1" CornerRadius="10" Margin="0,12,0,0" Padding="16">
                                     <StackPanel>
                                         <TextBlock Text="PRESENCE" Style="{StaticResource SectionHeader}" Margin="0,0,0,10"/>
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <StackPanel>
-                                                <TextBlock Text="Status" Style="{StaticResource SectionHeader}" Margin="0,0,0,5"/>
-                                                <ComboBox x:Name="StatusCombo" Style="{StaticResource ModernComboBox}" Height="32"
-                                                          SelectionChanged="Presence_Changed">
-                                                    <ComboBoxItem Content="Online"/>
-                                                    <ComboBoxItem Content="Idle"/>
-                                                    <ComboBoxItem Content="Do Not Disturb"/>
-                                                    <ComboBoxItem Content="Invisible"/>
-                                                </ComboBox>
-                                            </StackPanel>
-                                            <StackPanel Grid.Column="1" Margin="10,0,0,0">
-                                                <TextBlock Text="Activity" Style="{StaticResource SectionHeader}" Margin="0,0,0,5"/>
-                                                <ComboBox x:Name="ActivityCombo" Style="{StaticResource ModernComboBox}" Height="32"
-                                                          SelectionChanged="Presence_Changed">
-                                                    <ComboBoxItem Content="Playing"/>
-                                                    <ComboBoxItem Content="Watching"/>
-                                                    <ComboBoxItem Content="Listening to"/>
-                                                    <ComboBoxItem Content="Competing in"/>
-                                                    <ComboBoxItem Content="Streaming"/>
-                                                    <ComboBoxItem Content="Custom status"/>
-                                                </ComboBox>
-                                            </StackPanel>
-                                            <StackPanel Grid.Column="2" Margin="10,0,0,0">
-                                                <TextBlock Text="Text" Style="{StaticResource SectionHeader}" Margin="0,0,0,5"/>
-                                                <TextBox x:Name="ActivityTextBox" Style="{StaticResource FieldTextBox}" Height="32"
-                                                         TextChanged="ActivityText_Changed"/>
-                                            </StackPanel>
-                                        </Grid>
-                                        <StackPanel x:Name="StreamRow" Visibility="Collapsed" Margin="0,10,0,0">
-                                            <TextBlock Text="Stream URL (Twitch / YouTube / custom)" Style="{StaticResource SectionHeader}" Margin="0,0,0,5"/>
-                                            <TextBox x:Name="StreamUrlBox" Style="{StaticResource FieldTextBox}" Height="32"
-                                                     TextChanged="ActivityText_Changed"/>
-                                        </StackPanel>
-                                        <TextBlock x:Name="PresenceHint" Text="Applied to the live bot instantly"
-                                                   FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}" Margin="0,9,0,0"/>
+                                        <TextBlock Text="Your bot's status &amp; activity are set inside its Python code - Discord only allows the bot itself to change its presence."
+                                                   FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                                        <Border Background="{StaticResource SurfaceBrush}" CornerRadius="6" Padding="10">
+                                            <TextBlock FontFamily="{StaticResource MonoFont}" FontSize="10.5" Foreground="{StaticResource AccentTextBrush}"
+                                                       Text="await bot.change_presence(activity=discord.Game(name=&quot;your status&quot;))"
+                                                       TextWrapping="Wrap"/>
+                                        </Border>
+                                        <TextBlock x:Name="PresenceHint" FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}" Margin="0,9,0,0"/>
                                     </StackPanel>
                                 </Border>
 
@@ -613,30 +599,9 @@
                         <CheckBox x:Name="TelemetryCheck" Content="Send anonymous usage stats to the owner"
                                   Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,14"/>
 
-                        <TextBlock Text="DEFAULT PRESENCE FOR NEW BOTS" Style="{StaticResource SectionHeader}" Margin="0,0,0,8"/>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <ComboBox x:Name="DefStatusCombo" Style="{StaticResource ModernComboBox}" Height="30">
-                                <ComboBoxItem Content="Online"/>
-                                <ComboBoxItem Content="Idle"/>
-                                <ComboBoxItem Content="Do Not Disturb"/>
-                                <ComboBoxItem Content="Invisible"/>
-                            </ComboBox>
-                            <ComboBox x:Name="DefActivityCombo" Grid.Column="1" Style="{StaticResource ModernComboBox}" Height="30" Margin="8,0,0,0">
-                                <ComboBoxItem Content="Playing"/>
-                                <ComboBoxItem Content="Watching"/>
-                                <ComboBoxItem Content="Listening to"/>
-                                <ComboBoxItem Content="Competing in"/>
-                                <ComboBoxItem Content="Streaming"/>
-                                <ComboBoxItem Content="Custom status"/>
-                            </ComboBox>
-                            <TextBox x:Name="DefActivityTextBox" Grid.Column="2" Style="{StaticResource FieldTextBox}"
-                                     Height="30" Margin="8,0,0,0" FontSize="11"/>
-                        </Grid>
+                        <TextBlock Text="BOTS RUN AS PYTHON PROCESSES" Style="{StaticResource SectionHeader}" Margin="0,14,0,8"/>
+                        <TextBlock Text="Each bot is a .py file that the app runs with Python. Its commands, events and presence are all inside that file."
+                                   FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}" TextWrapping="Wrap" Margin="0,0,0,0"/>
 
                         <TextBlock Text="DATA" Style="{StaticResource SectionHeader}" Margin="0,16,0,8"/>
                         <Grid>

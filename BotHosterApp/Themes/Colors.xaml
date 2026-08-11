@@ -33,6 +33,7 @@
     <Color x:Key="ColorDanger">#E81123</Color>
     <Color x:Key="ColorDangerPressed">#B90F1D</Color>
     <Color x:Key="ColorOnline">#57F287</Color>
+    <Color x:Key="ColorWarn">#FEBB3D</Color>
 
     <!-- ============ Brushes ============ -->
     <SolidColorBrush x:Key="BgBrush" Color="{StaticResource ColorBg}"/>
@@ -64,6 +65,7 @@
     <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource ColorDanger}"/>
     <SolidColorBrush x:Key="DangerPressedBrush" Color="{StaticResource ColorDangerPressed}"/>
     <SolidColorBrush x:Key="OnlineBrush" Color="{StaticResource ColorOnline}"/>
+    <SolidColorBrush x:Key="WarnBrush" Color="{StaticResource ColorWarn}"/>
 
     <SolidColorBrush x:Key="WindowEdgeBrush" Color="{StaticResource ColorBorderStrong}"/>
 

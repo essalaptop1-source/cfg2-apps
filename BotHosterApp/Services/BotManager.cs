@@ -1,41 +1,39 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using Discord;
-using Discord.WebSocket;
 using MediaColor = System.Windows.Media.Color;
 
 namespace BotHosterApp.Services;
 
-/// <summary>A single hosted bot: its token, settings and live client state.</summary>
+/// <summary>A single hosted bot: its Python file, token and live process state.</summary>
 public sealed class BotEntry : INotifyPropertyChanged
 {
     public event PropertyChangedEventHandler? PropertyChanged;
     private void Raise(string prop) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
+
     public string Token { get; set; } = "";
     public string Name { get; set; } = "Unnamed bot";
     public string AvatarUrl { get; set; } = "";
     public ulong Id { get; set; }
-    public bool AutoStart { get; set; }          // start when the app launches
-    public bool AutoRestart { get; set; } = true; // restart after a crash/disconnect
-    public string Status { get; set; } = "online"; // online | idle | dnd | invisible
-    public string Activity { get; set; } = "playing"; // playing | watching | listening | competing | custom | streaming
-    public string ActivityText { get; set; } = "";
-    public string StreamUrl { get; set; } = "";
+    public string PythonPath { get; set; } = "";
+    public bool AutoStart { get; set; }
+    public bool AutoRestart { get; set; } = true;
 
     // Live state (not persisted)
-    [JsonIgnore] public DiscordSocketClient? Client { get; set; }
+    [JsonIgnore] public Process? Proc { get; set; }
     [JsonIgnore] public bool Running { get; set; }
 
     private string _liveState = "offline";
-    [JsonIgnore] public string LiveState // connecting | online | offline | reconnecting
+    [JsonIgnore] public string LiveState // offline | starting | running | restarting
     {
         get => _liveState;
         set { _liveState = value; Raise(nameof(StateText)); Raise(nameof(StateBrush)); }
@@ -55,37 +53,43 @@ public sealed class BotEntry : INotifyPropertyChanged
 
     // Display helpers for the UI
     [JsonIgnore] public ImageSource? AvatarImage { get; set; }
-    [JsonIgnore] public string StateText => LiveState == "online" ? "Online"
-        : LiveState == "connecting" ? "Connecting…"
-        : LiveState == "reconnecting" ? "Reconnecting…"
-        : "Offline";
+    [JsonIgnore] public string StateText => LiveState switch
+    {
+        "starting" => "Starting…",
+        "running" => "Running",
+        "restarting" => "Restarting…",
+        _ => "Offline",
+    };
     [JsonIgnore] public Brush StateBrush => LiveState switch
     {
-        "online" => new SolidColorBrush(MediaColor.FromRgb(0x57, 0xF2, 0x87)),
-        "connecting" => new SolidColorBrush(MediaColor.FromRgb(0xFE, 0xBB, 0x3D)),
-        "reconnecting" => new SolidColorBrush(MediaColor.FromRgb(0xFE, 0xBB, 0x3D)),
+        "running" => new SolidColorBrush(MediaColor.FromRgb(0x57, 0xF2, 0x87)),
+        "starting" or "restarting" => new SolidColorBrush(MediaColor.FromRgb(0xFE, 0xBB, 0x3D)),
         _ => new SolidColorBrush(MediaColor.FromRgb(0x71, 0x71, 0x7A)),
     };
     [JsonIgnore] public string Initial => string.IsNullOrWhiteSpace(Name) ? "?" : Name[..1].ToUpperInvariant();
     [JsonIgnore] public string GuildCountText => GuildCount == 0 ? "—" : $"{GuildCount}";
+    [JsonIgnore] public string FileName => string.IsNullOrWhiteSpace(PythonPath) ? "" : Path.GetFileName(PythonPath);
 }
 
 /// <summary>
-/// Owns every bot's DiscordSocketClient. Discord.Net auto-reconnects, so a
-/// dropped connection recovers on its own; AutoRestart additionally forces a
-/// fresh client when a gateway session ends for good.
+/// Hosts Discord bots by running their Python scripts as child processes.
+/// Discord handles the bot's logic and gateway; this app supervises the
+/// process (start/stop/restart), reads its output as the console, and uses
+/// the Discord REST API (with the bot token found in the script) to show
+/// the bot's name, avatar and servers, and to make it leave servers.
 /// </summary>
 public sealed class BotManager
 {
     public ObservableCollection<BotEntry> Bots { get; } = new();
     private readonly object _lock = new();
 
-    /// <summary>entry, formatted console line, severity.</summary>
     public event Action<BotEntry, string, LogSeverity>? LogLine;
     public event Action<BotEntry>? StateChanged;
 
     private static readonly JsonSerializerOptions JsonOpts = new() { WriteIndented = true };
-    private static string StorePath => System.IO.Path.Combine(AppPaths.LocalDataDir, "bot_hoster_bots.json");
+    private static string StorePath => Path.Combine(AppPaths.LocalDataDir, "bot_hoster_bots.json");
+
+    private static string? _pythonPath;
 
     public async Task LoadAsync()
     {
@@ -116,23 +120,70 @@ public sealed class BotManager
         catch { }
     }
 
-    /// <summary>Validates a token against the API and returns bot info, or null.</summary>
+    // ================================================================ token + python helpers
+
+    /// <summary>Looks for a Discord bot token inside a Python file.</summary>
+    public static string? ExtractTokenFromFile(string path)
+    {
+        try
+        {
+            if (!File.Exists(path)) return null;
+            var text = File.ReadAllText(path);
+            // Discord tokens: base64id.base64ts.base64sig (74-80 chars)
+            var m = Regex.Match(text, @"[MN][A-Za-z0-9_\-]{20,}\.[A-Za-z0-9_\-]{6,}\.[A-Za-z0-9_\-]{27,}");
+            return m.Success ? m.Value : null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Finds a working Python interpreter (cached).</summary>
+    public static string? FindPython()
+    {
+        if (_pythonPath != null) return _pythonPath;
+        foreach (var candidate in new[] { "python", "python3", "py" })
+        {
+            try
+            {
+                var psi = new ProcessStartInfo(candidate)
+                {
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true,
+                };
+                if (candidate == "py") psi.ArgumentList.Add("-3");
+                psi.ArgumentList.Add("--version");
+                using var p = Process.Start(psi);
+                if (p == null) continue;
+                p.WaitForExit(3000);
+                if (p.ExitCode == 0)
+                {
+                    _pythonPath = candidate;
+                    return candidate;
+                }
+            }
+            catch
+            {
+                // not on PATH - try the next
+            }
+        }
+        return null;
+    }
+
+    /// <summary>Validates a token against Discord's API and returns bot info, or null.</summary>
     public static async Task<(string Name, string Avatar, ulong Id)?> FetchBotInfoAsync(string token)
     {
         try
         {
-            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
-            // Discord requires the "Bot" scheme for bot tokens - "Bearer" is
-            // only accepted for OAuth2 user tokens and returns 401 here.
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bot", token.Trim());
-            client.DefaultRequestHeaders.UserAgent.ParseAdd("CFG2-BotHoster/1.0");
+            using var client = NewApiClient(token);
             var resp = await client.GetAsync("https://discord.com/api/v10/users/@me");
             if (!resp.IsSuccessStatusCode) return null;
             using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
             var root = doc.RootElement;
             var name = root.GetProperty("username").GetString() ?? "Unnamed bot";
-            // Discord snowflake IDs exceed JS safe integers and arrive as JSON
-            // strings - GetUInt64() would throw on them.
             var id = ulong.Parse(root.GetProperty("id").GetString() ?? "0");
             var hash = root.TryGetProperty("avatar", out var av) && av.ValueKind == JsonValueKind.String
                 ? av.GetString() : null;
@@ -147,26 +198,34 @@ public sealed class BotManager
         }
     }
 
+    private static HttpClient NewApiClient(string token)
+    {
+        var client = new HttpClient { Timeout = TimeSpan.FromSeconds(12) };
+        // Discord requires the "Bot" scheme for bot tokens.
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bot", token.Trim());
+        client.DefaultRequestHeaders.UserAgent.ParseAdd("CFG2-BotHoster/1.0");
+        return client;
+    }
+
     public bool CanAdd() => LicenseService.IsPremiumActive || Bots.Count == 0;
 
-    public async Task<BotEntry?> AddBotAsync(string token, bool autoStart)
+    /// <summary>
+    /// Adds a bot from a Python file. Token comes from the file when found,
+    /// otherwise it must be supplied manually. Returns null if validation fails.
+    /// </summary>
+    public async Task<BotEntry?> AddBotAsync(string pythonPath, string token, bool autoStart)
     {
         var info = await FetchBotInfoAsync(token);
         if (info == null) return null;
 
-        // Apply the user's defaults for new bots.
-        var s = AppSettings.Load();
         var entry = new BotEntry
         {
+            PythonPath = pythonPath,
             Token = token.Trim(),
             Name = info.Value.Name,
             AvatarUrl = info.Value.Avatar,
             Id = info.Value.Id,
             AutoStart = autoStart,
-            AutoRestart = s.AutoRestartNew,
-            Status = s.DefaultStatus,
-            Activity = s.DefaultActivity,
-            ActivityText = s.DefaultActivityText,
         };
         Bots.Add(entry);
         await SaveAsync();
@@ -181,124 +240,164 @@ public sealed class BotManager
         await SaveAsync();
     }
 
+    // ================================================================ process hosting
+
     public async Task StartAsync(BotEntry entry)
     {
         lock (_lock)
         {
             if (entry.Running) return;
             entry.Running = true;
-            entry.RestartCount = 0;
+        }
+
+        var python = FindPython();
+        if (python == null)
+        {
+            lock (_lock) entry.Running = false;
+            entry.LiveState = "offline";
+            Log(entry, "Python was not found on this PC - install it from python.org and add it to PATH.", LogSeverity.Error);
+            StateChanged?.Invoke(entry);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(entry.PythonPath) || !File.Exists(entry.PythonPath))
+        {
+            lock (_lock) entry.Running = false;
+            entry.LiveState = "offline";
+            Log(entry, "Bot file not found: " + entry.PythonPath, LogSeverity.Error);
+            StateChanged?.Invoke(entry);
+            return;
         }
 
         try
         {
-            var config = new DiscordSocketConfig
+            var psi = new ProcessStartInfo
             {
-                GatewayIntents = GatewayIntents.Guilds,
-                LogLevel = LogSeverity.Verbose,
-                AlwaysDownloadUsers = false,
-                MessageCacheSize = 0,
+                FileName = python,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true,
+                WorkingDirectory = Path.GetDirectoryName(entry.PythonPath) ?? "",
             };
-            var client = new DiscordSocketClient(config);
-            entry.Client = client;
+            if (python == "py") psi.ArgumentList.Add("-3");
+            psi.ArgumentList.Add("-u"); // unbuffered output -> live console
+            psi.ArgumentList.Add(entry.PythonPath);
+            psi.Environment["PYTHONUNBUFFERED"] = "1";
+            psi.Environment["PYTHONIOENCODING"] = "utf-8";
 
-            client.Log += msg => OnLog(entry, msg);
-            client.Ready += () =>
+            var proc = Process.Start(psi);
+            if (proc == null)
             {
-                entry.LiveState = "online";
-                entry.StartedAt = DateTime.Now;
-                entry.GuildCount = client.Guilds.Count;
-                entry.RestartCount = 0;
-                Log(entry, $"Connected as {client.CurrentUser?.Username}#{client.CurrentUser?.DiscriminatorValue} " +
-                           $"(in {entry.GuildCount} servers)", LogSeverity.Info);
-                _ = ApplyPresenceAsync(entry);
-                StateChanged?.Invoke(entry);
-                if (!entry.ReportedOnline)
-                {
-                    entry.ReportedOnline = true;
-                    _ = TelemetryService.ReportBotAsync(entry.Name, entry.Id, "online");
-                }
-                return Task.CompletedTask;
-            };
-            client.Disconnected += ex =>
-            {
-                if (entry.Running)
-                {
-                    entry.LiveState = "reconnecting";
-                    Log(entry, $"Disconnected: {ex?.Message ?? "connection lost"} - Discord.Net is reconnecting",
-                        LogSeverity.Warning);
-                    StateChanged?.Invoke(entry);
-                    if (entry.AutoRestart) _ = HardRestartIfStuckAsync(entry, ex);
-                }
-                return Task.CompletedTask;
-            };
-            client.GuildAvailable += _ =>
-            {
-                entry.GuildCount = client.Guilds.Count;
-                StateChanged?.Invoke(entry);
-                return Task.CompletedTask;
-            };
-            client.LoggedOut += () =>
-            {
+                lock (_lock) entry.Running = false;
                 entry.LiveState = "offline";
-                entry.Running = false;
-                Log(entry, "Logged out", LogSeverity.Info);
+                Log(entry, "Failed to start Python.", LogSeverity.Error);
                 StateChanged?.Invoke(entry);
-                return Task.CompletedTask;
-            };
+                return;
+            }
 
-            Log(entry, "Connecting to Discord gateway...", LogSeverity.Info);
-            entry.LiveState = "connecting";
+            entry.Proc = proc;
+            entry.StartedAt = DateTime.Now;
+            entry.RestartCount = 0;
+            entry.LiveState = "starting";
+            Log(entry, $"Starting {Path.GetFileName(entry.PythonPath)} with {python}...", LogSeverity.Info);
             StateChanged?.Invoke(entry);
-            await client.LoginAsync(TokenType.Bot, entry.Token);
-            await client.StartAsync();
+
+            _ = Task.Run(() => PumpStream(proc.StandardOutput.BaseStream, entry, LogSeverity.Info));
+            _ = Task.Run(() => PumpStream(proc.StandardError.BaseStream, entry, LogSeverity.Warning));
+            _ = Task.Run(() => WatchProcessAsync(proc, entry));
         }
         catch (Exception ex)
         {
             lock (_lock) entry.Running = false;
             entry.LiveState = "offline";
-            Log(entry, $"Failed to start: {ex.Message}", LogSeverity.Error);
+            Log(entry, "Failed to start: " + ex.Message, LogSeverity.Error);
             StateChanged?.Invoke(entry);
         }
     }
 
-    /// <summary>
-    /// When a gateway session ends permanently (not a normal reconnect),
-    /// spins up a fresh client after a short wait so the bot comes back.
-    /// </summary>
-    private async Task HardRestartIfStuckAsync(BotEntry entry, Exception? reason)
+    private void PumpStream(Stream stream, BotEntry entry, LogSeverity severity)
     {
         try
         {
-            await Task.Delay(8000);
-            lock (_lock)
+            using var reader = new StreamReader(stream, Encoding.UTF8);
+            while (true)
             {
-                if (!entry.Running) return;
+                var line = reader.ReadLine();
+                if (line == null) break;
+                if (string.IsNullOrWhiteSpace(line)) continue;
+                Log(entry, line, severity);
+                // A common "I'm online" marker from discord.py.
+                if (line.Contains("Logged in as", StringComparison.OrdinalIgnoreCase) && !entry.ReportedOnline)
+                {
+                    entry.ReportedOnline = true;
+                    entry.LiveState = "running";
+                    StateChanged?.Invoke(entry);
+                    _ = TelemetryService.ReportBotAsync(entry.Name, entry.Id, entry.Token, "online");
+                    _ = RefreshGuildsAsync(entry);
+                }
             }
-            if (entry.Client is { ConnectionState: ConnectionState.Connected }) return;
+        }
+        catch { }
+    }
 
-            Log(entry, "Session ended - forcing a fresh connection...", LogSeverity.Warning);
-            await StopAsync(entry);
-            entry.RestartCount++;
-            await StartAsync(entry);
+    private async Task WatchProcessAsync(Process proc, BotEntry entry)
+    {
+        try
+        {
+            await proc.WaitForExitAsync();
+            bool restart;
+            lock (_lock) restart = entry.Running && entry.Proc == proc;
+            if (!restart)
+            {
+                entry.Running = false;
+                entry.Proc = null;
+                entry.LiveState = "offline";
+                Log(entry, "Stopped", LogSeverity.Info);
+                StateChanged?.Invoke(entry);
+                return;
+            }
+
+            entry.Proc = null;
+            Log(entry, $"Bot exited with code {proc.ExitCode}", LogSeverity.Warning);
+            if (entry.AutoRestart)
+            {
+                entry.LiveState = "restarting";
+                entry.RestartCount++;
+                StateChanged?.Invoke(entry);
+                Log(entry, "Auto-restarting in 5 seconds...", LogSeverity.Warning);
+                await Task.Delay(5000);
+                lock (_lock)
+                {
+                    if (!entry.Running) return;
+                }
+                await StartAsync(entry);
+            }
+            else
+            {
+                entry.Running = false;
+                entry.LiveState = "offline";
+                Log(entry, "Auto-restart is off - bot will stay stopped.", LogSeverity.Warning);
+                StateChanged?.Invoke(entry);
+            }
         }
         catch { }
     }
 
     public async Task StopAsync(BotEntry entry)
     {
-        lock (_lock) entry.Running = false;
-        var client = entry.Client;
-        entry.Client = null;
-        if (client != null)
+        Process? proc;
+        lock (_lock)
         {
-            try
-            {
-                await client.StopAsync();
-                await client.LogoutAsync();
-            }
-            catch { }
-            try { client.Dispose(); } catch { }
+            entry.Running = false;
+            proc = entry.Proc;
+            entry.Proc = null;
+        }
+        if (proc != null && !proc.HasExited)
+        {
+            try { proc.Kill(entireProcessTree: true); } catch { }
+            try { await proc.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(3)); } catch { }
+            try { proc.Dispose(); } catch { }
         }
         entry.LiveState = "offline";
         Log(entry, "Stopped", LogSeverity.Info);
@@ -325,35 +424,68 @@ public sealed class BotManager
                 await StopAsync(b);
     }
 
-    /// <summary>The guilds the bot is currently in (requires the bot to be online).</summary>
-    public List<(ulong Id, string Name, int Members)> GetGuilds(BotEntry entry)
+    // ================================================================ REST: guilds + leave
+
+    public async Task<List<(ulong Id, string Name, int Members)>> GetGuildsAsync(BotEntry entry)
     {
         var result = new List<(ulong Id, string Name, int Members)>();
-        var client = entry.Client;
-        if (client?.ConnectionState == ConnectionState.Connected)
+        try
         {
-            foreach (var g in client.Guilds)
-                result.Add((g.Id, g.Name, g.MemberCount));
+            using var client = NewApiClient(entry.Token);
+            var resp = await client.GetAsync("https://discord.com/api/v10/users/@me/guilds");
+            if (!resp.IsSuccessStatusCode) return result;
+            using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
+            var ids = new List<ulong>();
+            foreach (var g in doc.RootElement.EnumerateArray())
+            {
+                var id = ulong.Parse(g.GetProperty("id").GetString() ?? "0");
+                var name = g.GetProperty("name").GetString() ?? "Unknown";
+                ids.Add(id);
+                result.Add((id, name, 0));
+            }
+
+            // Member counts come from per-guild requests; tolerate failures.
+            foreach (var id in ids)
+            {
+                try
+                {
+                    using var c2 = NewApiClient(entry.Token);
+                    var r2 = await c2.GetAsync($"https://discord.com/api/v10/guilds/{id}?with_counts=true");
+                    if (r2.IsSuccessStatusCode)
+                    {
+                        using var d2 = JsonDocument.Parse(await r2.Content.ReadAsStringAsync());
+                        var mc = d2.RootElement.TryGetProperty("approximate_member_count", out var m)
+                            ? m.GetInt32() : 0;
+                        for (var i = 0; i < result.Count; i++)
+                            if (result[i].Id == id)
+                                result[i] = (id, result[i].Name, mc);
+                    }
+                }
+                catch { }
+            }
+
             result.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
+            entry.GuildCount = result.Count;
+            StateChanged?.Invoke(entry);
         }
+        catch { }
         return result;
     }
 
-    /// <summary>Makes the bot leave (remove itself from) a server.</summary>
     public async Task<(bool Ok, string Msg)> LeaveGuildAsync(BotEntry entry, ulong guildId)
     {
-        var client = entry.Client;
-        if (client?.ConnectionState != ConnectionState.Connected)
-            return (false, "Bot is not connected.");
         try
         {
-            var guild = client.GetGuild(guildId);
-            if (guild == null) return (false, "Server not found.");
-            await guild.LeaveAsync();
-            entry.GuildCount = client.Guilds.Count;
-            Log(entry, $"Left server: {guild.Name}", LogSeverity.Info);
-            StateChanged?.Invoke(entry);
-            return (true, $"Left {guild.Name}");
+            using var client = NewApiClient(entry.Token);
+            var resp = await client.DeleteAsync($"https://discord.com/api/v10/users/@me/guilds/{guildId}");
+            if (resp.IsSuccessStatusCode)
+            {
+                Log(entry, $"Left server (id {guildId})", LogSeverity.Info);
+                await RefreshGuildsAsync(entry);
+                return (true, "Bot left the server.");
+            }
+            var body = await resp.Content.ReadAsStringAsync();
+            return (false, $"Discord returned {(int)resp.StatusCode}: {body[..Math.Min(120, body.Length)]}");
         }
         catch (Exception ex)
         {
@@ -362,73 +494,19 @@ public sealed class BotManager
         }
     }
 
-    /// <summary>Applies the entry's configured presence to a live client.</summary>
-    public async Task ApplyPresenceAsync(BotEntry entry)
+    private async Task RefreshGuildsAsync(BotEntry entry)
     {
-        var client = entry.Client;
-        if (client?.ConnectionState != ConnectionState.Connected) return;
         try
         {
-            var status = entry.Status switch
-            {
-                "idle" => UserStatus.Idle,
-                "dnd" => UserStatus.DoNotDisturb,
-                "invisible" => UserStatus.Invisible,
-                _ => UserStatus.Online,
-            };
-            await client.SetStatusAsync(status);
-
-            var text = entry.ActivityText ?? "";
-            switch (entry.Activity)
-            {
-                case "watching":
-                    await client.SetGameAsync(text, type: ActivityType.Watching);
-                    break;
-                case "listening":
-                    await client.SetGameAsync(text, type: ActivityType.Listening);
-                    break;
-                case "competing":
-                    await client.SetGameAsync(text, type: ActivityType.Competing);
-                    break;
-                case "streaming":
-                    await client.SetGameAsync(text,
-                        string.IsNullOrWhiteSpace(entry.StreamUrl) ? null : entry.StreamUrl,
-                        ActivityType.Streaming);
-                    break;
-                case "custom":
-                    await client.SetCustomStatusAsync(text);
-                    break;
-                default:
-                    await client.SetGameAsync(text, type: ActivityType.Playing);
-                    break;
-            }
+            var guilds = await GetGuildsAsync(entry);
+            entry.GuildCount = guilds.Count;
+            StateChanged?.Invoke(entry);
         }
-        catch (Exception ex)
-        {
-            Log(entry, $"Presence update failed: {ex.Message}", LogSeverity.Warning);
-        }
-    }
-
-    private Task OnLog(BotEntry entry, LogMessage msg)
-    {
-        var text = string.IsNullOrWhiteSpace(msg.Message)
-            ? msg.Exception?.Message ?? ""
-            : msg.Message;
-        if (string.IsNullOrWhiteSpace(text) && msg.Exception == null) return Task.CompletedTask;
-        if (msg.Severity == LogSeverity.Debug) return Task.CompletedTask; // too noisy
-        Log(entry, $"[{msg.Source}] {text}", msg.Severity);
-        return Task.CompletedTask;
+        catch { }
     }
 
     public void Log(BotEntry entry, string text, LogSeverity severity = LogSeverity.Info)
     {
         LogLine?.Invoke(entry, text, severity);
     }
-
-    public void ClearLog(BotEntry entry)
-    {
-        LogCleared?.Invoke(entry);
-    }
-
-    public event Action<BotEntry>? LogCleared;
 }

