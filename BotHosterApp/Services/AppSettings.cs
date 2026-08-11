@@ -16,6 +16,7 @@ public sealed class AppSettings
     public bool LaunchOnStartup { get; set; }
     public bool KeepInTray { get; set; } = true;
     public string Theme { get; set; } = ThemeService.DefaultTheme;
+    public double WindowOpacity { get; set; } = 1.0;
 
     private const string StartupValueName = "CFG2BotHoster";
 

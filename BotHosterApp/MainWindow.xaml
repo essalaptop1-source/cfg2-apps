@@ -935,6 +935,23 @@
                                    FontSize="10" Foreground="{DynamicResource TextTertiaryBrush}" TextWrapping="Wrap" Margin="0,0,0,8"/>
                         <WrapPanel x:Name="ThemeList" Margin="0,0,0,4"/>
 
+                        <TextBlock Text="TRANSPARENCY" Style="{StaticResource SectionHeader}" Margin="0,14,0,8"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Slider x:Name="OpacitySlider" Minimum="50" Maximum="100" Value="100"
+                                    VerticalAlignment="Center"
+                                    ValueChanged="OpacitySlider_ValueChanged"
+                                    PreviewMouseLeftButtonUp="OpacitySlider_MouseUp"/>
+                            <TextBlock x:Name="OpacityValueText" Grid.Column="1" Text="100%" FontSize="11"
+                                       Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"
+                                       MinWidth="44" TextAlignment="Right" Margin="14,0,0,0"/>
+                        </Grid>
+                        <TextBlock Text="Make the window see-through so you can see your desktop and other apps behind it. Lower = more transparent."
+                                   FontSize="10" Foreground="{DynamicResource TextTertiaryBrush}" TextWrapping="Wrap" Margin="0,6,0,0"/>
+
                         <TextBlock Text="24/7 POWER" Style="{StaticResource SectionHeader}" Margin="0,14,0,8"/>
                         <TextBlock x:Name="LidStatusText" FontSize="10.5" Foreground="{DynamicResource TextTertiaryBrush}"
                                    TextWrapping="Wrap" Margin="0,0,0,8"/>

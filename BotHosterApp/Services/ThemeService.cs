@@ -14,7 +14,14 @@ namespace BotHosterApp.Services;
 public static class ThemeService
 {
     /// <summary>Theme names. Order matches the settings picker.</summary>
-    public static readonly string[] Themes = { "Cyan", "Violet", "Ember", "Mint", "Ocean" };
+    public static readonly string[] Themes = { "Cyan", "Violet", "Ember", "Mint", "Ocean", "Mono" };
+
+    /// <summary>Friendly picker labels (mostly same as the key).</summary>
+    public static string DisplayName(string name) => name switch
+    {
+        "Mono" => "Black & White",
+        _ => name,
+    };
 
     public const string DefaultTheme = "Cyan";
 

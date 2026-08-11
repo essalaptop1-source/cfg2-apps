@@ -47,9 +47,10 @@ public partial class MainWindow : Window
         InitializeComponent();
         _startToTray = Environment.GetCommandLineArgs().Contains("--tray");
 
-        // Apply the saved theme before the window first paints, and build the
-        // settings swatches so the picker matches what is applied.
-        ThemeService.Apply(AppSettings.Load().Theme);
+        // Load preferences before the window paints: the theme swap and the
+        // startup fade both need them (fade ends at the saved transparency).
+        _settings = AppSettings.Load();
+        ThemeService.Apply(_settings.Theme);
         BuildThemeSwatches();
         RootGrid.SizeChanged += (_, e) =>
         {
@@ -60,7 +61,8 @@ public partial class MainWindow : Window
         {
             Opacity = 0;
             BeginAnimation(OpacityProperty,
-                Anim(1, 280, new QuadraticEase { EasingMode = EasingMode.EaseOut }));
+                Anim(Math.Max(0.35, _settings.WindowOpacity), 280,
+                    new QuadraticEase { EasingMode = EasingMode.EaseOut }));
             ClampToWorkArea();
             SetupTray();
             if (_startToTray)
@@ -230,7 +232,6 @@ public partial class MainWindow : Window
         LicenseService.RefreshStatus();
         ApplyPremiumState();
 
-        _settings = AppSettings.Load();
         TelemetryService.Enabled = _settings.Telemetry;
 
         NotificationList.ItemsSource = ToastService.History;
@@ -1449,7 +1450,7 @@ public partial class MainWindow : Window
             });
             panel.Children.Add(new TextBlock
             {
-                Text = name,
+                Text = ThemeService.DisplayName(name),
                 FontSize = 12,
                 FontWeight = selected ? FontWeights.SemiBold : FontWeights.Normal,
                 Foreground = (Brush)FindResource(selected ? "TextBrush" : "TextSecondaryBrush"),
@@ -1486,6 +1487,23 @@ public partial class MainWindow : Window
         ToastService.Show("Theme applied", $"{name} theme is active.");
     }
 
+    private void OpacitySlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (OpacityValueText == null) return; // fired mid-InitializeComponent
+        var v = Math.Clamp(OpacitySlider.Value, 50, 100);
+        OpacityValueText.Text = $"{v:0}%";
+        // The startup fade holds the Opacity property via animation; clear it
+        // so a direct set applies (and stays applied after the fade would end).
+        BeginAnimation(OpacityProperty, null);
+        Opacity = v / 100.0;
+    }
+
+    private void OpacitySlider_MouseUp(object sender, MouseButtonEventArgs e)
+    {
+        _settings.WindowOpacity = OpacitySlider.Value / 100.0;
+        _settings.Save();
+    }
+
     private void Settings_Click(object sender, RoutedEventArgs e)
     {
         StartAllCheck.IsChecked = _settings.StartAllOnLaunch;
@@ -1494,6 +1512,7 @@ public partial class MainWindow : Window
         TelemetryCheck.IsChecked = _settings.Telemetry;
         StartupCheck.IsChecked = _settings.LaunchOnStartup;
         TrayCheck.IsChecked = _settings.KeepInTray;
+        OpacitySlider.Value = Math.Clamp(_settings.WindowOpacity * 100, 50, 100);
         DataPathText.Text = System.IO.Path.Combine(AppPaths.LocalDataDir, "bot_hoster_bots.json");
         LidStatusText.Text = ReadLidAction();
         SettingsOverlay.Visibility = Visibility.Visible;
@@ -1588,6 +1607,7 @@ public partial class MainWindow : Window
         _settings.Telemetry = TelemetryCheck.IsChecked == true;
         _settings.LaunchOnStartup = StartupCheck.IsChecked == true;
         _settings.KeepInTray = TrayCheck.IsChecked == true;
+        _settings.WindowOpacity = OpacitySlider.Value / 100.0;
         AppSettings.SetLaunchOnStartup(_settings.LaunchOnStartup);
         _settings.Save();
         TelemetryService.Enabled = _settings.Telemetry;

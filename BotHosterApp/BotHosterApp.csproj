@@ -10,7 +10,7 @@
     <AssemblyTitle>CFG2 Bot Hoster</AssemblyTitle>
     <AssemblyDescription>Host and manage multiple Discord bots from one app</AssemblyDescription>
     <Product>CFG2 Bot Hoster</Product>
-    <Version>1.3.1</Version>
+    <Version>1.3.2</Version>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <!-- Single-file WPF on Windows 10 crashes with DllNotFoundException in
          SetWindowLongPtrWndProc unless native libraries are force-extracted. -->
@@ -32,6 +32,7 @@
     <Resource Include="Themes\Colors.Violet.xaml" />
     <Resource Include="Themes\Colors.Ember.xaml" />
     <Resource Include="Themes\Colors.Mint.xaml" />
+    <Resource Include="Themes\Colors.Mono.xaml" />
     <Resource Include="Themes\Colors.Ocean.xaml" />
     <Resource Include="Themes\Icons.xaml" />
     <Resource Include="Themes\Styles.xaml" />
