@@ -9,9 +9,11 @@ namespace FPSBoosterApp.Services;
 /// <summary>
 /// Screen recording engine built on ffmpeg (ships next to the exe).
 ///
-/// Video: gdigrab (monitor region or specific window).
-/// Audio: system sound via the WASAPI loopback pipe (s16le 48k stereo on
-///        stdin) and/or the microphone via dshow.
+/// Capture:
+///   - gdigrab (monitor region or window) - always works
+///   - app-fed rawvideo (e.g. DXGI desktop duplication) when enabled
+/// Audio: system sound via the WASAPI loopback pipe and/or mic via dshow.
+/// Encode: hardware (h264_qsv/nvenc/amf) when available, libx264 fallback.
 /// Container: records to MPEG-TS first (crash-safe), then remuxes to a
 ///            fast-start MP4 on stop - so an interrupted recording is never lost.
 /// </summary>
@@ -43,6 +45,9 @@ public sealed class RecorderService : IDisposable
 
     public bool IsFfmpegAvailable => File.Exists(FfmpegPath);
 
+    /// <summary>Writes BGRA32 frames to ffmpeg's stdin when CaptureFrames is on.</summary>
+    public Stream? FrameInput { get; private set; }
+
     public sealed class Options
     {
         public int X, Y, Width, Height;      // monitor region
@@ -52,7 +57,13 @@ public sealed class RecorderService : IDisposable
         public int Fps = 30;
         public bool Watermark;
         public string OutputPath = "";       // final .mp4 path
-        public string Crf = "21";            // premium: 18, free: 22
+        public string Encoder = "auto";      // auto / h264_qsv / libx264 / ...
+        public int BitrateKbps = 8000;       // hw encoders
+        public int Crf = 20;                 // libx264
+        public bool CaptureFrames;           // app feeds rawvideo on stdin
+        public int CropX, CropY, CropW, CropH; // 0,0,0,0 = no crop
+        public int OutW, OutH;               // 0,0 = keep source size
+        public bool Fit = true;              // false = stretch/distort
     }
 
     public bool Start(Options o)
@@ -73,8 +84,8 @@ public sealed class RecorderService : IDisposable
                 CurrentFile = tsPath;
 
                 // Named pipe for system audio: the app writes PCM to it and
-                // ffmpeg reads it as a file - which keeps stdin free for the
-                // graceful 'q' quit command on stop.
+                // ffmpeg reads it as a file - keeps stdin free for the
+                // graceful 'q' quit (and rawvideo capture when used).
                 var pipeName = "cfg2audio_" + Environment.ProcessId + "_" + Guid.NewGuid().ToString("N")[..8];
                 _audioPipe = new NamedPipeServerStream(
                     pipeName, PipeDirection.Out, 1, PipeTransmissionMode.Byte,
@@ -108,8 +119,7 @@ public sealed class RecorderService : IDisposable
                 _cts = new CancellationTokenSource();
 
                 // System audio -> named pipe (s16le 48k stereo). The gate
-                // feeds silence if the loopback ever stalls, so ffmpeg never
-                // hangs waiting for the first audio frame.
+                // feeds silence if the loopback ever stalls.
                 if (o.SystemAudio)
                 {
                     _audioGate = new AudioGate(_audioPipe) { IsConnected = () => _audioPipe!.IsConnected };
@@ -119,12 +129,15 @@ public sealed class RecorderService : IDisposable
                     _audioThread.Start();
                 }
 
+                if (o.CaptureFrames)
+                    FrameInput = _ffmpeg.StandardInput.BaseStream;
+
                 // Progress + errors.
                 _ = Task.Run(() => ReadProgress(_ffmpeg, _cts.Token));
                 _ = Task.Run(() => ReadErrors(_ffmpeg, _cts.Token));
 
                 IsRecording = true;
-                Log?.Invoke($"recording started: {Path.GetFileName(tsPath)}");
+                Log?.Invoke($"recording started: {Path.GetFileName(tsPath)} (enc={o.Encoder})");
                 return true;
             }
             catch (Exception ex)
@@ -139,18 +152,27 @@ public sealed class RecorderService : IDisposable
     {
         var args = new List<string> { "-y", "-hide_banner", "-loglevel", "warning", "-nostats" };
 
-        // ---- video input (gdigrab) ----
-        args.AddRange(new[] { "-f", "gdigrab", "-framerate", o.Fps.ToString() });
-        if (!string.IsNullOrEmpty(o.WindowTitle))
+        // ---- video input ----
+        if (o.CaptureFrames)
         {
-            args.AddRange(new[] { "-i", "title=" + o.WindowTitle });
+            args.AddRange(new[]
+            {
+                "-f", "rawvideo", "-pix_fmt", "bgra",
+                "-video_size", $"{o.Width}x{o.Height}",
+                "-framerate", o.Fps.ToString(),
+                "-i", "pipe:0",
+            });
+        }
+        else if (!string.IsNullOrEmpty(o.WindowTitle))
+        {
+            args.AddRange(new[] { "-f", "gdigrab", "-framerate", o.Fps.ToString(), "-i", "title=" + o.WindowTitle });
         }
         else
         {
             args.AddRange(new[]
             {
-                "-offset_x", o.X.ToString(),
-                "-offset_y", o.Y.ToString(),
+                "-f", "gdigrab", "-framerate", o.Fps.ToString(),
+                "-offset_x", o.X.ToString(), "-offset_y", o.Y.ToString(),
                 "-video_size", $"{o.Width}x{o.Height}",
                 "-i", "desktop",
             });
@@ -169,19 +191,41 @@ public sealed class RecorderService : IDisposable
             audioTags.Add("mic");
         }
 
-        // ---- filters ----
-        var fc = new List<string>();
+        // ---- video filter chain: crop -> scale -> watermark -> format ----
+        var chain = new List<string>();
+        if (o.CropW > 0 && o.CropH > 0)
+        {
+            var cw = Math.Min(o.CropW, o.Width);
+            var ch = Math.Min(o.CropH, o.Height);
+            var cx = Math.Clamp(o.CropX, 0, Math.Max(0, o.Width - cw));
+            var cy = Math.Clamp(o.CropY, 0, Math.Max(0, o.Height - ch));
+            chain.Add($"crop={cw}:{ch}:{cx}:{cy}");
+        }
+        if (o.OutW > 0 && o.OutH > 0)
+        {
+            if (o.Fit)
+            {
+                chain.Add($"scale={o.OutW}:{o.OutH}:force_original_aspect_ratio=decrease:flags=lanczos");
+                chain.Add($"pad={o.OutW}:{o.OutH}:(ow-iw)/2:(oh-ih)/2:color=black");
+            }
+            else
+            {
+                chain.Add($"scale={o.OutW}:{o.OutH}:flags=lanczos");
+            }
+        }
         if (o.Watermark)
         {
-            fc.Add("[0:v]drawtext=fontfile='C\\:/Windows/Fonts/segoeui.ttf':" +
-                   "text='CFG2 Recorder':fontcolor=white@0.45:fontsize=22:" +
-                   "x=w-tw-24:y=h-th-24[vout]");
+            chain.Add("drawtext=fontfile='C\\:/Windows/Fonts/segoeui.ttf':" +
+                      "text='CFG2 Recorder':fontcolor=white@0.45:fontsize=22:" +
+                      "x=w-tw-24:y=h-th-24");
         }
-        else
-        {
-            fc.Add("[0:v]null[vout]");
-        }
+        chain.Add("format=" + (o.Encoder == "h264_qsv" ? "nv12" : "yuv420p"));
+        // Force constant frame rate: capture (gdigrab/DXGI) can deliver frames
+        // in bursts, which otherwise produces non-monotonic timestamps and
+        // stuttery playback. The fps filter evens the timeline out.
+        chain.Add($"fps={o.Fps}");
 
+        var fc = new List<string> { $"[0:v]{string.Join(",", chain)}[vout]" };
         var hasAudio = audioTags.Count > 0;
         if (audioTags.Count == 1)
         {
@@ -199,11 +243,32 @@ public sealed class RecorderService : IDisposable
         if (hasAudio) args.AddRange(new[] { "-map", "[aout]" });
 
         // ---- encode ----
-        args.AddRange(new[] { "-c:v", "libx264", "-preset", "veryfast", "-crf", o.Crf, "-pix_fmt", "yuv420p" });
+        AppendEncoder(args, o.Encoder, o.BitrateKbps, o.Crf);
         if (hasAudio) args.AddRange(new[] { "-c:a", "aac", "-b:a", "192k" });
         args.AddRange(new[] { "-f", "mpegts", "-flush_packets", "1", "-progress", "pipe:1", tsPath });
 
         return args;
+    }
+
+    private static void AppendEncoder(List<string> args, string encoder, int bitrateKbps, int crf)
+    {
+        switch (encoder)
+        {
+            case "h264_qsv":
+                // ICQ mode = constant quality (like CRF): adaptive bitrate, so
+                // static scenes stay small and game scenes keep their detail.
+                args.AddRange(new[] { "-c:v", "h264_qsv", "-preset", "veryfast", "-global_quality", crf.ToString() });
+                break;
+            case "h264_nvenc":
+                args.AddRange(new[] { "-c:v", "h264_nvenc", "-preset", "p5", "-rc", "vbr", "-cq", (crf + 5).ToString(), "-b:v", $"{bitrateKbps}k" });
+                break;
+            case "h264_amf":
+                args.AddRange(new[] { "-c:v", "h264_amf", "-usage", "transcoding", "-quality", "quality", "-b:v", $"{bitrateKbps}k" });
+                break;
+            default:
+                args.AddRange(new[] { "-c:v", "libx264", "-preset", "veryfast", "-crf", crf.ToString() });
+                break;
+        }
     }
 
     /// <summary>Stops the capture and remuxes the TS into the final MP4.</summary>
@@ -235,8 +300,6 @@ public sealed class RecorderService : IDisposable
         {
             if (p != null && !p.HasExited)
             {
-                // Graceful quit: 'q' on stdin flushes the muxer and writes a
-                // clean TS. Fall back to a hard kill if it doesn't exit fast.
                 try
                 {
                     p.StandardInput.Write('q');
@@ -251,6 +314,8 @@ public sealed class RecorderService : IDisposable
             }
         }
         catch { }
+
+        FrameInput = null;
 
         // Remux TS -> MP4 (fast, stream copy).
         var final = PendingFinalPath ?? "";
@@ -279,7 +344,7 @@ public sealed class RecorderService : IDisposable
         {
             var psi = new ProcessStartInfo
             {
-                FileName = FfmpegPath,
+                FileName = AppPaths.Combine("ffmpeg.exe"),
                 UseShellExecute = false,
                 RedirectStandardError = true,
                 CreateNoWindow = true,
@@ -347,7 +412,7 @@ public sealed class RecorderService : IDisposable
                 var line = reader.ReadLine();
                 if (line == null) break;
                 sb.AppendLine(line);
-                if (sb.Length > 4000) sb.Clear(); // keep recent tail
+                if (sb.Length > 4000) sb.Clear();
             }
             if (sb.Length > 0) Log?.Invoke(sb.ToString().Trim());
         }
@@ -365,10 +430,52 @@ public sealed class RecorderService : IDisposable
 }
 
 /// <summary>
+/// Detects the best available H.264 encoder by asking ffmpeg.
+/// </summary>
+public static class EncoderDetect
+{
+    public static readonly string[] Preference = { "h264_qsv", "h264_nvenc", "h264_amf", "libx264" };
+
+    /// <summary>Returns the first available encoder from Preference (cached).</summary>
+    public static string BestEncoder()
+    {
+        var cached = _cached;
+        if (cached != null) return cached;
+        try
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = AppPaths.Combine("ffmpeg.exe"),
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true,
+            };
+            psi.ArgumentList.Add("-hide_banner");
+            psi.ArgumentList.Add("-encoders");
+            using var p = Process.Start(psi);
+            if (p == null) return "libx264";
+            var outText = p.StandardOutput.ReadToEnd() + p.StandardError.ReadToEnd();
+            p.WaitForExit(5000);
+            foreach (var enc in Preference)
+                if (outText.Contains(enc))
+                {
+                    _cached = enc;
+                    return enc;
+                }
+        }
+        catch { }
+        return "libx264";
+    }
+
+    private static string? _cached;
+}
+
+/// <summary>
 /// A Stream that queues PCM chunks for a pump thread writing to ffmpeg's
-/// stdin. When the producer (WASAPI loopback) delivers nothing, the pump
-/// writes digital silence instead - so ffmpeg always gets a steady audio
-/// stream and never blocks waiting for frames.
+/// audio pipe. When the producer (WASAPI loopback) delivers nothing, the
+/// pump writes digital silence instead - so ffmpeg always gets a steady
+/// audio stream and never blocks waiting for frames.
 /// </summary>
 public sealed class AudioGate : Stream
 {
@@ -387,7 +494,7 @@ public sealed class AudioGate : Stream
         lock (_lock)
         {
             if (_done) return;
-            if (_q.Count > 16) _q.Clear(); // drop oldest under backlog
+            if (_q.Count > 16) _q.Clear();
             _q.Enqueue(copy);
         }
     }
@@ -421,7 +528,6 @@ public sealed class AudioGate : Stream
             }
             try
             {
-                // Wait until the pipe is connected before writing anything.
                 if (IsConnected != null && !IsConnected())
                 {
                     Thread.Sleep(25);

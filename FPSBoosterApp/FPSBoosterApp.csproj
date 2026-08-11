@@ -9,7 +9,7 @@
     <AssemblyTitle>CFG2 Recorder</AssemblyTitle>
     <AssemblyDescription>Record your screen, games and audio - like OBS but light</AssemblyDescription>
     <Product>CFG2 Recorder</Product>
-    <Version>1.0.1</Version>
+    <Version>1.1.0</Version>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <!-- Single-file WPF on Windows 10 needs the native-lib extraction fix. -->
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
