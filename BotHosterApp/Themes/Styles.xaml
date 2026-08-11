@@ -166,10 +166,10 @@
     </Style>
 
     <!-- ============ Ghost Icon Button ============ -->
+    <!-- Width/Height are intentionally unset so text buttons (Clear, Cancel,
+         Save log, Auto-scroll...) size to their content instead of clipping. -->
     <Style x:Key="GhostButton" TargetType="Button">
-        <Setter Property="Width" Value="32"/>
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-        <Setter Property="Height" Value="32"/>
         <Setter Property="Padding" Value="12,6"/>
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>

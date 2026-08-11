@@ -44,7 +44,7 @@
                     </ContextMenu>
                 </Grid.ContextMenu>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="50"/>
+                    <ColumnDefinition Width="56"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="30"/>
                 </Grid.ColumnDefinitions>
@@ -519,11 +519,14 @@
                                                 CornerRadius="11,0,0,11" IsHitTestVisible="False"/>
                                         <Grid>
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="62"/>
+                                            <ColumnDefinition Width="72"/>
                                             <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
-                                        <Border Width="70" Height="70" CornerRadius="35" Padding="2"
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <Border Grid.Row="0" Grid.RowSpan="2" Width="70" Height="70" CornerRadius="35" Padding="2"
                                                 BorderBrush="{StaticResource AccentBorderBrush}" BorderThickness="2"
                                                 Background="{StaticResource SurfaceAltBrush}" VerticalAlignment="Center">
                                             <Border.Effect>
@@ -545,7 +548,7 @@
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock x:Name="BotNameText" FontSize="22" FontWeight="Bold"
                                                            Foreground="{StaticResource TextBrush}"
-                                                           TextTrimming="CharacterEllipsis" MaxWidth="240"/>
+                                                           TextTrimming="CharacterEllipsis" MaxWidth="520"/>
                                                 <Border x:Name="BotStatePill" Background="{StaticResource SurfaceAltBrush}"
                                                         CornerRadius="10" Padding="9,3" Margin="10,0,0,0" VerticalAlignment="Center">
                                                     <StackPanel Orientation="Horizontal">
@@ -594,7 +597,7 @@
                                                 </Border>
                                             </WrapPanel>
                                         </StackPanel>
-                                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <StackPanel Grid.Column="1" Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="16,16,10,0">
                                             <Button x:Name="StartStopBtn" Style="{StaticResource ModernButton}" Height="36" Padding="16,0"
                                                     Click="StartStop_Click">
                                                 <StackPanel Orientation="Horizontal">
@@ -785,51 +788,6 @@
                                   VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                         <StackPanel Margin="26,18,26,22">
 
-                            <!-- Google sign-in -->
-                            <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"                                        BorderThickness="1" CornerRadius="16" Padding="18">
-                                <StackPanel>
-                                    <TextBlock Text="ACCOUNT" Style="{StaticResource SectionHeader}" Margin="0,0,0,10"/>
-                                    <StackPanel x:Name="GoogleSignedOutPanel">
-                                        <TextBlock Text="Sign in with Google to link your account, balance and limits to this PC."
-                                                   FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,0,0,12"/>
-                                        <Button x:Name="GoogleSignInBtn" Height="36" Padding="16,0" HorizontalAlignment="Left"
-                                                Click="GoogleSignIn_Click" Background="#FFFFFF" BorderThickness="0" Cursor="Hand">
-                                            <StackPanel Orientation="Horizontal">
-                                                <Border Width="18" Height="18">
-                                                    <TextBlock Text="G" FontSize="13" FontWeight="Bold" Foreground="#4285F4"
-                                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                </Border>
-                                                <TextBlock Text="Sign in with Google" FontSize="12" FontWeight="SemiBold"
-                                                           Foreground="#1A1A1A" Margin="9,0,0,0"/>
-                                            </StackPanel>
-                                        </Button>
-                                        <TextBlock x:Name="GoogleStatusText" FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}"
-                                                   TextWrapping="Wrap" Margin="0,9,0,0"/>
-                                    </StackPanel>
-                                    <Grid x:Name="GoogleSignedInPanel" Visibility="Collapsed">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="48"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <Border Width="40" Height="40" CornerRadius="20" Background="{StaticResource SurfaceAltBrush}"
-                                                VerticalAlignment="Center">
-                                            <Ellipse x:Name="GoogleAvatarEllipse" Width="40" Height="40"/>
-                                        </Border>
-                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="12,0,10,0">
-                                            <TextBlock x:Name="GoogleNameText" FontSize="13" FontWeight="SemiBold"
-                                                       Foreground="{StaticResource TextBrush}" TextTrimming="CharacterEllipsis"/>
-                                            <TextBlock x:Name="GoogleEmailText" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"
-                                                       TextTrimming="CharacterEllipsis" Margin="0,3,0,0"/>
-                                        </StackPanel>
-                                        <Button Grid.Column="2" x:Name="GoogleSignOutBtn" Style="{StaticResource GhostButton}" Height="30" Padding="12,0"
-                                                Click="GoogleSignOut_Click">
-                                            <TextBlock Text="Sign out" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"/>
-                                        </Button>
-                                    </Grid>
-                                </StackPanel>
-                            </Border>
-
                             <!-- Limits -->
                             <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"
                                     BorderThickness="1" CornerRadius="16" Margin="0,12,0,0" Padding="18">
@@ -982,14 +940,6 @@
                         <TextBlock Text="Closing the lid normally puts the laptop to sleep, which pauses your bots. This keeps them running on AC power (needs administrator)."
                                    FontSize="10" Foreground="{StaticResource TextTertiaryBrush}" TextWrapping="Wrap" Margin="0,0,0,14"/>
 
-                        <TextBlock Text="GOOGLE / DEVELOPER" Style="{StaticResource SectionHeader}" Margin="0,16,0,8"/>
-                        <CheckBox x:Name="RequireGoogleCheck" FontSize="12" Margin="0,0,0,8">
-                            <TextBlock Text="Require Google sign-in to use the app" TextWrapping="Wrap"
-                                       Foreground="{StaticResource TextSecondaryBrush}"/>
-                        </CheckBox>
-                        <TextBlock Text="Google sign-in is compiled into the app - users just click the button, nothing to set up. The developer adds the free OAuth Client ID once in GoogleAuthService.cs (console.cloud.google.com/apis/credentials, redirect http://localhost:52621/)."
-                                   FontSize="10" Foreground="{StaticResource TextTertiaryBrush}" TextWrapping="Wrap" Margin="0,0,0,0"/>
-
                         <TextBlock Text="BOTS RUN AS PYTHON PROCESSES" Style="{StaticResource SectionHeader}" Margin="0,16,0,8"/>
                         <TextBlock Text="Each bot is a .py file that the app runs with Python. Its commands, events and presence are all inside that file."
                                    FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}" TextWrapping="Wrap" Margin="0,0,0,0"/>
@@ -1066,11 +1016,17 @@
                         </StackPanel>
                         <TextBlock Text="Enter the admin code to unlock server management."
                                    FontSize="11" Foreground="{StaticResource TextTertiaryBrush}" TextWrapping="Wrap" Margin="0,6,0,12"/>
-                        <PasswordBox x:Name="AdminCodeBox" Height="34"
-                                     Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}"
-                                     BorderThickness="1" Foreground="{StaticResource TextBrush}" CaretBrush="{StaticResource TextBrush}"
-                                     FontFamily="{StaticResource MonoFont}" FontSize="12" Padding="8,0"
-                                     KeyDown="AdminCodeBox_KeyDown"/>
+                        <Grid Height="34">
+                            <PasswordBox x:Name="AdminCodeBox"
+                                         Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}"
+                                         BorderThickness="1" Foreground="{StaticResource TextBrush}" CaretBrush="{StaticResource TextBrush}"
+                                         FontFamily="{StaticResource MonoFont}" FontSize="12" Padding="8,0"
+                                         VerticalContentAlignment="Center"
+                                         KeyDown="AdminCodeBox_KeyDown" PasswordChanged="AdminCodeBox_PasswordChanged"/>
+                            <TextBlock x:Name="AdminCodePlaceholder" Text="Enter admin code…" FontSize="12"
+                                       Foreground="{StaticResource TextTertiaryBrush}" Margin="10,0,0,0"
+                                       VerticalAlignment="Center" IsHitTestVisible="False"/>
+                        </Grid>
                         <TextBlock x:Name="AdminCodeStatus" FontSize="10.5" Foreground="{StaticResource DangerBrush}"
                                    TextWrapping="Wrap" Margin="0,7,0,0"/>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
@@ -1579,39 +1535,6 @@
                 </Border>
             </Grid>
 
-            <!-- ======================== Google sign-in gate (requires login) ======================== -->
-            <Grid x:Name="GoogleGateOverlay" Grid.RowSpan="2" Visibility="Collapsed" Background="#E6000000">
-                <Border Width="420" VerticalAlignment="Center" HorizontalAlignment="Center"
-                        Background="{StaticResource BgElevatedBrush}" BorderBrush="{StaticResource BorderStrongBrush}"
-                        BorderThickness="1" CornerRadius="16" Padding="24">
-                    <StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <Border Width="26" Height="26" CornerRadius="6" Background="{StaticResource SurfaceAltBrush}">
-                                <Image x:Name="GateLogo" Stretch="Uniform" Width="20" Height="20"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center"
-                                       RenderOptions.BitmapScalingMode="HighQuality"/>
-                            </Border>
-                            <TextBlock Text="Welcome" FontSize="16" FontWeight="Bold"
-                                       Foreground="{StaticResource TextBrush}" Margin="10,0,0,0" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <TextBlock Text="Sign in with Google to use CFG2 Bot Hoster."
-                                   FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,8,0,16"/>
-                        <Button x:Name="GateSignInBtn" Height="36" Padding="16,0" HorizontalAlignment="Left"
-                                Click="GoogleSignIn_Click" Background="#FFFFFF" BorderThickness="0" Cursor="Hand">
-                            <StackPanel Orientation="Horizontal">
-                                <Border Width="18" Height="18">
-                                    <TextBlock Text="G" FontSize="13" FontWeight="Bold" Foreground="#4285F4"
-                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                                <TextBlock Text="Sign in with Google" FontSize="12" FontWeight="SemiBold"
-                                           Foreground="#1A1A1A" Margin="9,0,0,0"/>
-                            </StackPanel>
-                        </Button>
-                        <TextBlock x:Name="GateStatusText" FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}"
-                                   TextWrapping="Wrap" Margin="0,9,0,0"/>
-                    </StackPanel>
-                </Border>
-            </Grid>
         </Grid>
     </Border>
 </Window>

@@ -15,7 +15,6 @@ public sealed class AppSettings
     public bool Telemetry { get; set; } = true;
     public bool LaunchOnStartup { get; set; }
     public bool KeepInTray { get; set; } = true;
-    public bool RequireGoogleLogin { get; set; }
 
     private const string StartupValueName = "CFG2BotHoster";
 

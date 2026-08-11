@@ -228,7 +228,6 @@ public partial class MainWindow : Window
         _settings = AppSettings.Load();
         TelemetryService.Enabled = _settings.Telemetry;
 
-        GoogleAuthService.LoadSession();
         NotificationList.ItemsSource = ToastService.History;
 
         await _manager.LoadAsync();
@@ -261,21 +260,6 @@ public partial class MainWindow : Window
         if (!_settings.LaunchOnStartup)
             AskStartupOverlay.Visibility = Visibility.Visible;
 
-        // Google login gate (only when the developer enabled it AND it's configured).
-        if (_settings.RequireGoogleLogin && !GoogleAuthService.IsSignedIn)
-        {
-            if (GoogleAuthService.IsConfigured)
-            {
-                GateLogo.Source = App.TryLoadLogo();
-                GoogleGateOverlay.Visibility = Visibility.Visible;
-            }
-            else
-            {
-                ToastService.Show("Google sign-in not configured",
-                    "Require Google login is on but no Client ID is compiled in yet - see GoogleAuthService.cs.",
-                    isError: true);
-            }
-        }
     }
 
     // ================================================================== main tabs / account
@@ -310,21 +294,6 @@ public partial class MainWindow : Window
     private void RefreshAccountView()
     {
         var premium = LicenseService.IsPremiumActive;
-        var g = GoogleAuthService.Current;
-
-        // Sign-in card
-        GoogleSignedOutPanel.Visibility = g == null ? Visibility.Visible : Visibility.Collapsed;
-        GoogleSignedInPanel.Visibility = g == null ? Visibility.Collapsed : Visibility.Visible;
-        if (g != null)
-        {
-            GoogleNameText.Text = string.IsNullOrWhiteSpace(g.Name) ? "Google user" : g.Name;
-            GoogleEmailText.Text = string.IsNullOrWhiteSpace(g.Email) ? "Signed in via Google" : g.Email;
-            GoogleAvatarEllipse.Fill = string.IsNullOrWhiteSpace(g.Picture)
-                ? null
-                : new ImageBrush(new BitmapImage(new Uri(g.Picture))) { Stretch = Stretch.UniformToFill };
-        }
-        if (GoogleGateOverlay.Visibility == Visibility.Visible && GoogleAuthService.IsSignedIn)
-            GoogleGateOverlay.Visibility = Visibility.Collapsed;
 
         // Limits
         LimitsStatusText.Text = premium
@@ -354,41 +323,6 @@ public partial class MainWindow : Window
 
         // Notifications
         NotificationsEmptyText.Visibility = ToastService.History.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-    }
-
-    private async void GoogleSignIn_Click(object sender, RoutedEventArgs e)
-    {
-        if (!GoogleAuthService.IsConfigured)
-        {
-            var notice = "Google sign-in needs a one-time setup by the developer: create a free OAuth Client ID at console.cloud.google.com/apis/credentials (type: Desktop app, redirect http://localhost:52621/) and paste it into GoogleAuthService.cs. It's compiled in, so end users never configure anything.";
-            if (GoogleStatusText != null)
-            {
-                GoogleStatusText.Text = notice;
-                GoogleStatusText.Foreground = (Brush)FindResource("WarnBrush");
-            }
-            if (GateStatusText != null) GateStatusText.Text = notice;
-            return;
-        }
-        GoogleSignInBtn.IsEnabled = false;
-        GateSignInBtn.IsEnabled = false;
-        GoogleStatusText.Text = "Opening Google…";
-        var (ok, msg, profile) = await GoogleAuthService.SignInAsync();
-        GoogleSignInBtn.IsEnabled = true;
-        GateSignInBtn.IsEnabled = true;
-        GoogleStatusText.Text = msg;
-        GoogleStatusText.Foreground = (Brush)FindResource(ok ? "OnlineBrush" : "DangerBrush");
-        GateStatusText.Text = msg;
-        if (ok && profile != null)
-        {
-            ToastService.Show("Signed in", $"Welcome, {profile.Name}!");
-            RefreshAccountView();
-        }
-    }
-
-    private void GoogleSignOut_Click(object sender, RoutedEventArgs e)
-    {
-        GoogleAuthService.SignOut();
-        RefreshAccountView();
     }
 
     private void AskStartupYes_Click(object sender, RoutedEventArgs e)
@@ -1485,7 +1419,6 @@ public partial class MainWindow : Window
         TelemetryCheck.IsChecked = _settings.Telemetry;
         StartupCheck.IsChecked = _settings.LaunchOnStartup;
         TrayCheck.IsChecked = _settings.KeepInTray;
-        RequireGoogleCheck.IsChecked = _settings.RequireGoogleLogin;
         DataPathText.Text = System.IO.Path.Combine(AppPaths.LocalDataDir, "bot_hoster_bots.json");
         LidStatusText.Text = ReadLidAction();
         SettingsOverlay.Visibility = Visibility.Visible;
@@ -1580,7 +1513,6 @@ public partial class MainWindow : Window
         _settings.Telemetry = TelemetryCheck.IsChecked == true;
         _settings.LaunchOnStartup = StartupCheck.IsChecked == true;
         _settings.KeepInTray = TrayCheck.IsChecked == true;
-        _settings.RequireGoogleLogin = RequireGoogleCheck.IsChecked == true;
         AppSettings.SetLaunchOnStartup(_settings.LaunchOnStartup);
         _settings.Save();
         TelemetryService.Enabled = _settings.Telemetry;
@@ -1672,6 +1604,13 @@ public partial class MainWindow : Window
     private void AdminCodeBox_KeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key == Key.Enter) AdminCodeUnlock_Click(sender, e);
+    }
+
+    private void AdminCodeBox_PasswordChanged(object sender, RoutedEventArgs e)
+    {
+        if (AdminCodePlaceholder != null)
+            AdminCodePlaceholder.Visibility = string.IsNullOrEmpty(AdminCodeBox.Password)
+                ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void AdminCodeCancel_Click(object sender, RoutedEventArgs e) =>
