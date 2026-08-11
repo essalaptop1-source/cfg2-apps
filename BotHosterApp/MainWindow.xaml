@@ -145,13 +145,54 @@
             <!-- ======================== Body ======================== -->
             <Grid Grid.Row="1">
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="56"/>
                     <ColumnDefinition Width="292"/>
                     <ColumnDefinition Width="1"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- ============ Sidebar ============ -->
+                <!-- ============ Icon rail (activity bar) ============ -->
                 <Grid Grid.Column="0" Background="{StaticResource SidebarBgBrush}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Border HorizontalAlignment="Right" VerticalAlignment="Stretch" Width="1"
+                            Background="{StaticResource PanelDividerBrush}" IsHitTestVisible="False"/>
+                    <StackPanel HorizontalAlignment="Center" Margin="0,14,0,0">
+                        <Border Width="36" Height="36" CornerRadius="11" Background="{StaticResource AccentGradientBrush}">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="12" ShadowDepth="0" Opacity="0.5" Color="#8A22D3EE"/>
+                            </Border.Effect>
+                            <Image x:Name="RailLogo" Stretch="Uniform" Width="24" Height="24"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   RenderOptions.BitmapScalingMode="HighQuality"/>
+                        </Border>
+                    </StackPanel>
+                    <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,18,0,0">
+                        <Button x:Name="RailBotsBtn" Style="{StaticResource RailIconActiveButton}" Tag="bots"
+                                Click="MainTab_Click" ToolTip="Bots" AutomationProperties.Name="Bots">
+                            <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconBot}"
+                                  Width="17" Height="17" Stroke="{StaticResource AccentTextBrush}"/>
+                        </Button>
+                        <Button x:Name="RailAccountBtn" Style="{StaticResource RailIconButton}" Tag="account"
+                                Click="MainTab_Click" ToolTip="Account" AutomationProperties.Name="Account" Margin="0,8,0,0">
+                            <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconUser}"
+                                  Width="17" Height="17" Stroke="{StaticResource TextTertiaryBrush}"/>
+                        </Button>
+                    </StackPanel>
+                    <StackPanel Grid.Row="2" HorizontalAlignment="Center" Margin="0,0,0,14">
+                        <Button Style="{StaticResource RailIconButton}" Click="AddBotToggle_Click" ToolTip="Add bot"
+                                AutomationProperties.Name="Add bot">
+                            <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconPlus}"
+                                  Width="16" Height="16" Stroke="{StaticResource AccentTextBrush}"/>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+
+                <!-- ============ Sidebar ============ -->
+                <Grid Grid.Column="1" Background="{StaticResource SidebarBgBrush}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
@@ -381,54 +422,34 @@
                     </StackPanel>
                 </Grid>
 
-                <Border Grid.Column="1" Background="{StaticResource PanelDividerBrush}"/>
+                <Border Grid.Column="2" Background="{StaticResource PanelDividerBrush}"/>
 
                 <!-- ============ Main panel ============ -->
-                <Grid Grid.Column="2" Background="{StaticResource WindowBgBrush}">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-
-                    <!-- Main tabs (segmented control) -->
-                    <Grid Grid.Row="0" Margin="26,16,26,0">
-                        <Border Background="{StaticResource BgElevatedBrush}" BorderBrush="{StaticResource BorderBrush}"
-                                BorderThickness="1" CornerRadius="11" Padding="4" HorizontalAlignment="Left">
-                            <StackPanel Orientation="Horizontal">
-                                <Button x:Name="TabBotsBtn" Style="{StaticResource ModernButton}" Height="30" Padding="16,0"
-                                        Click="MainTab_Click" Tag="bots">
-                                    <StackPanel Orientation="Horizontal">
-                                        <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconBot}" Width="11" Height="11"
-                                              Stroke="{StaticResource OnAccentBrush}" VerticalAlignment="Center"/>
-                                        <TextBlock Text="Bots" FontSize="11.5" FontWeight="SemiBold" Margin="6,0,0,0"
-                                                   Foreground="{StaticResource OnAccentBrush}"/>
-                                    </StackPanel>
-                                </Button>
-                                <Button x:Name="TabAccountBtn" Style="{StaticResource GhostButton}" Height="30" Padding="16,0" Width="Auto" Margin="4,0,0,0"
-                                        Click="MainTab_Click" Tag="account">
-                                    <StackPanel Orientation="Horizontal">
-                                        <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconUser}" Width="11" Height="11"
-                                              Stroke="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"/>
-                                        <TextBlock Text="Account" FontSize="11.5" FontWeight="SemiBold" Margin="6,0,0,0"
-                                                   Foreground="{StaticResource TextBrush}"/>
-                                    </StackPanel>
-                                </Button>
-                            </StackPanel>
+                <Grid Grid.Column="3" Background="{StaticResource WindowBgBrush}">
+                    <Grid>
+                    <!-- Empty state: welcome dashboard -->
+                    <StackPanel x:Name="EmptyState" VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="430">
+                        <Border Width="96" Height="96" CornerRadius="48" Background="{StaticResource AccentGradientBrush}">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="26" ShadowDepth="0" Opacity="0.55" Color="#8A22D3EE"/>
+                            </Border.Effect>
+                            <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconBot}" Width="38" Height="38"
+                                  Stroke="{StaticResource OnAccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
-                    </Grid>
-
-                    <Grid Grid.Row="1">
-                    <!-- Empty state -->
-                    <StackPanel x:Name="EmptyState" VerticalAlignment="Center" HorizontalAlignment="Center">
-                        <Border Width="84" Height="84" CornerRadius="42" Background="{StaticResource SurfaceBrush}">
-                            <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconBot}" Width="36" Height="36"
-                                  Stroke="{StaticResource TextTertiaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <TextBlock Text="No bot selected" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center"
-                                   Foreground="{StaticResource TextBrush}" Margin="0,18,0,0"/>
+                        <TextBlock Text="No bot selected" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"
+                                   Foreground="{StaticResource TextBrush}" Margin="0,22,0,0"/>
                         <TextBlock Text="Pick a bot from the list, or add one with its token"
-                                   FontSize="12" HorizontalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}"
-                                   Margin="0,6,0,0"/>
+                                   FontSize="12.5" HorizontalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}"
+                                   TextWrapping="Wrap" TextAlignment="Center" Margin="0,8,0,0"/>
+                        <Button Style="{StaticResource ModernButton}" Height="38" Padding="22,0" Margin="0,24,0,0"
+                                HorizontalAlignment="Center" Click="AddBotToggle_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconPlus}" Width="13" Height="13"
+                                      Stroke="{StaticResource OnAccentBrush}" VerticalAlignment="Center"/>
+                                <TextBlock Text="Add bot" FontSize="12.5" FontWeight="SemiBold" Margin="7,0,0,0"
+                                           Foreground="{StaticResource OnAccentBrush}"/>
+                            </StackPanel>
+                        </Button>
                     </StackPanel>
 
                     <!-- Bot view -->

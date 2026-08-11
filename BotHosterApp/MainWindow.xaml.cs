@@ -201,7 +201,11 @@ public partial class MainWindow : Window
     {
         VersionText.Text = "v" + GetVersion();
         var logo = App.TryLoadLogo();
-        if (logo != null) TitleLogo.Source = logo;
+        if (logo != null)
+        {
+            TitleLogo.Source = logo;
+            RailLogo.Source = logo;
+        }
         LicenseService.RefreshStatus();
         ApplyPremiumState();
 
@@ -264,8 +268,8 @@ public partial class MainWindow : Window
     {
         if (sender is not Button { Tag: string tab }) return;
         var isBots = tab == "bots";
-        TabBotsBtn.Style = (Style)FindResource(isBots ? "ModernButton" : "GhostButton");
-        TabAccountBtn.Style = (Style)FindResource(isBots ? "GhostButton" : "ModernButton");
+        RailBotsBtn.Style = (Style)FindResource(isBots ? "RailIconActiveButton" : "RailIconButton");
+        RailAccountBtn.Style = (Style)FindResource(isBots ? "RailIconButton" : "RailIconActiveButton");
         AccountPanel.Visibility = isBots ? Visibility.Collapsed : Visibility.Visible;
         if (isBots)
         {
