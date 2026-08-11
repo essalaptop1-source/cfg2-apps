@@ -6,15 +6,14 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
-    <AssemblyTitle>FPS Booster</AssemblyTitle>
-    <AssemblyDescription>Apply Windows tweaks to boost gaming performance</AssemblyDescription>
-    <Product>FPS Booster</Product>
-    <Version>1.4.0</Version>
+    <AssemblyTitle>CFG2 Recorder</AssemblyTitle>
+    <AssemblyDescription>Record your screen, games and audio - like OBS but light</AssemblyDescription>
+    <Product>CFG2 Recorder</Product>
+    <Version>1.0.1</Version>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <!-- Single-file WPF on Windows 10 needs the native-lib extraction fix. -->
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
-    <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
 
   <ItemGroup>

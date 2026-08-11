@@ -29,7 +29,7 @@ public partial class App : Application
             LogCrash("MainWindow", ex);
             MessageBox.Show(
                 "The main window could not be created:\n\n" + ex.Message,
-                "FPS Booster - startup error",
+                "CFG2 Recorder - startup error",
                 MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown();
         }
@@ -44,7 +44,7 @@ public partial class App : Application
                 "Kicia", "debug_crash.log");
             Directory.CreateDirectory(Path.GetDirectoryName(log)!);
             File.AppendAllText(log,
-                $"[{DateTime.Now:HH:mm:ss.fff}] FPSBooster:{source}\n{ex}\n\n");
+                $"[{DateTime.Now:HH:mm:ss.fff}] Recorder:{source}\n{ex}\n\n");
         }
         catch
         {

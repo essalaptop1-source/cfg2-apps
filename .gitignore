@@ -23,3 +23,7 @@ Cfg2 apps/
 # License keys - never commit these
 keys.txt
 *.pdb
+
+# ffmpeg (downloaded by publish_update.ps1, ~100MB)
+ffmpeg.exe
+ffmpeg_cache/

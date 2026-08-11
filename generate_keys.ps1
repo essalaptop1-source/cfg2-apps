@@ -1,8 +1,8 @@
 # ============================================================
-#  generate_keys.ps1 - create premium license keys for FPS Booster
+#  generate_keys.ps1 - create premium license keys for the CFG2 apps
 #
 #  Usage:
-#    powershell -ExecutionPolicy Bypass -File generate_keys.ps1 [-Count 5] [-KeysFile ..\Cfg2 apps\FPS booster\keys.txt]
+#    powershell -ExecutionPolicy Bypass -File generate_keys.ps1 [-Count 5] [-KeysFile ..\Cfg2 apps\CFG2 Recorder\keys.txt]
 #
 #  Keys are appended to keys.txt next to the exe. A key activates when a user
 #  enters it in the app; the app then writes the device HWID + IP next to the
@@ -12,7 +12,7 @@
 # ============================================================
 param(
     [int]$Count = 5,
-    [string]$KeysFile = "..\Cfg2 apps\FPS booster\keys.txt"
+    [string]$KeysFile = "..\Cfg2 apps\CFG2 Recorder\keys.txt"
 )
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path

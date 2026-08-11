@@ -1,692 +1,669 @@
 using System.Diagnostics;
+using System.IO;
 using System.Runtime.InteropServices;
+using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
-using System.Windows.Media.Animation;
-using System.Windows.Shapes;
 using System.Windows.Threading;
+using Shapes = System.Windows.Shapes;
 using FPSBoosterApp.Services;
+using Microsoft.Win32;
 
 namespace FPSBoosterApp;
 
 public partial class MainWindow : Window
 {
-    private sealed class TweakRow
+    private readonly RecorderService _recorder = new();
+    private readonly DispatcherTimer _uiTimer = new() { Interval = TimeSpan.FromMilliseconds(500) };
+    private readonly List<MonitorInfo> _monitors = new();
+    private DateTime _recStarted;
+    private TimeSpan _elapsed;
+    private bool _premium;
+    private HwndSource? _hwndSource;
+    private const int HotkeyId = 0x4346; // "CF"
+    private const uint MOD_NOREPEAT = 0x4000;
+
+    private sealed class MonitorInfo
     {
-        public required CheckBox Check { get; init; }
-        public required Ellipse Dot { get; init; }
-        public required TextBlock StateText { get; init; }
-        public FrameworkElement? Lock { get; set; }
+        public required string Name;
+        public required int X, Y, Width, Height;
+        public bool Primary;
+        public override string ToString() => $"{Name}  ·  {Width}×{Height}" + (Primary ? "  ·  primary" : "");
     }
 
-    private readonly Dictionary<TweakId, TweakRow> _rows = new();
-    private readonly List<Path> _featureLocks = new();
-    private bool _busy;
+    private sealed class WindowEntry
+    {
+        public required IntPtr Hwnd;
+        public required string Title;
+        public required int X, Y, Width, Height;
+        public override string ToString() => Title;
+    }
 
-    // ---- live system stats ----
-    private readonly DispatcherTimer _statsTimer;
-    private long _lastIdle, _lastKernel, _lastUser;
-    private ulong _totalRam;
-    private int _tick;
-    private Process? _monitoredGame;
-    private DateTime _lastGameSample;
-    private TimeSpan _lastGameCpu;
-    private bool _refreshingGames;
+    private sealed class Settings
+    {
+        public string Folder { get; set; } = "";
+        public bool SystemAudio { get; set; } = true;
+        public bool Mic { get; set; }
+        public string MicDevice { get; set; } = "";
+        public int Fps { get; set; } = 30;
+        public string SourceMode { get; set; } = "monitor";
+        public int MonitorIndex { get; set; }
+    }
 
     public MainWindow()
     {
         InitializeComponent();
-        BuildTweakList();
-        BuildPremiumFeatures();
-        LicenseService.RefreshStatus();
-        UpdateTabs();
-        RefreshPremiumUi();
-        RefreshAll("Ready");
-
-        // Report this launch (device / IP / HWID / premium status) - never blocks.
-        _ = Task.Run(TelemetryService.ReportLaunchAsync);
-
-        // Real FPS counter from the graphics driver (needs admin - we are elevated).
-        FrameCounterService.Start();
-
-        InitStats();
-        _statsTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
-        _statsTimer.Tick += StatsTimer_Tick;
-        _statsTimer.Start();
-        RefreshGamesList();
-
-        var isAdmin = BoostService.IsAdmin();
-        if (isAdmin)
+        Loaded += (_, _) => InitAsync();
+        _recorder.Log += msg => WriteLog(msg);
+        Closed += (_, _) =>
         {
-            AdminBadge.Visibility = Visibility.Visible;
-            AdminButton.Visibility = Visibility.Collapsed;
-            AdminHint.Visibility = Visibility.Collapsed;
-            AdminStatusText.Text = "Running as administrator";
-        }
-        else
-        {
-            AdminButton.Visibility = Visibility.Visible;
-            AdminHint.Visibility = Visibility.Visible;
-            AdminStatusText.Text = "Not elevated - some tweaks need admin";
-        }
-
-        // Modern entrance: fade the window in once it's shown.
-        Opacity = 0;
-        Loaded += (_, _) =>
-        {
-            var fade = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(280))
-            {
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
-            };
-            BeginAnimation(UIElement.OpacityProperty, fade);
+            UnregisterHotKey();
+            _recorder.Dispose();
+            SaveSettings();
         };
+        _uiTimer.Tick += UiTimer_Tick;
+        _ = TelemetryService.ReportLaunchAsync();
     }
 
-    // ================================================================ Tabs
-
-    private void Tab_Click(object sender, RoutedEventArgs e)
+    private async void InitAsync()
     {
-        if (sender is Button { Tag: string tag })
+        var cfg = LoadSettings();
+
+        // Output folder
+        if (string.IsNullOrWhiteSpace(cfg.Folder))
         {
-            var premium = tag == "premium";
-            PanelBoost.Visibility = premium ? Visibility.Collapsed : Visibility.Visible;
-            PanelPremium.Visibility = premium ? Visibility.Visible : Visibility.Collapsed;
-            UpdateTabs();
+            var videos = Environment.GetFolderPath(Environment.SpecialFolder.MyVideos);
+            cfg.Folder = Path.Combine(videos, "CFG2 Recorder");
         }
-    }
+        FolderBox.Text = cfg.Folder;
+        Directory.CreateDirectory(cfg.Folder);
+        UpdateFileNamePreview();
 
-    private void UpdateTabs()
-    {
-        var premium = PanelPremium.Visibility == Visibility.Visible;
-        StyleTab(TabBoost, !premium);
-        StyleTab(TabPremium, premium);
-    }
+        SystemAudioCheck.IsChecked = cfg.SystemAudio;
+        MicCheck.IsChecked = cfg.Mic;
+        SelectFps(cfg.Fps == 60 ? 1 : 0);
 
-    private void StyleTab(Button b, bool active)
-    {
-        b.Background = active ? (Brush)FindResource("AccentGradientBrush") : (Brush)FindResource("SurfaceAltBrush");
-        b.Foreground = active ? (Brush)FindResource("OnAccentBrush") : (Brush)FindResource("TextSecondaryBrush");
-        b.BorderBrush = active ? (Brush)FindResource("AccentBorderBrush") : (Brush)FindResource("BorderBrush");
-    }
+        // Premium
+        LicenseService.RefreshStatus();
+        ApplyPremiumState();
+        RefreshFpsLock();
 
-    // ================================================================ Tweak list
+        // Sources
+        EnumMonitors();
+        if (MonitorCombo.Items.Count > 0)
+            MonitorCombo.SelectedIndex = Math.Clamp(cfg.MonitorIndex, 0, MonitorCombo.Items.Count - 1);
+        EnumWindows();
+        RefreshMicList();
 
-    private void BuildTweakList()
-    {
-        TweakList.Children.Clear();
-        foreach (var tweak in BoostService.Tweaks)
+        if (cfg.SourceMode == "window")
         {
-            var check = new CheckBox
-            {
-                IsChecked = tweak.Recommended,
-                IsEnabled = !tweak.IsPremium, // premium rows unlock after activation
-                VerticalAlignment = VerticalAlignment.Top,
-                Margin = new Thickness(0, 2, 10, 0),
-                ToolTip = tweak.NeedsAdmin ? "Needs administrator rights" : null,
-            };
-
-            var titlePanel = new StackPanel { Orientation = Orientation.Horizontal };
-            titlePanel.Children.Add(new TextBlock
-            {
-                Text = tweak.Title,
-                FontSize = 12.5,
-                FontWeight = FontWeights.SemiBold,
-                Foreground = (Brush)FindResource("TextBrush"),
-            });
-            if (tweak.NeedsAdmin)
-            {
-                titlePanel.Children.Add(new Border
-                {
-                    Background = (Brush)FindResource("SurfaceAltBrush"),
-                    CornerRadius = new CornerRadius(4),
-                    Padding = new Thickness(5, 1, 5, 1),
-                    Margin = new Thickness(8, 0, 0, 0),
-                    Child = new TextBlock
-                    {
-                        Text = "ADMIN",
-                        FontSize = 8.5,
-                        FontWeight = FontWeights.Bold,
-                        Foreground = (Brush)FindResource("TextTertiaryBrush"),
-                    },
-                });
-            }
-            if (tweak.IsPremium)
-            {
-                titlePanel.Children.Add(new Border
-                {
-                    Background = (Brush)FindResource("AccentGradientBrush"),
-                    CornerRadius = new CornerRadius(4),
-                    Padding = new Thickness(5, 1, 5, 1),
-                    Margin = new Thickness(8, 0, 0, 0),
-                    Child = new TextBlock
-                    {
-                        Text = "PREMIUM",
-                        FontSize = 8.5,
-                        FontWeight = FontWeights.Bold,
-                        Foreground = (Brush)FindResource("OnAccentBrush"),
-                    },
-                });
-            }
-
-            var textPanel = new StackPanel();
-            textPanel.Children.Add(titlePanel);
-            textPanel.Children.Add(new TextBlock
-            {
-                Text = tweak.Description,
-                FontSize = 11,
-                Foreground = (Brush)FindResource("TextTertiaryBrush"),
-                TextWrapping = TextWrapping.Wrap,
-                Margin = new Thickness(0, 3, 0, 0),
-            });
-
-            var dot = new Ellipse { Width = 8, Height = 8, Margin = new Thickness(0, 0, 6, 0) };
-            var stateText = new TextBlock { FontSize = 10.5, Foreground = (Brush)FindResource("TextTertiaryBrush") };
-            var statePanel = new StackPanel
-            {
-                Orientation = Orientation.Horizontal,
-                VerticalAlignment = VerticalAlignment.Top,
-                Margin = new Thickness(8, 4, 0, 0),
-            };
-            statePanel.Children.Add(dot);
-            statePanel.Children.Add(stateText);
-
-            var row = new TweakRow { Check = check, Dot = dot, StateText = stateText };
-            if (tweak.IsPremium)
-            {
-                var lockIcon = new Path
-                {
-                    Style = (Style)FindResource("StrokeIcon"),
-                    Data = (Geometry)FindResource("IconShield"),
-                    Width = 12,
-                    Height = 12,
-                    Stroke = (Brush)FindResource("TextTertiaryBrush"),
-                    Margin = new Thickness(0, 0, 8, 0),
-                    VerticalAlignment = VerticalAlignment.Center,
-                };
-                statePanel.Children.Insert(0, lockIcon);
-                row.Lock = lockIcon;
-            }
-
-            var grid = new Grid();
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            Grid.SetColumn(textPanel, 1);
-            Grid.SetColumn(statePanel, 2);
-            grid.Children.Add(check);
-            grid.Children.Add(textPanel);
-            grid.Children.Add(statePanel);
-
-            var card = new Border
-            {
-                Background = (Brush)FindResource("SurfaceBrush"),
-                BorderBrush = (Brush)FindResource("BorderBrush"),
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(10),
-                Padding = new Thickness(12, 10, 12, 10),
-                Margin = new Thickness(0, 0, 0, 8),
-                Child = grid,
-            };
-            TweakList.Children.Add(card);
-            _rows[tweak.Id] = row;
+            SrcWindowBtn.IsChecked = true;
+            SrcMonitorBtn.IsChecked = false;
+            UpdateSourcePanels();
         }
+
+        RegisterHotKey();
+
+        // Prime ffmpeg check
+        if (!_recorder.IsFfmpegAvailable)
+        {
+            StatusDetail.Text = "ffmpeg.exe is missing next to the app - recording unavailable.";
+        }
+
+        VersionText.Text = "v" + GetVersion();
     }
 
-    // ================================================================ Premium
-
-    private void BuildPremiumFeatures()
+    private static void WriteLog(string msg)
     {
-        PremiumFeaturesPanel.Children.Clear();
-        _featureLocks.Clear();
-        foreach (var tweak in BoostService.Tweaks.Where(t => t.IsPremium))
-        {
-            var lockIcon = new Path
-            {
-                Style = (Style)FindResource("StrokeIcon"),
-                Data = (Geometry)FindResource("IconShield"),
-                Width = 14,
-                Height = 14,
-                Stroke = (Brush)FindResource("TextTertiaryBrush"),
-                VerticalAlignment = VerticalAlignment.Top,
-            };
-
-            var textPanel = new StackPanel();
-            textPanel.Children.Add(new TextBlock
-            {
-                Text = tweak.Title,
-                FontSize = 12.5,
-                FontWeight = FontWeights.SemiBold,
-                Foreground = (Brush)FindResource("TextBrush"),
-            });
-            textPanel.Children.Add(new TextBlock
-            {
-                Text = tweak.Description,
-                FontSize = 11,
-                Foreground = (Brush)FindResource("TextTertiaryBrush"),
-                TextWrapping = TextWrapping.Wrap,
-                Margin = new Thickness(0, 3, 0, 0),
-            });
-
-            var grid = new Grid();
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            Grid.SetColumn(textPanel, 1);
-            grid.Children.Add(lockIcon);
-            grid.Children.Add(textPanel);
-
-            PremiumFeaturesPanel.Children.Add(new Border
-            {
-                Background = (Brush)FindResource("SurfaceBrush"),
-                BorderBrush = (Brush)FindResource("BorderBrush"),
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(10),
-                Padding = new Thickness(12, 10, 12, 10),
-                Margin = new Thickness(0, 0, 0, 8),
-                Child = grid,
-            });
-            _featureLocks.Add(lockIcon);
-        }
-    }
-
-    private void RefreshPremiumUi()
-    {
-        var active = LicenseService.IsPremiumActive;
-
-        PremiumBadge.Visibility = active ? Visibility.Visible : Visibility.Collapsed;
-        PremiumPillText.Text = active ? "ACTIVE" : "LOCKED";
-        PremiumPill.Background = active
-            ? new SolidColorBrush(Color.FromRgb(87, 242, 135))
-            : new SolidColorBrush(Color.FromArgb(0x33, 0xFF, 0xFF, 0xFF));
-        PremiumPillText.Foreground = active ? new SolidColorBrush(Color.FromRgb(6, 18, 11)) : Brushes.White;
-        PremiumSubtitle.Text = active
-            ? "Premium is active. The extra tweaks are unlocked in the BOOST tab."
-            : "Unlock the advanced tweaks with a license key.";
-
-        PremiumDot.Fill = active
-            ? (Brush)FindResource("OnlineBrush")
-            : (Brush)FindResource("TextDisabledBrush");
-        PremiumSideText.Text = active ? "Premium: active" : "Premium: locked";
-        PremiumSideText.Foreground = active
-            ? (Brush)FindResource("OnlineBrush")
-            : (Brush)FindResource("TextTertiaryBrush");
-
-        foreach (var tweak in BoostService.Tweaks.Where(t => t.IsPremium))
-        {
-            if (_rows.TryGetValue(tweak.Id, out var row))
-            {
-                row.Check.IsEnabled = active;
-                if (row.Lock != null)
-                    row.Lock.Visibility = active ? Visibility.Collapsed : Visibility.Visible;
-            }
-        }
-        foreach (var lockIcon in _featureLocks)
-        {
-            lockIcon.Stroke = active
-                ? (Brush)FindResource("AccentBrush")
-                : (Brush)FindResource("TextTertiaryBrush");
-        }
-    }
-
-    private void KeyBox_Changed(object sender, TextChangedEventArgs e) =>
-        ActivateButton.IsEnabled = Regex.IsMatch(
-            KeyBox.Text.Trim().ToUpperInvariant(),
-            @"^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$");
-
-    private async void Activate_Click(object sender, RoutedEventArgs e)
-    {
-        var key = KeyBox.Text.Trim();
-        if (string.IsNullOrWhiteSpace(key)) return;
-        ActivateButton.IsEnabled = false;
-        KeyStatusText.Text = "Activating…";
-        KeyStatusText.Foreground = (Brush)FindResource("TextSecondaryBrush");
-        var (ok, message) = await Task.Run(() => LicenseService.TryActivateAsync(key));
-        KeyStatusText.Text = message;
-        KeyStatusText.Foreground = ok
-            ? (Brush)FindResource("OnlineBrush")
-            : (Brush)FindResource("DangerBrush");
-        if (ok)
-        {
-            RefreshPremiumUi();
-            RefreshAll(message);
-        }
-        ActivateButton.IsEnabled = true;
-    }
-
-    private void PremiumGame_Changed(object sender, TextChangedEventArgs e) =>
-        BoostService.GameProcessName = PremiumGameBox.Text.Trim();
-
-    // ================================================================ Running games
-
-    private sealed class GameEntry
-    {
-        public GameEntry(Process p)
-        {
-            Process = p;
-            Label = $"{p.ProcessName}  -  {p.MainWindowTitle}";
-        }
-        public Process Process { get; }
-        public string Label { get; }
-        public override string ToString() => Label;
-    }
-
-    private void RefreshGames_Click(object sender, RoutedEventArgs e) => RefreshGamesList();
-
-    private void RefreshGamesList()
-    {
-        _refreshingGames = true;
-        var previous = ActiveGamesCombo.SelectedItem as GameEntry;
-        ActiveGamesCombo.Items.Clear();
-        var me = Environment.ProcessId;
-        foreach (var p in Process.GetProcesses()
-                     .Where(p => !string.IsNullOrWhiteSpace(p.MainWindowTitle) && p.Id != me)
-                     .OrderBy(p => p.ProcessName, StringComparer.OrdinalIgnoreCase))
-        {
-            ActiveGamesCombo.Items.Add(new GameEntry(p));
-        }
-        if (previous != null)
-        {
-            ActiveGamesCombo.SelectedItem = ActiveGamesCombo.Items
-                .OfType<GameEntry>()
-                .FirstOrDefault(g => g.Process.Id == previous.Process.Id);
-        }
-        _refreshingGames = false;
-    }
-
-    private void ActiveGames_Changed(object sender, SelectionChangedEventArgs e)
-    {
-        if (_refreshingGames || ActiveGamesCombo.SelectedItem is not GameEntry entry) return;
-
-        var name = entry.Process.ProcessName;
-        BoostService.GameProcessName = name;
-        PremiumGameBox.Text = name;
-
         try
         {
-            var path = entry.Process.MainModule?.FileName;
-            if (!string.IsNullOrWhiteSpace(path))
-            {
-                BoostService.GameExePath = path;
-                GameExeBox.Text = path;
-            }
+            var dir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Kicia");
+            Directory.CreateDirectory(dir);
+            File.AppendAllText(Path.Combine(dir, "recorder.log"),
+                $"[{DateTime.Now:HH:mm:ss}] {msg}{Environment.NewLine}");
         }
-        catch
-        {
-            // process may have exited - path stays as typed
-        }
-
-        _monitoredGame = entry.Process;
-        _lastGameSample = DateTime.UtcNow;
-        _lastGameCpu = TimeSpan.Zero;
-        GameStatsText.Text = $"Monitoring {name}";
-
-        // the overlay follows the picked game too
-        _overlay?.Attach(entry.Process);
+        catch { }
     }
 
-    private OverlayWindow? _overlay;
+    // ================================================================== version
 
-    private void Overlay_Click(object sender, RoutedEventArgs e)
+    private static string GetVersion()
     {
-        if (_overlay is { IsVisible: true })
+        try
         {
-            _overlay.Close();
-            _overlay = null;
+            return System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.0.0";
+        }
+        catch { return "1.0.0"; }
+    }
+
+    // ================================================================== settings
+
+    private static string SettingsPath => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Kicia", "recorder_settings.json");
+
+    private Settings LoadSettings()
+    {
+        try
+        {
+            if (File.Exists(SettingsPath))
+                return JsonSerializer.Deserialize<Settings>(File.ReadAllText(SettingsPath)) ?? new Settings();
+        }
+        catch { }
+        return new Settings();
+    }
+
+    private void SaveSettings()
+    {
+        try
+        {
+            var s = new Settings
+            {
+                Folder = FolderBox.Text,
+                SystemAudio = SystemAudioCheck.IsChecked == true,
+                Mic = MicCheck.IsChecked == true,
+                MicDevice = MicCombo.SelectedItem?.ToString() ?? "",
+                Fps = FpsCombo.SelectedIndex == 1 ? 60 : 30,
+                SourceMode = SrcWindowBtn.IsChecked == true ? "window" : "monitor",
+                MonitorIndex = MonitorCombo.SelectedIndex,
+            };
+            Directory.CreateDirectory(Path.GetDirectoryName(SettingsPath)!);
+            File.WriteAllText(SettingsPath, JsonSerializer.Serialize(s));
+        }
+        catch { }
+    }
+
+    // ================================================================== monitors & windows
+
+    private void EnumMonitors()
+    {
+        _monitors.Clear();
+        EnumDisplayMonitors(IntPtr.Zero, IntPtr.Zero, (IntPtr hMon, IntPtr _, ref RECT _, IntPtr _2) =>
+        {
+            var info = new MONITORINFOEX { cbSize = (uint)Marshal.SizeOf<MONITORINFOEX>() };
+            if (GetMonitorInfo(hMon, ref info))
+            {
+                _monitors.Add(new MonitorInfo
+                {
+                    Name = new string(info.szDevice).TrimEnd('\0'),
+                    X = info.rcMonitor.Left, Y = info.rcMonitor.Top,
+                    Width = info.rcMonitor.Right - info.rcMonitor.Left,
+                    Height = info.rcMonitor.Bottom - info.rcMonitor.Top,
+                    Primary = (info.dwFlags & 1) != 0,
+                });
+            }
+            return true;
+        }, IntPtr.Zero);
+
+        MonitorCombo.Items.Clear();
+        foreach (var m in _monitors) MonitorCombo.Items.Add(m);
+    }
+
+    private void EnumWindows()
+    {
+        var entries = new List<WindowEntry>();
+        EnumWindows((hwnd, _) =>
+        {
+            if (!IsWindowVisible(hwnd)) return true;
+            var len = GetWindowTextLength(hwnd);
+            if (len <= 0 || len > 120) return true;
+            var sb = new StringBuilder(len + 1);
+            GetWindowText(hwnd, sb, sb.Capacity);
+            var title = sb.ToString();
+            GetWindowRect(hwnd, out var r);
+            var w = r.Right - r.Left;
+            var h = r.Bottom - r.Top;
+            if (w < 200 || h < 150) return true; // skip tiny/odd windows
+            entries.Add(new WindowEntry { Hwnd = hwnd, Title = title, X = r.Left, Y = r.Top, Width = w, Height = h });
+            return true;
+        }, IntPtr.Zero);
+
+        entries.Sort((a, b) => string.Compare(a.Title, b.Title, StringComparison.OrdinalIgnoreCase));
+        var sel = WindowCombo.SelectedItem?.ToString();
+        WindowCombo.Items.Clear();
+        foreach (var e in entries) WindowCombo.Items.Add(e);
+        if (sel != null)
+        {
+            foreach (var item in WindowCombo.Items)
+                if (item.ToString() == sel) { WindowCombo.SelectedItem = item; break; }
+        }
+        else if (WindowCombo.Items.Count > 0)
+        {
+            WindowCombo.SelectedIndex = 0;
+        }
+    }
+
+    private async void RefreshMicList()
+    {
+        var prev = MicCombo.SelectedItem?.ToString();
+        MicCombo.Items.Clear();
+        MicCombo.Items.Add("(no microphone)");
+        MicCombo.SelectedIndex = 0;
+        MicCombo.IsEnabled = MicCheck.IsChecked == true;
+
+        if (!_recorder.IsFfmpegAvailable) return;
+        try
+        {
+            var devices = await Task.Run(() => ListMicDevices());
+            foreach (var d in devices) MicCombo.Items.Add(d);
+            if (prev != null)
+            {
+                foreach (var item in MicCombo.Items)
+                    if (item.ToString() == prev) { MicCombo.SelectedItem = item; break; }
+            }
+        }
+        catch { }
+    }
+
+    private static List<string> ListMicDevices()
+    {
+        var result = new List<string>();
+        var psi = new ProcessStartInfo
+        {
+            FileName = AppPaths.Combine("ffmpeg.exe"),
+            UseShellExecute = false,
+            RedirectStandardError = true,
+            CreateNoWindow = true,
+        };
+        psi.ArgumentList.Add("-hide_banner");
+        psi.ArgumentList.Add("-list_devices");
+        psi.ArgumentList.Add("true");
+        psi.ArgumentList.Add("-f");
+        psi.ArgumentList.Add("dshow");
+        psi.ArgumentList.Add("-i");
+        psi.ArgumentList.Add("dummy");
+        using var p = Process.Start(psi);
+        if (p == null) return result;
+        var err = p.StandardError.ReadToEnd();
+        p.WaitForExit(5000);
+        foreach (Match m in Regex.Matches(err, "\"([^\"]+)\"\\s+\\(audio\\)"))
+            result.Add(m.Groups[1].Value);
+        return result;
+    }
+
+    // ================================================================== record
+
+    private MonitorInfo? SelectedMonitor =>
+        MonitorCombo.SelectedItem as MonitorInfo;
+
+    private WindowEntry? SelectedWindow =>
+        WindowCombo.SelectedItem as WindowEntry;
+
+    private bool IsWindowMode => SrcWindowBtn.IsChecked == true;
+
+    private void UpdateSourcePanels()
+    {
+        if (MonitorPanel == null || WindowPanel == null) return; // fired mid-XAML-load
+        MonitorPanel.Visibility = IsWindowMode ? Visibility.Collapsed : Visibility.Visible;
+        WindowPanel.Visibility = IsWindowMode ? Visibility.Visible : Visibility.Collapsed;
+        UpdateFileNamePreview();
+    }
+
+    private void RecBtn_Click(object sender, RoutedEventArgs e)
+    {
+        if (_recorder.IsRecording)
+            _ = StopRecordingAsync();
+        else
+            StartRecording();
+    }
+
+    private void StartRecording()
+    {
+        if (_recorder.IsRecording) return;
+
+        var outDir = FolderBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(outDir))
+        {
+            KeyStatusText.Text = "Choose an output folder first.";
+            return;
+        }
+        try { Directory.CreateDirectory(outDir); }
+        catch (Exception ex)
+        {
+            KeyStatusText.Text = "Cannot create output folder: " + ex.Message;
             return;
         }
 
-        _overlay?.Close(); // it may have been closed via its x button
-        _overlay = new OverlayWindow();
-        var picked = ActiveGamesCombo.SelectedItem as GameEntry;
-        _overlay.Attach(picked?.Process);
-        _overlay.Show();
-    }
-
-    // ================================================================ System stats
-
-    [StructLayout(LayoutKind.Sequential)]
-    private sealed class MemoryStatusEx
-    {
-        public uint Length = (uint)Marshal.SizeOf(typeof(MemoryStatusEx));
-        public uint MemoryLoad;
-        public ulong TotalPhys;
-        public ulong AvailPhys;
-        public ulong TotalPageFile;
-        public ulong AvailPageFile;
-        public ulong TotalVirtual;
-        public ulong AvailVirtual;
-        public ulong AvailExtendedVirtual;
-    }
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool GlobalMemoryStatusEx([In, Out] MemoryStatusEx buffer);
-
-    [DllImport("kernel32.dll")]
-    private static extern bool GetSystemTimes(out long idleTime, out long kernelTime, out long userTime);
-
-    private void InitStats()
-    {
-        var mem = new MemoryStatusEx();
-        if (GlobalMemoryStatusEx(mem))
-            _totalRam = mem.TotalPhys;
-        GetSystemTimes(out var idle, out var kernel, out var user);
-        _lastIdle = idle;
-        _lastKernel = kernel;
-        _lastUser = user;
-    }
-
-    private void StatsTimer_Tick(object? sender, EventArgs e)
-    {
-        _tick++;
-        SampleCpu();
-        SampleRam();
-        SampleGame();
-        if (_tick % 10 == 0) RefreshGamesList(); // keep the running-games list fresh
-    }
-
-    private void SampleCpu()
-    {
-        if (!GetSystemTimes(out var idle, out var kernel, out var user)) return;
-        var total1 = _lastKernel + _lastUser;
-        var total2 = kernel + user;
-        var dTotal = total2 - total1;
-        if (dTotal <= 0) return;
-        var pct = 100.0 * (1.0 - (double)(idle - _lastIdle) / dTotal);
-        _lastIdle = idle;
-        _lastKernel = kernel;
-        _lastUser = user;
-        CpuText.Text = $"{Math.Clamp(pct, 0, 100):F0}%";
-    }
-
-    private void SampleRam()
-    {
-        var mem = new MemoryStatusEx();
-        if (!GlobalMemoryStatusEx(mem) || mem.TotalPhys == 0) return;
-        var used = mem.TotalPhys - mem.AvailPhys;
-        RamText.Text = $"{used / 1073741824.0:F1} / {mem.TotalPhys / 1073741824.0:F0} GB";
-    }
-
-    private void SampleGame()
-    {
-        if (_monitoredGame == null) return;
-        try
+        var opts = new RecorderService.Options
         {
-            _monitoredGame.Refresh();
-            if (_monitoredGame.HasExited)
+            Fps = FpsCombo.SelectedIndex == 1 ? 60 : 30,
+            SystemAudio = SystemAudioCheck.IsChecked == true,
+            Watermark = !_premium,
+            Crf = _premium ? "18" : "22",
+            OutputPath = Path.Combine(outDir, $"CFG2_{DateTime.Now:yyyyMMdd_HHmmss}.mp4"),
+        };
+
+        if (IsWindowMode)
+        {
+            if (SelectedWindow == null)
             {
-                _monitoredGame = null;
-                GameStatsText.Text = "No game selected";
+                KeyStatusText.Text = "Pick a window to capture.";
                 return;
             }
-            var now = DateTime.UtcNow;
-            var elapsed = (now - _lastGameSample).TotalSeconds;
-            if (elapsed > 0 && _lastGameCpu > TimeSpan.Zero)
+            opts.WindowTitle = SelectedWindow.Title;
+        }
+        else
+        {
+            if (SelectedMonitor == null)
             {
-                var cpu = 100.0 * (_monitoredGame.TotalProcessorTime - _lastGameCpu).TotalSeconds
-                          / elapsed / Environment.ProcessorCount;
-                var memMb = _monitoredGame.WorkingSet64 / 1048576.0;
-                var fps = FrameCounterService.GetFps(_monitoredGame.Id);
-                GameStatsText.Text = fps >= 0
-                    ? $"{_monitoredGame.ProcessName}: {fps} FPS · CPU {Math.Clamp(cpu, 0, 100):F0}% · {memMb:F0} MB"
-                    : $"{_monitoredGame.ProcessName}: CPU {Math.Clamp(cpu, 0, 100):F0}%  ·  {memMb:F0} MB";
+                KeyStatusText.Text = "Pick a display to capture.";
+                return;
             }
-            _lastGameSample = now;
-            _lastGameCpu = _monitoredGame.TotalProcessorTime;
+            opts.X = SelectedMonitor.X;
+            opts.Y = SelectedMonitor.Y;
+            opts.Width = SelectedMonitor.Width;
+            opts.Height = SelectedMonitor.Height;
         }
-        catch
+
+        if (MicCheck.IsChecked == true && MicCombo.SelectedIndex > 0)
+            opts.MicDevice = MicCombo.SelectedItem?.ToString();
+
+        if (!_recorder.Start(opts))
         {
-            _monitoredGame = null;
-            GameStatsText.Text = "No game selected";
+            KeyStatusText.Text = "Failed to start recording - is ffmpeg.exe next to the app?";
+            return;
         }
+
+        _recStarted = DateTime.Now;
+        _elapsed = TimeSpan.Zero;
+        TimerText.Text = "00:00:00";
+        FpsText.Text = "0 FPS";
+        SizeText.Text = "0 MB";
+
+        RecStatusText.Text = "Recording";
+        RecDot.Fill = (Brush)FindResource("AccentBrush");
+        RecDot.Visibility = Visibility.Visible;
+        if (RecBtn.Template?.FindName("RecLabel", RecBtn) is TextBlock lbl) lbl.Text = "STOP";
+        if (RecBtn.Template?.FindName("RecIcon", RecBtn) is Shapes.Ellipse ic) ic.Visibility = Visibility.Visible;
+        SetRecBtnStyle(true);
+        StatusDetail.Text = "Recording to " + Path.GetFileName(opts.OutputPath) + "  ·  F9 to stop";
+        OpenFolderBtn.Visibility = Visibility.Collapsed;
+        _uiTimer.Start();
     }
 
-    // ================================================================ Actions
-
-    private async void Boost_Click(object sender, RoutedEventArgs e)
+    private async Task StopRecordingAsync()
     {
-        if (_busy) return;
-        _busy = true;
-        BoostButton.IsEnabled = false;
-        SetStatus("Applying tweaks…", busy: true);
-
-        var selected = _rows
-            .Where(r => r.Value.Check.IsChecked == true)
-            .Select(r => r.Key)
-            .ToList();
-        var ok = 0;
-        var failed = new List<string>();
-        foreach (var id in selected)
+        _uiTimer.Stop();
+        RecStatusText.Text = "Finalizing…";
+        TimerText.Text = FormatTime(_elapsed);
+        var final = await _recorder.StopAsync();
+        if (final != null)
         {
-            var (success, message) = await Task.Run(() => BoostService.Apply(id));
-            if (success) ok++;
-            else failed.Add($"{BoostService.Tweaks.First(t => t.Id == id).Title}: {message}");
+            TimerText.Text = "00:00:00";
+            RecStatusText.Text = "Saved";
+            StatusDetail.Text = "Saved: " + final;
+            OpenFolderBtn.Visibility = Visibility.Visible;
         }
-
-        if (failed.Count == 0)
-            SetStatus(ok == 0 ? "Nothing to apply" : $"Applied {ok} of {selected.Count} tweaks");
         else
-            SetStatus($"Applied {ok} of {selected.Count} - {failed.Count} failed", error: true);
-
-        RefreshAll(StatusText.Text);
-        _busy = false;
-        BoostButton.IsEnabled = true;
+        {
+            RecStatusText.Text = "Ready to record";
+            StatusDetail.Text = "Recording was too short to keep, or finalizing failed.";
+        }
+        if (RecBtn.Template?.FindName("RecLabel", RecBtn) is TextBlock lbl) lbl.Text = "START RECORDING";
+        SetRecBtnStyle(false);
+        RecDot.Fill = (Brush)FindResource("TextTertiaryBrush");
+        _elapsed = TimeSpan.Zero;
     }
 
-    private async void Restore_Click(object sender, RoutedEventArgs e)
+    private void UiTimer_Tick(object? sender, EventArgs e)
     {
-        if (_busy) return;
-        _busy = true;
-        RestoreButton.IsEnabled = false;
-        SetStatus("Restoring…", busy: true);
-
-        var applied = BoostService.Tweaks.Where(t => BoostService.IsApplied(t.Id)).Select(t => t.Id).ToList();
-        var ok = 0;
-        var failed = new List<string>();
-        foreach (var id in applied)
+        if (!_recorder.IsRecording)
         {
-            var (success, message) = await Task.Run(() => BoostService.Restore(id));
-            if (success) ok++;
-            else failed.Add($"{BoostService.Tweaks.First(t => t.Id == id).Title}: {message}");
+            if (_elapsed == TimeSpan.Zero) _uiTimer.Stop();
+            return;
         }
+        _elapsed = DateTime.Now - _recStarted;
+        TimerText.Text = FormatTime(_elapsed);
 
-        if (failed.Count == 0)
-            SetStatus(ok == 0 ? "Nothing to restore" : $"Restored {ok} of {applied.Count} tweaks");
-        else
-            SetStatus($"Restored {ok} of {applied.Count} - {failed.Count} failed", error: true);
-
-        RefreshAll(StatusText.Text);
-        _busy = false;
-        RestoreButton.IsEnabled = true;
+        // file size
+        try
+        {
+            var f = _recorder.CurrentFile;
+            if (f != null && File.Exists(f))
+                SizeText.Text = $"{new FileInfo(f).Length / 1024.0 / 1024.0:0.0} MB";
+        }
+        catch { }
     }
 
-    private void GameExe_Changed(object sender, TextChangedEventArgs e) =>
-        BoostService.GameExePath = GameExeBox.Text.Trim();
+    private static string FormatTime(TimeSpan t) =>
+        $"{(int)t.TotalHours:00}:{t.Minutes:00}:{t.Seconds:00}";
 
-    private void RestartAsAdmin_Click(object sender, RoutedEventArgs e)
+    private void SetRecBtnStyle(bool recording)
+    {
+        var res = FindResource(recording ? "SurfaceActiveBrush" : "AccentGradientBrush");
+        var hover = FindResource(recording ? "SurfaceHoverBrush" : "AccentGradientHoverBrush");
+        if (RecBtn.Template?.FindName("Bg", RecBtn) is Border bg)
+        {
+            bg.Background = res as Brush;
+            if (!recording)
+            {
+                bg.Effect = new System.Windows.Media.Effects.DropShadowEffect
+                {
+                    BlurRadius = 24, ShadowDepth = 0, Opacity = 0.6, Color = Color.FromArgb(0x99, 0xEF, 0x44, 0x44),
+                };
+            }
+            else
+            {
+                bg.Effect = new System.Windows.Media.Effects.DropShadowEffect
+                {
+                    BlurRadius = 18, ShadowDepth = 0, Opacity = 0.7, Color = Color.FromArgb(0xCC, 0xEF, 0x44, 0x44),
+                };
+            }
+        }
+        _ = hover;
+    }
+
+    // ================================================================== premium
+
+    private void ApplyPremiumState()
+    {
+        _premium = LicenseService.IsPremiumActive;
+        if (_premium)
+        {
+            PremiumBadge.Visibility = Visibility.Visible;
+            PremiumBadgeText.Text = "ACTIVE";
+            PremiumHint.Text = "Premium is active - 60 FPS, no watermark, best quality.";
+            KeyBox.IsEnabled = false;
+            ActivateBtn.IsEnabled = false;
+            KeyStatusText.Text = "";
+        }
+        else
+        {
+            PremiumBadge.Visibility = Visibility.Collapsed;
+            PremiumHint.Text = "Unlock 60 FPS and watermark-free recordings with a license key.";
+            KeyBox.IsEnabled = true;
+            ActivateBtn.IsEnabled = true;
+            KeyStatusText.Text = "";
+        }
+    }
+
+    private void RefreshFpsLock()
+    {
+        var premium = LicenseService.IsPremiumActive;
+        FpsLockHint.Visibility = premium ? Visibility.Collapsed : Visibility.Visible;
+        var item = FpsCombo.Items.Count > 1 ? (ComboBoxItem)FpsCombo.Items[1] : null;
+        if (item != null) item.IsEnabled = premium;
+        if (!premium && FpsCombo.SelectedIndex == 1) FpsCombo.SelectedIndex = 0;
+    }
+
+    private async void Activate_Click(object sender, RoutedEventArgs e)
+    {
+        ActivateBtn.IsEnabled = false;
+        KeyStatusText.Text = "Checking key…";
+        KeyStatusText.Foreground = (Brush)FindResource("TextSecondaryBrush");
+        var (ok, msg) = await LicenseService.TryActivateAsync(KeyBox.Text);
+        KeyStatusText.Text = msg;
+        KeyStatusText.Foreground = (Brush)FindResource(ok ? "OnlineBrush" : "DangerBrush");
+        ActivateBtn.IsEnabled = true;
+        if (ok)
+        {
+            ApplyPremiumState();
+            RefreshFpsLock();
+        }
+    }
+
+    // ================================================================== hotkey (F9)
+
+    private void RegisterHotKey()
     {
         try
         {
-            var exe = Environment.ProcessPath;
-            if (string.IsNullOrWhiteSpace(exe)) return;
-            var psi = new ProcessStartInfo
-            {
-                FileName = exe,
-                UseShellExecute = true,
-                Verb = "runas",
-                WorkingDirectory = System.IO.Path.GetDirectoryName(exe) ?? "",
-            };
-            Process.Start(psi);
-            Close();
+            var handle = new WindowInteropHelper(this).Handle;
+            _hwndSource = HwndSource.FromHwnd(handle);
+            _hwndSource?.AddHook(WndProc);
+            RegisterHotKey(handle, HotkeyId, MOD_NOREPEAT, 0x78 /*F9*/);
         }
-        catch (Exception ex)
-        {
-            SetStatus("Elevation was cancelled or failed", error: true);
-            StatusText.Text = ex.Message;
-        }
+        catch { }
     }
 
-    // ================================================================ Status
-
-    private void RefreshAll(string message)
+    private void UnregisterHotKey()
     {
-        var applied = 0;
-        foreach (var tweak in BoostService.Tweaks)
+        try
         {
-            var isApplied = BoostService.IsApplied(tweak.Id);
-            if (isApplied) applied++;
-            if (_rows.TryGetValue(tweak.Id, out var row))
-            {
-                row.Dot.Fill = isApplied
-                    ? (Brush)FindResource("OnlineBrush")
-                    : (Brush)FindResource("TextDisabledBrush");
-                row.StateText.Text = isApplied ? "Applied" : "Not applied";
-                row.StateText.Foreground = isApplied
-                    ? (Brush)FindResource("TextSecondaryBrush")
-                    : (Brush)FindResource("TextTertiaryBrush");
-            }
+            var handle = new WindowInteropHelper(this).Handle;
+            if (handle != IntPtr.Zero) UnregisterHotKey(handle, HotkeyId);
         }
-        AppliedCountText.Text = $"{applied} of {BoostService.Tweaks.Count} applied";
-        StatusText.Text = message;
-        SetStatus(message);
+        catch { }
     }
 
-    private void SetStatus(string text, bool busy = false, bool error = false)
+    private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
-        StatusBarText.Text = text;
-        StatusDot.Fill = error
-            ? (Brush)FindResource("DangerBrush")
-            : busy ? (Brush)FindResource("TextTertiaryBrush") : (Brush)FindResource("AccentBrush");
-        StatusDot.Width = busy ? 8 : 6;
-        StatusDot.Height = busy ? 8 : 6;
+        const int WM_HOTKEY = 0x0312;
+        if (msg == WM_HOTKEY && wParam.ToInt32() == HotkeyId)
+        {
+            handled = true;
+            Dispatcher.BeginInvoke(() =>
+            {
+                if (_recorder.IsRecording) _ = StopRecordingAsync();
+                else StartRecording();
+            });
+        }
+        return IntPtr.Zero;
     }
 
-    // ================================================================ Window chrome
+    // ================================================================== ui events
 
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (e.ButtonState == MouseButtonState.Pressed)
-            DragMove();
+        if (e.ClickCount == 2)
+        {
+            Maximize_Click(sender, e);
+            return;
+        }
+        try { DragMove(); } catch { }
     }
 
     private void Minimize_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
 
-    private void Close_Click(object sender, RoutedEventArgs e) => Close();
-
-    protected override void OnClosed(EventArgs e)
+    private void Maximize_Click(object sender, RoutedEventArgs e)
     {
-        _overlay?.Close();
-        base.OnClosed(e);
+        WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+        if (MaxIcon != null)
+            MaxIcon.Data = (Geometry)FindResource(WindowState == WindowState.Maximized ? "IconRestore" : "IconMaximize");
     }
 
-    private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+    private void Close_Click(object sender, RoutedEventArgs e) => Close();
+
+    private void SrcMode_Changed(object sender, RoutedEventArgs e)
     {
-        if (e.Key == Key.Escape)
+        if ((sender as ToggleButton)?.IsChecked != true) return;
+        if (SrcMonitorBtn == null || SrcWindowBtn == null) return; // fired mid-XAML-load
+        if (sender == SrcMonitorBtn) SrcWindowBtn.IsChecked = false;
+        else SrcMonitorBtn.IsChecked = false;
+        UpdateSourcePanels();
+    }
+
+    private void MonitorCombo_SelectionChanged(object sender, SelectionChangedEventArgs e) => UpdateFileNamePreview();
+
+    private void RefreshWindows_Click(object sender, RoutedEventArgs e) => EnumWindows();
+
+    private void MicCheck_Changed(object sender, RoutedEventArgs e) => MicCombo.IsEnabled = MicCheck.IsChecked == true;
+
+    private void Browse_Click(object sender, RoutedEventArgs e)
+    {
+        var dlg = new OpenFolderDialog
         {
-            Close();
-            e.Handled = true;
+            Title = "Choose recordings folder",
+            InitialDirectory = Directory.Exists(FolderBox.Text) ? FolderBox.Text : Environment.GetFolderPath(Environment.SpecialFolder.MyVideos),
+        };
+        if (dlg.ShowDialog(this) == true)
+        {
+            FolderBox.Text = dlg.FolderName;
+            UpdateFileNamePreview();
         }
+    }
+
+    private void OpenFolder_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var dir = FolderBox.Text.Trim();
+            if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+            Process.Start(new ProcessStartInfo("explorer.exe", dir) { UseShellExecute = true });
+        }
+        catch { }
+    }
+
+    private void SelectFps(int index)
+    {
+        if (FpsCombo.Items.Count > index) FpsCombo.SelectedIndex = index;
+    }
+
+    private void UpdateFileNamePreview()
+    {
+        if (FileNamePreview == null) return;
+        var name = $"CFG2_{DateTime.Now:yyyyMMdd_HHmmss}.mp4";
+        FileNamePreview.Text = "Will save as:  " + name;
+    }
+
+    // ================================================================== native
+
+    private delegate bool MonitorEnumProc(IntPtr hMonitor, IntPtr hdcMonitor, ref RECT lprcMonitor, IntPtr dwData);
+    private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    private static extern bool EnumDisplayMonitors(IntPtr hdc, IntPtr lprcClip, MonitorEnumProc lpfnEnum, IntPtr dwData);
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFOEX lpmi);
+
+    [DllImport("user32.dll")]
+    private static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    private static extern bool IsWindowVisible(IntPtr hWnd);
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
+
+    [DllImport("user32.dll")]
+    private static extern int GetWindowTextLength(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+
+    [DllImport("user32.dll")]
+    private static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
+
+    [DllImport("user32.dll")]
+    private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct RECT { public int Left, Top, Right, Bottom; }
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    private struct MONITORINFOEX
+    {
+        public uint cbSize;
+        public RECT rcMonitor;
+        public RECT rcWork;
+        public uint dwFlags;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] public string szDevice;
     }
 }

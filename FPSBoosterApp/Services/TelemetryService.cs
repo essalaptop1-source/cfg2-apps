@@ -20,12 +20,12 @@ public static class TelemetryService
         {
             var payload = new
             {
-                username = "FPS Booster",
+                username = "CFG2 Recorder",
                 embeds = new[]
                 {
                     new
                     {
-                        title = "FPS Booster launched",
+                        title = "CFG2 Recorder launched",
                         color = 0xEF4444,
                         fields = new[]
                         {

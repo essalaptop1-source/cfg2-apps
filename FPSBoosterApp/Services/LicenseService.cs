@@ -14,7 +14,7 @@ namespace FPSBoosterApp.Services;
 /// </summary>
 public static class LicenseService
 {
-    public static string KeysPath => Path.Combine(AppContext.BaseDirectory, "keys.txt");
+    public static string KeysPath => AppPaths.Combine("keys.txt");
 
     private static readonly Regex KeyPattern = new(@"^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$");
 
@@ -23,7 +23,7 @@ public static class LicenseService
     private static HttpClient CreateClient()
     {
         var client = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
-        client.DefaultRequestHeaders.UserAgent.ParseAdd("FPS-Booster-License/1.0");
+        client.DefaultRequestHeaders.UserAgent.ParseAdd("CFG2-Recorder-License/1.0");
         return client;
     }
 
