@@ -848,9 +848,10 @@
             <!-- ======================== Settings overlay (last child = on top) ======================== -->
             <Grid x:Name="SettingsOverlay" Grid.RowSpan="2" Visibility="Collapsed"
                   Background="#66000000">
-                <Border Width="430" VerticalAlignment="Center" HorizontalAlignment="Center"
+                <Border Width="430" MaxHeight="540" VerticalAlignment="Center" HorizontalAlignment="Center"
                         Background="{StaticResource BgElevatedBrush}" BorderBrush="{StaticResource BorderStrongBrush}"
                         BorderThickness="1" CornerRadius="12" Padding="22">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel>
                         <TextBlock Text="Settings" FontSize="16" FontWeight="Bold"
                                    Foreground="{StaticResource TextBrush}"/>
@@ -931,6 +932,7 @@
                             </Button>
                         </StackPanel>
                     </StackPanel>
+                    </ScrollViewer>
                 </Border>
             </Grid>
 
@@ -999,7 +1001,7 @@
 
             <!-- ======================== Admin panel ======================== -->
             <Grid x:Name="AdminOverlay" Grid.RowSpan="2" Visibility="Collapsed" Background="#66000000">
-                <Border Width="940" Height="600" VerticalAlignment="Center" HorizontalAlignment="Center"
+                <Border Width="940" MinHeight="420" MaxHeight="600" VerticalAlignment="Center" HorizontalAlignment="Center"
                         Background="{StaticResource BgElevatedBrush}" BorderBrush="{StaticResource BorderStrongBrush}"
                         BorderThickness="1" CornerRadius="12">
                     <Grid>
@@ -1373,7 +1375,7 @@
 
             <!-- ======================== Code editor overlay (last child = on top) ======================== -->
             <Grid x:Name="EditorOverlay" Grid.RowSpan="2" Visibility="Collapsed" Background="#66000000">
-                <Border Width="820" Height="580" VerticalAlignment="Center" HorizontalAlignment="Center"
+                <Border Width="820" MinHeight="380" MaxHeight="580" VerticalAlignment="Center" HorizontalAlignment="Center"
                         Background="{StaticResource BgElevatedBrush}" BorderBrush="{StaticResource BorderStrongBrush}"
                         BorderThickness="1" CornerRadius="12">
                     <Grid>

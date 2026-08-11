@@ -329,7 +329,7 @@
         </Setter>
     </Style>
 
-    <!-- ============ CheckBox (dark, implicit) ============ -->
+    <!-- ============ CheckBox (dark, implicit, modern toggle switch) ============ -->
     <Style TargetType="CheckBox">
         <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
         <Setter Property="FontFamily" Value="{StaticResource AppFont}"/>
@@ -345,26 +345,27 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <Border x:Name="Box" Width="16" Height="16" CornerRadius="4"
+                        <Border x:Name="Track" Width="38" Height="22" CornerRadius="11"
                                 Background="{DynamicResource SurfaceAltBrush}"
                                 BorderBrush="{DynamicResource BorderStrongBrush}"
                                 BorderThickness="1" VerticalAlignment="Center">
-                            <Path x:Name="CheckMark" Data="{StaticResource IconCheck}" Stretch="Uniform"
-                                  Width="10" Height="10" Stroke="{StaticResource OnAccentBrush}"
-                                  StrokeThickness="2.2" Visibility="Collapsed"
-                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Ellipse x:Name="Thumb" Width="16" Height="16"
+                                     Fill="{StaticResource TextTertiaryBrush}"
+                                     HorizontalAlignment="Left" Margin="3,0,0,0"/>
                         </Border>
-                        <ContentPresenter Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center"
+                        <ContentPresenter Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center"
                                           RecognizesAccessKey="True"/>
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="Box" Property="Background" Value="{DynamicResource AccentBrush}"/>
-                            <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
-                            <Setter TargetName="CheckMark" Property="Visibility" Value="Visible"/>
+                            <Setter TargetName="Track" Property="Background" Value="{DynamicResource AccentBrush}"/>
+                            <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                            <Setter TargetName="Thumb" Property="Fill" Value="{StaticResource OnAccentBrush}"/>
+                            <Setter TargetName="Thumb" Property="HorizontalAlignment" Value="Right"/>
+                            <Setter TargetName="Thumb" Property="Margin" Value="0,0,3,0"/>
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
+                            <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.45"/>

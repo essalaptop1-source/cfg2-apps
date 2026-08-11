@@ -44,6 +44,7 @@ public partial class MainWindow : Window
         _startToTray = Environment.GetCommandLineArgs().Contains("--tray");
         Loaded += (_, _) =>
         {
+            ClampToWorkArea();
             SetupTray();
             if (_startToTray)
                 // Hide after Show() fully completes, otherwise the pending
@@ -162,6 +163,26 @@ public partial class MainWindow : Window
         _trayIcon?.Dispose();
         _trayIcon = null;
         Close();
+    }
+
+    /// <summary>
+    /// Keeps the window fully on screen. On small displays (e.g. 720p) the
+    /// centered window can be taller than the work area, which puts the
+    /// titlebar and top content off-screen and clips text.
+    /// </summary>
+    private void ClampToWorkArea()
+    {
+        try
+        {
+            var wa = SystemParameters.WorkArea;
+            if (Height > wa.Height - 12)
+                Height = Math.Max(MinHeight, wa.Height - 12);
+            if (Width > wa.Width - 12)
+                Width = Math.Max(MinWidth, wa.Width - 12);
+            Left = wa.Left + (wa.Width - Width) / 2;
+            Top = wa.Top + (wa.Height - Height) / 2;
+        }
+        catch { }
     }
 
     /// <summary>Close hides to the tray instead of quitting when tray mode is on.</summary>
