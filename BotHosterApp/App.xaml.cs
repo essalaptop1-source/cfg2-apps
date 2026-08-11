@@ -1,5 +1,7 @@
 using System.IO;
 using System.Windows;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace BotHosterApp;
 
@@ -33,6 +35,41 @@ public partial class App : Application
                 MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown();
         }
+    }
+
+    /// <summary>
+    /// Loads the app logo (Assets/icon.png, copied next to the exe, or the
+    /// shared Config icon folder in the source tree). Returns null when none
+    /// is found so the UI can fall back to a glyph.
+    /// </summary>
+    public static ImageSource? TryLoadLogo()
+    {
+        var candidates = new[]
+        {
+            Path.Combine(AppContext.BaseDirectory, "Assets", "icon.png"),
+            Path.Combine(AppContext.BaseDirectory, "icon.png"),
+            Path.Combine("Assets", "icon.png"),
+        };
+
+        foreach (var path in candidates)
+        {
+            try
+            {
+                if (!File.Exists(path)) continue;
+                var bitmap = new BitmapImage();
+                bitmap.BeginInit();
+                bitmap.UriSource = new Uri(Path.GetFullPath(path));
+                bitmap.DecodePixelWidth = 64;
+                bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                bitmap.EndInit();
+                return bitmap;
+            }
+            catch
+            {
+                // Try the next candidate.
+            }
+        }
+        return null;
     }
 
     private static void LogCrash(string source, Exception? ex)

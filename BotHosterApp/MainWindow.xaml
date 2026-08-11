@@ -86,10 +86,10 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="14,0,0,0">
-                    <Border Width="22" Height="22" CornerRadius="6" Background="{StaticResource AccentGradientBrush}">
-                        <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconRocket}"
-                              Width="11" Height="11" Stroke="{StaticResource OnAccentBrush}"
-                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <Border Width="24" Height="24" CornerRadius="6" Background="{StaticResource SurfaceAltBrush}">
+                        <Image x:Name="TitleLogo" Stretch="Uniform" Width="20" Height="20"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               RenderOptions.BitmapScalingMode="HighQuality"/>
                     </Border>
                     <TextBlock Text="CFG2 Bot Hoster" FontSize="13" FontWeight="SemiBold"
                                Foreground="{StaticResource TextBrush}" Margin="10,0,0,0" VerticalAlignment="Center"/>
@@ -171,6 +171,7 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBox x:Name="BotFileBox" Style="{StaticResource FieldTextBox}"
                                          Height="32" IsReadOnly="True" FontSize="10.5"
@@ -179,6 +180,11 @@
                                         Padding="12,0" Margin="8,0,0,0" Click="AddBotBrowse_Click">
                                     <TextBlock Text="Browse…" FontSize="11.5" FontWeight="SemiBold"
                                                Foreground="{StaticResource OnAccentBrush}"/>
+                                </Button>
+                                <Button x:Name="BrowseFolderBtn" Grid.Column="2" Style="{StaticResource OutlineButton}" Height="32"
+                                        Padding="12,0" Margin="8,0,0,0" Click="AddBotFolder_Click">
+                                    <TextBlock Text="Folder…" FontSize="11.5" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextBrush}"/>
                                 </Button>
                             </Grid>
                             <TextBlock x:Name="TokenFoundText" FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}"
@@ -411,6 +417,15 @@
                                                                Foreground="{StaticResource TextBrush}"/>
                                                 </StackPanel>
                                             </Button>
+                                            <Button Style="{StaticResource OutlineButton}" Height="34" Padding="12,0" Margin="8,0,0,0"
+                                                    Click="EditCode_Click">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconCode}"
+                                                          Width="11" Height="11" Stroke="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="Edit code" FontSize="12" FontWeight="SemiBold" Margin="6,0,0,0"
+                                                               Foreground="{StaticResource TextBrush}"/>
+                                                </StackPanel>
+                                            </Button>
                                         </StackPanel>
                                     </Grid>
                                 </Border>
@@ -629,6 +644,124 @@
                             </Button>
                         </StackPanel>
                     </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- ======================== Code editor overlay (last child = on top) ======================== -->
+            <Grid x:Name="EditorOverlay" Grid.RowSpan="2" Visibility="Collapsed" Background="#66000000">
+                <Border Width="820" Height="580" VerticalAlignment="Center" HorizontalAlignment="Center"
+                        Background="{StaticResource BgElevatedBrush}" BorderBrush="{StaticResource BorderStrongBrush}"
+                        BorderThickness="1" CornerRadius="12">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Header -->
+                        <Grid Grid.Row="0" Margin="20,16,20,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconCode}"
+                                          Width="14" Height="14" Stroke="{StaticResource AccentTextBrush}" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="EditorTitle" Text="Edit code" FontSize="15" FontWeight="Bold"
+                                               Foreground="{StaticResource TextBrush}" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <TextBlock x:Name="EditorPathText" FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}"
+                                           TextTrimming="CharacterEllipsis" Margin="22,3,0,0"/>
+                            </StackPanel>
+                            <Button Grid.Column="1" Style="{StaticResource GhostButton}" Width="28" Height="28"
+                                    Click="EditorClose_Click">
+                                <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconClose}"
+                                      Width="11" Height="11" Stroke="{StaticResource TextSecondaryBrush}"/>
+                            </Button>
+                        </Grid>
+
+                        <!-- Body: file list + editor -->
+                        <Grid Grid.Row="1" Margin="20,14,20,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="190"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Files -->
+                            <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"
+                                    BorderThickness="1" CornerRadius="8" Padding="8">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Text="FILES" Style="{StaticResource SectionHeader}" Margin="4,2,0,8"/>
+                                    <ListBox x:Name="EditorFilesList" Grid.Row="1" Background="Transparent" BorderThickness="0"
+                                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                             ItemContainerStyle="{StaticResource RowItem}"
+                                             SelectionChanged="EditorFilesList_SelectionChanged">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal" Margin="8,6">
+                                                    <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconCode}"
+                                                          Width="11" Height="11" Stroke="{StaticResource AccentTextBrush}" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="{Binding Name}" FontSize="11.5" Foreground="{StaticResource TextBrush}"
+                                                               Margin="8,0,0,0" TextTrimming="CharacterEllipsis"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </Grid>
+                            </Border>
+
+                            <!-- Editor -->
+                            <Border Grid.Column="1" Background="#0A0A0C" BorderBrush="{StaticResource BorderBrush}"
+                                    BorderThickness="1" CornerRadius="8" Margin="12,0,0,0">
+                                <TextBox x:Name="CodeEditorBox" BorderThickness="0" Background="Transparent"
+                                         FontFamily="{StaticResource MonoFont}" FontSize="12"
+                                         Foreground="#E4E4E7" CaretBrush="#FFFFFF"
+                                         VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                                         AcceptsReturn="True" AcceptsTab="True"
+                                         Padding="12" TextChanged="CodeEditorBox_TextChanged"/>
+                            </Border>
+                        </Grid>
+
+                        <!-- Footer -->
+                        <Grid Grid.Row="2" Margin="20,12,20,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock x:Name="EditorStatusText" FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}"
+                                           TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                <CheckBox x:Name="RestartAfterSaveCheck" Content="Restart bot after saving"
+                                          Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" Margin="0,6,0,0" IsChecked="True"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button Style="{StaticResource OutlineButton}" Height="32" Padding="12,0"
+                                        Click="EditorOpenFolder_Click">
+                                    <TextBlock Text="Open folder" FontSize="11" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextBrush}"/>
+                                </Button>
+                                <Button Style="{StaticResource GhostButton}" Height="32" Padding="14,0" Margin="8,0,0,0"
+                                        Click="EditorClose_Click">
+                                    <TextBlock Text="Cancel" FontSize="11.5" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                </Button>
+                                <Button x:Name="EditorSaveBtn" Style="{StaticResource ModernButton}" Height="32" Padding="18,0"
+                                        Margin="10,0,0,0" Click="EditorSave_Click">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconCheck}"
+                                              Width="11" Height="11" Stroke="{StaticResource OnAccentBrush}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Save" FontSize="11.5" FontWeight="SemiBold" Margin="6,0,0,0"
+                                                   Foreground="{StaticResource OnAccentBrush}"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
                 </Border>
             </Grid>
         </Grid>

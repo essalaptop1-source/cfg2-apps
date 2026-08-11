@@ -78,6 +78,8 @@ public partial class MainWindow : Window
     private async void InitAsync()
     {
         VersionText.Text = "v" + GetVersion();
+        var logo = App.TryLoadLogo();
+        if (logo != null) TitleLogo.Source = logo;
         LicenseService.RefreshStatus();
         ApplyPremiumState();
 
@@ -305,9 +307,52 @@ public partial class MainWindow : Window
             CheckFileExists = true,
         };
         if (dlg.ShowDialog(this) != true) return;
+        SelectBotFile(dlg.FileName);
+    }
 
-        BotFileBox.Text = dlg.FileName;
-        var token = BotManager.ExtractTokenFromFile(dlg.FileName);
+    /// <summary>Picks a whole folder; the main .py (one containing the token,
+    /// or the only one) is used as the entry point and all files in the
+    /// folder become editable in the code editor.</summary>
+    private void AddBotFolder_Click(object sender, RoutedEventArgs e)
+    {
+        using var dlg = new System.Windows.Forms.FolderBrowserDialog
+        {
+            Description = "Choose the bot's folder - all .py files inside will be editable",
+            ShowNewFolderButton = false,
+        };
+        if (dlg.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
+
+        List<string> pyFiles;
+        try
+        {
+            pyFiles = Directory.EnumerateFiles(dlg.SelectedPath, "*.py", SearchOption.TopDirectoryOnly)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            AddStatusText.Text = "Could not read folder: " + ex.Message;
+            AddStatusText.Foreground = (Brush)FindResource("DangerBrush");
+            return;
+        }
+        if (pyFiles.Count == 0)
+        {
+            AddStatusText.Text = "No .py files found in that folder.";
+            AddStatusText.Foreground = (Brush)FindResource("DangerBrush");
+            return;
+        }
+
+        var main = pyFiles.FirstOrDefault(f => BotManager.ExtractTokenFromFile(f) != null) ?? pyFiles[0];
+        SelectBotFile(main);
+        AddStatusText.Text = pyFiles.Count == 1
+            ? $"1 Python file in the folder."
+            : $"Folder has {pyFiles.Count} Python files - all editable in the code editor.";
+        AddStatusText.Foreground = (Brush)FindResource("TextTertiaryBrush");
+    }
+
+    private void SelectBotFile(string path)
+    {
+        BotFileBox.Text = path;
+        var token = BotManager.ExtractTokenFromFile(path);
         TokenBox.Text = token ?? "";
         if (token != null)
         {
@@ -446,6 +491,127 @@ public partial class MainWindow : Window
         _selected.AutoStart = AutoStartCheck.IsChecked == true;
         _selected.AutoRestart = AutoRestartCheck.IsChecked == true;
         _ = _manager.SaveAsync();
+    }
+
+    // ================================================================== code editor
+
+    private BotEntry? _editorBot;
+    private string _editorFile = "";
+    private bool _editorDirty;
+    private bool _editorLoading;
+
+    private void EditCode_Click(object sender, RoutedEventArgs e)
+    {
+        var b = _selected;
+        if (b == null) return;
+        _editorBot = b;
+        _editorFile = "";
+        _editorDirty = false;
+
+        var dir = Path.GetDirectoryName(b.PythonPath) ?? "";
+        var files = new List<FileInfo>();
+        if (Directory.Exists(dir))
+        {
+            try
+            {
+                files = Directory.EnumerateFiles(dir, "*.py", SearchOption.AllDirectories)
+                    .Select(f => new FileInfo(f))
+                    .OrderBy(f => f.FullName.Equals(b.PythonPath, StringComparison.OrdinalIgnoreCase) ? 0 : 1)
+                    .ThenBy(f => f.Name)
+                    .ToList();
+            }
+            catch { }
+        }
+        EditorFilesList.ItemsSource = files;
+        EditorTitle.Text = "Edit code - " + b.Name;
+        EditorPathText.Text = dir;
+        EditorStatusText.Text = files.Count == 0
+            ? "No .py files found next to the bot's file."
+            : $"{files.Count} Python file(s) in this bot's folder - edit, save, and restart to apply.";
+        RestartAfterSaveCheck.IsChecked = b.Running;
+        EditorOverlay.Visibility = Visibility.Visible;
+
+        if (files.Count > 0)
+        {
+            EditorFilesList.SelectedItem = files.FirstOrDefault(f => f.FullName.Equals(b.PythonPath, StringComparison.OrdinalIgnoreCase))
+                                           ?? files[0];
+        }
+    }
+
+    private void EditorFilesList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (EditorFilesList.SelectedItem is not FileInfo fi) return;
+        _editorLoading = true;
+        _editorFile = fi.FullName;
+        try
+        {
+            CodeEditorBox.Text = File.ReadAllText(fi.FullName);
+            EditorPathText.Text = fi.FullName;
+        }
+        catch (Exception ex)
+        {
+            CodeEditorBox.Text = "";
+            EditorStatusText.Text = "Could not read file: " + ex.Message;
+        }
+        _editorDirty = false;
+        _editorLoading = false;
+    }
+
+    private void CodeEditorBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (_editorLoading) return;
+        _editorDirty = true;
+        EditorStatusText.Text = "Unsaved changes";
+    }
+
+    private async void EditorSave_Click(object sender, RoutedEventArgs e)
+    {
+        if (_editorBot == null || _editorFile.Length == 0)
+        {
+            EditorStatusText.Text = "Pick a file first.";
+            return;
+        }
+        try
+        {
+            File.WriteAllText(_editorFile, CodeEditorBox.Text);
+            _editorDirty = false;
+            EditorStatusText.Text = "Saved - " + Path.GetFileName(_editorFile);
+            if (RestartAfterSaveCheck.IsChecked == true && _editorBot.Running)
+            {
+                EditorStatusText.Text = "Saved - restarting bot to apply...";
+                await _manager.RestartAsync(_editorBot);
+                EditorStatusText.Text = "Saved - bot restarted with the new code.";
+            }
+        }
+        catch (Exception ex)
+        {
+            EditorStatusText.Text = "Could not save: " + ex.Message;
+        }
+    }
+
+    private void EditorClose_Click(object sender, RoutedEventArgs e)
+    {
+        if (_editorDirty)
+        {
+            var r = MessageBox.Show(
+                "You have unsaved changes. Close without saving?",
+                "Edit code", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (r != MessageBoxResult.Yes) return;
+        }
+        EditorOverlay.Visibility = Visibility.Collapsed;
+        _editorBot = null;
+        _editorFile = "";
+        _editorDirty = false;
+    }
+
+    private void EditorOpenFolder_Click(object sender, RoutedEventArgs e)
+    {
+        if (_editorBot == null) return;
+        var dir = Path.GetDirectoryName(_editorBot.PythonPath) ?? "";
+        if (Directory.Exists(dir))
+        {
+            try { Process.Start(new ProcessStartInfo(dir) { UseShellExecute = true }); } catch { }
+        }
     }
 
     // ================================================================== console

@@ -6,10 +6,11 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
     <AssemblyTitle>CFG2 Bot Hoster</AssemblyTitle>
     <AssemblyDescription>Host and manage multiple Discord bots from one app</AssemblyDescription>
     <Product>CFG2 Bot Hoster</Product>
-    <Version>1.0.4</Version>
+    <Version>1.0.5</Version>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <!-- Single-file WPF on Windows 10 crashes with DllNotFoundException in
          SetWindowLongPtrWndProc unless native libraries are force-extracted. -->
@@ -19,6 +20,11 @@
 
   <ItemGroup>
     <PackageReference Include="Discord.Net" Version="3.17.3" />
+    <!-- Keep the WinForms reference (FolderBrowserDialog) but drop its
+         implicit global usings, which collide with WPF types (Application,
+         Brush, ...). -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
   </ItemGroup>
 
   <ItemGroup>
@@ -26,6 +32,9 @@
     <Resource Include="Themes\Icons.xaml" />
     <Resource Include="Themes\Styles.xaml" />
     <Resource Include="Assets\app.ico" />
+    <Content Include="Assets\icon.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>
