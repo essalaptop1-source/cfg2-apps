@@ -91,7 +91,7 @@
                     <Border x:Name="Bg" Background="{TemplateBinding Background}"
                             CornerRadius="8" Padding="{TemplateBinding Padding}">
                         <Border.Effect>
-                            <DropShadowEffect BlurRadius="14" ShadowDepth="0" Opacity="0.55" Color="#7A6366F1"/>
+                            <DropShadowEffect BlurRadius="14" ShadowDepth="0" Opacity="0.5" Color="#8A8B5CF6"/>
                         </Border.Effect>
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
@@ -100,7 +100,7 @@
                             <Setter TargetName="Bg" Property="Background" Value="{DynamicResource AccentGradientHoverBrush}"/>
                             <Setter TargetName="Bg" Property="Effect">
                                 <Setter.Value>
-                                    <DropShadowEffect BlurRadius="20" ShadowDepth="0" Opacity="0.75" Color="#8A6366F1"/>
+                                    <DropShadowEffect BlurRadius="20" ShadowDepth="0" Opacity="0.7" Color="#A68B5CF6"/>
                                 </Setter.Value>
                             </Setter>
                         </Trigger>
@@ -108,7 +108,7 @@
                             <Setter TargetName="Bg" Property="Background" Value="{DynamicResource AccentGradientPressedBrush}"/>
                             <Setter TargetName="Bg" Property="Effect">
                                 <Setter.Value>
-                                    <DropShadowEffect BlurRadius="8" ShadowDepth="0" Opacity="0.4" Color="#7A6366F1"/>
+                                    <DropShadowEffect BlurRadius="8" ShadowDepth="0" Opacity="0.4" Color="#8A8B5CF6"/>
                                 </Setter.Value>
                             </Setter>
                         </Trigger>
@@ -575,6 +575,10 @@
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="10" Padding="16">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="16" ShadowDepth="2" Direction="270"
+                                              Color="#000000" Opacity="0.35"/>
+                        </Border.Effect>
                         <ContentPresenter/>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -584,7 +588,7 @@
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
                             <Setter TargetName="Card" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
-                            <Setter TargetName="Card" Property="Background" Value="{DynamicResource SurfaceActiveBrush}"/>
+                            <Setter TargetName="Card" Property="Background" Value="{DynamicResource AccentSoftBrush}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -607,6 +611,10 @@
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="10" Padding="16,12">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="14" ShadowDepth="2" Direction="270"
+                                              Color="#000000" Opacity="0.32"/>
+                        </Border.Effect>
                         <ContentPresenter/>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -615,7 +623,7 @@
                             <Setter TargetName="Row" Property="BorderBrush" Value="{DynamicResource BorderStrongBrush}"/>
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="Row" Property="Background" Value="{DynamicResource SurfaceActiveBrush}"/>
+                            <Setter TargetName="Row" Property="Background" Value="{DynamicResource AccentSoftBrush}"/>
                             <Setter TargetName="Row" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>

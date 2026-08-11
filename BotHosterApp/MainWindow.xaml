@@ -90,6 +90,11 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
+                <!-- Top accent strip: violet -> fuchsia gradient line -->
+                <Border Height="3" VerticalAlignment="Top" Background="{StaticResource AccentStripBrush}"
+                        IsHitTestVisible="False"/>
+                <Border VerticalAlignment="Bottom" Height="1" Background="{StaticResource PanelDividerBrush}"
+                        IsHitTestVisible="False"/>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
                     <Border Width="28" Height="28" CornerRadius="9" Background="{StaticResource AccentGradientBrush}">
                         <Image x:Name="TitleLogo" Stretch="Uniform" Width="20" Height="20"

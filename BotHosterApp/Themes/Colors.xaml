@@ -18,14 +18,14 @@
     <Color x:Key="ColorTextSecondary">#A1A1AA</Color>
     <Color x:Key="ColorTextTertiary">#71717A</Color>
     <Color x:Key="ColorTextDisabled">#63636E</Color>
-    <Color x:Key="ColorAccent">#5865F2</Color>
-    <Color x:Key="ColorAccentHover">#6873F4</Color>
-    <Color x:Key="ColorAccentPressed">#4752C4</Color>
+    <Color x:Key="ColorAccent">#8B5CF6</Color>
+    <Color x:Key="ColorAccentHover">#A78BFA</Color>
+    <Color x:Key="ColorAccentPressed">#7C3AED</Color>
     <Color x:Key="ColorOnAccent">#FFFFFF</Color>
     <Color x:Key="ColorOnAccentSoft">#1A000000</Color>
-    <Color x:Key="ColorAccentSoft">#1A5865F2</Color>
-    <Color x:Key="ColorAccentBorder">#3D5865F2</Color>
-    <Color x:Key="ColorAccentText">#A9B4FC</Color>
+    <Color x:Key="ColorAccentSoft">#268B5CF6</Color>
+    <Color x:Key="ColorAccentBorder">#558B5CF6</Color>
+    <Color x:Key="ColorAccentText">#C4B5FD</Color>
     <Color x:Key="ColorGhostOverlay">#05FFFFFF</Color>
     <Color x:Key="ColorScrim">#99000000</Color>
 
@@ -82,16 +82,23 @@
 
     <!-- ============ Gradients ============ -->
     <LinearGradientBrush x:Key="AccentGradientBrush" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#5865F2" Offset="0"/>
-        <GradientStop Color="#7C3AED" Offset="1"/>
+        <GradientStop Color="#8B5CF6" Offset="0"/>
+        <GradientStop Color="#D946EF" Offset="1"/>
     </LinearGradientBrush>
     <LinearGradientBrush x:Key="AccentGradientHoverBrush" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#6873F4" Offset="0"/>
-        <GradientStop Color="#8B5CF6" Offset="1"/>
+        <GradientStop Color="#A78BFA" Offset="0"/>
+        <GradientStop Color="#E879F9" Offset="1"/>
     </LinearGradientBrush>
     <LinearGradientBrush x:Key="AccentGradientPressedBrush" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#4752C4" Offset="0"/>
-        <GradientStop Color="#6D28D9" Offset="1"/>
+        <GradientStop Color="#7C3AED" Offset="0"/>
+        <GradientStop Color="#C026D3" Offset="1"/>
+    </LinearGradientBrush>
+
+    <!-- Soft glow for cards and the top accent strip -->
+    <LinearGradientBrush x:Key="AccentStripBrush" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#8B5CF6" Offset="0"/>
+        <GradientStop Color="#D946EF" Offset="0.5"/>
+        <GradientStop Color="#F472B6" Offset="1"/>
     </LinearGradientBrush>
 
 </ResourceDictionary>

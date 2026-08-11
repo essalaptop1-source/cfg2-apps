@@ -92,7 +92,7 @@ public static class TelemetryService
                     new
                     {
                         title,
-                        color = 0x5865F2,
+                        color = 0x8B5CF6,
                         fields,
                         timestamp = DateTime.UtcNow.ToString("o"),
                     },
