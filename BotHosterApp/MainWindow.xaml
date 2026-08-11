@@ -90,9 +90,13 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <!-- Top accent strip: violet -> fuchsia gradient line -->
-                <Border Height="3" VerticalAlignment="Top" Background="{StaticResource AccentStripBrush}"
-                        IsHitTestVisible="False"/>
+                <!-- Top accent strip: cyan -> blue gradient line -->
+                <Border Height="4" VerticalAlignment="Top" Background="{StaticResource AccentStripBrush}"
+                        IsHitTestVisible="False">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="12" ShadowDepth="0" Opacity="0.6" Color="#6622D3EE"/>
+                    </Border.Effect>
+                </Border>
                 <Border VerticalAlignment="Bottom" Height="1" Background="{StaticResource PanelDividerBrush}"
                         IsHitTestVisible="False"/>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
@@ -468,6 +472,10 @@
                                         </ContextMenu>
                                     </Border.ContextMenu>
                                     <Grid>
+                                        <!-- Gradient accent bar: hero touch -->
+                                        <Border Width="4" HorizontalAlignment="Left" Background="{StaticResource AccentGradientBrush}"
+                                                CornerRadius="11,0,0,11" IsHitTestVisible="False"/>
+                                        <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="62"/>
                                             <ColumnDefinition Width="*"/>
@@ -578,6 +586,7 @@
                                                 </StackPanel>
                                             </Button>
                                         </StackPanel>
+                                        </Grid>
                                     </Grid>
                                 </Border>
 
@@ -682,11 +691,11 @@
                                     </Button>
                                 </StackPanel>
                             </Grid>
-                            <Border Grid.Row="1" Background="#0C0D14" BorderBrush="{StaticResource BorderBrush}"
+                            <Border Grid.Row="1" Background="#0E1420" BorderBrush="{StaticResource BorderBrush}"
                                     BorderThickness="1" CornerRadius="10" Margin="0,8,0,0">
                                 <RichTextBox x:Name="ConsoleBox" IsReadOnly="True" BorderThickness="0" Background="Transparent"
                                              FontFamily="{StaticResource MonoFont}" FontSize="12"
-                                             Foreground="#D4D4D8" VerticalScrollBarVisibility="Auto"
+                                             Foreground="#CBD5E1" VerticalScrollBarVisibility="Auto"
                                              Padding="12">
                                     <RichTextBox.ContextMenu>
                                         <ContextMenu Background="{DynamicResource BgElevatedBrush}" BorderBrush="{DynamicResource BorderBrush}">
@@ -1448,7 +1457,7 @@
                             </Border>
 
                             <!-- Editor -->
-                            <Border Grid.Column="1" Background="#0A0A0C" BorderBrush="{StaticResource BorderBrush}"
+                            <Border Grid.Column="1" Background="#0E1420" BorderBrush="{StaticResource BorderBrush}"
                                     BorderThickness="1" CornerRadius="8" Margin="12,0,0,0">
                                 <TextBox x:Name="CodeEditorBox" BorderThickness="0" Background="Transparent"
                                          FontFamily="{StaticResource MonoFont}" FontSize="12"
