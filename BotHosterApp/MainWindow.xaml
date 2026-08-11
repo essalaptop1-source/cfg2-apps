@@ -18,6 +18,26 @@
         <!-- Bot list item template -->
         <DataTemplate x:Key="BotItemTemplate">
             <Grid Margin="12,10">
+                <Grid.ContextMenu>
+                    <ContextMenu Background="{DynamicResource BgElevatedBrush}" BorderBrush="{DynamicResource BorderBrush}">
+                        <MenuItem Header="Start" Click="Ctx_Start">
+                            <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconPlay}" Width="11" Height="11" Stroke="{StaticResource OnlineBrush}"/></MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="Stop" Click="Ctx_Stop">
+                            <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconStop}" Width="11" Height="11" Stroke="{StaticResource DangerBrush}"/></MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="Restart" Click="Ctx_Restart">
+                            <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconRefresh}" Width="11" Height="11" Stroke="{StaticResource TextSecondaryBrush}"/></MenuItem.Icon>
+                        </MenuItem>
+                        <Separator/>
+                        <MenuItem Header="Copy token" Click="Ctx_CopyToken">
+                            <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconCopy}" Width="11" Height="11" Stroke="{StaticResource TextSecondaryBrush}"/></MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="Remove" Click="Ctx_Remove">
+                            <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconTrash}" Width="11" Height="11" Stroke="{StaticResource DangerBrush}"/></MenuItem.Icon>
+                        </MenuItem>
+                    </ContextMenu>
+                </Grid.ContextMenu>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="40"/>
                     <ColumnDefinition Width="*"/>
@@ -77,6 +97,11 @@
                                Margin="8,1,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button x:Name="SettingsBtn" Style="{StaticResource WindowControlButton}" Width="40" Height="44"
+                            ToolTip="Settings" Click="Settings_Click">
+                        <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconSettings}"
+                              Width="13" Height="13" Stroke="{StaticResource TextSecondaryBrush}"/>
+                    </Button>
                     <Button Style="{StaticResource WindowControlButton}" Width="44" Height="44"
                             ToolTip="Minimize" Click="Minimize_Click">
                         <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconMinimize}"
@@ -93,6 +118,82 @@
                               Width="12" Height="12" Stroke="{StaticResource TextSecondaryBrush}"/>
                     </Button>
                 </StackPanel>
+            </Grid>
+
+            <!-- ======================== Settings overlay ======================== -->
+            <Grid x:Name="SettingsOverlay" Grid.RowSpan="2" Visibility="Collapsed"
+                  Background="#66000000">
+                <Border Width="430" VerticalAlignment="Center" HorizontalAlignment="Center"
+                        Background="{StaticResource BgElevatedBrush}" BorderBrush="{StaticResource BorderStrongBrush}"
+                        BorderThickness="1" CornerRadius="12" Padding="22">
+                    <StackPanel>
+                        <TextBlock Text="Settings" FontSize="16" FontWeight="Bold"
+                                   Foreground="{StaticResource TextBrush}"/>
+                        <TextBlock Text="CFG2 Bot Hoster" FontSize="11"
+                                   Foreground="{StaticResource TextTertiaryBrush}" Margin="0,3,0,14"/>
+
+                        <TextBlock Text="GENERAL" Style="{StaticResource SectionHeader}" Margin="0,0,0,8"/>
+                        <CheckBox x:Name="StartAllCheck" Content="Start all bots when the app opens"
+                                  Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,8"/>
+                        <CheckBox x:Name="AutoRestartNewCheck" Content="Auto-restart new bots by default"
+                                  Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,8"/>
+                        <CheckBox x:Name="UpdateCheck" Content="Check for updates on launch"
+                                  Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,8"/>
+                        <CheckBox x:Name="TelemetryCheck" Content="Send anonymous usage stats to the owner"
+                                  Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,14"/>
+
+                        <TextBlock Text="DEFAULT PRESENCE FOR NEW BOTS" Style="{StaticResource SectionHeader}" Margin="0,0,0,8"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <ComboBox x:Name="DefStatusCombo" Style="{StaticResource ModernComboBox}" Height="30">
+                                <ComboBoxItem Content="Online"/>
+                                <ComboBoxItem Content="Idle"/>
+                                <ComboBoxItem Content="Do Not Disturb"/>
+                                <ComboBoxItem Content="Invisible"/>
+                            </ComboBox>
+                            <ComboBox x:Name="DefActivityCombo" Grid.Column="1" Style="{StaticResource ModernComboBox}" Height="30" Margin="8,0,0,0">
+                                <ComboBoxItem Content="Playing"/>
+                                <ComboBoxItem Content="Watching"/>
+                                <ComboBoxItem Content="Listening to"/>
+                                <ComboBoxItem Content="Competing in"/>
+                                <ComboBoxItem Content="Streaming"/>
+                                <ComboBoxItem Content="Custom status"/>
+                            </ComboBox>
+                            <TextBox x:Name="DefActivityTextBox" Grid.Column="2" Style="{StaticResource FieldTextBox}"
+                                     Height="30" Margin="8,0,0,0" FontSize="11"/>
+                        </Grid>
+
+                        <TextBlock Text="DATA" Style="{StaticResource SectionHeader}" Margin="0,16,0,8"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="DataPathText" FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}"
+                                       TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                            <Button Grid.Column="1" Style="{StaticResource OutlineButton}" Height="28" Padding="10,0"
+                                    Margin="10,0,0,0" Click="OpenDataFolder_Click">
+                                <TextBlock Text="Open folder" FontSize="10.5" FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextBrush}"/>
+                            </Button>
+                        </Grid>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,22,0,0">
+                            <Button Style="{StaticResource GhostButton}" Height="32" Padding="14,0" Click="SettingsClose_Click">
+                                <TextBlock Text="Cancel" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"/>
+                            </Button>
+                            <Button x:Name="SettingsSaveBtn" Style="{StaticResource ModernButton}" Height="32" Padding="18,0"
+                                    Margin="10,0,0,0" Click="SettingsSave_Click">
+                                <TextBlock Text="Save" FontSize="12" FontWeight="SemiBold"
+                                           Foreground="{StaticResource OnAccentBrush}"/>
+                            </Button>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
             </Grid>
 
             <!-- ======================== Body ======================== -->
@@ -488,6 +589,16 @@
                                              FontFamily="{StaticResource MonoFont}" FontSize="11.5"
                                              Foreground="#D4D4D8" VerticalScrollBarVisibility="Auto"
                                              Padding="12">
+                                    <RichTextBox.ContextMenu>
+                                        <ContextMenu Background="{DynamicResource BgElevatedBrush}" BorderBrush="{DynamicResource BorderBrush}">
+                                            <MenuItem Header="Copy all" Click="Console_CopyAll">
+                                                <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconCopy}" Width="11" Height="11" Stroke="{StaticResource TextSecondaryBrush}"/></MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Header="Clear console" Click="ClearConsole_Click">
+                                                <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconTrash}" Width="11" Height="11" Stroke="{StaticResource TextSecondaryBrush}"/></MenuItem.Icon>
+                                            </MenuItem>
+                                        </ContextMenu>
+                                    </RichTextBox.ContextMenu>
                                     <RichTextBox.Resources>
                                         <Style TargetType="Paragraph">
                                             <Setter Property="Margin" Value="0"/>

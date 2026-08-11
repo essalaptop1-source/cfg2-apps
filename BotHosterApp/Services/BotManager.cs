@@ -138,6 +138,8 @@ public sealed class BotManager
         var info = await FetchBotInfoAsync(token);
         if (info == null) return null;
 
+        // Apply the user's defaults for new bots.
+        var s = AppSettings.Load();
         var entry = new BotEntry
         {
             Token = token.Trim(),
@@ -145,6 +147,10 @@ public sealed class BotManager
             AvatarUrl = info.Value.Avatar,
             Id = info.Value.Id,
             AutoStart = autoStart,
+            AutoRestart = s.AutoRestartNew,
+            Status = s.DefaultStatus,
+            Activity = s.DefaultActivity,
+            ActivityText = s.DefaultActivityText,
         };
         Bots.Add(entry);
         await SaveAsync();

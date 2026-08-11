@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.IO;
+using System.Net.Http;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -70,24 +72,28 @@ public partial class MainWindow : Window
         LicenseService.RefreshStatus();
         ApplyPremiumState();
 
+        _settings = AppSettings.Load();
+        TelemetryService.Enabled = _settings.Telemetry;
+
         await _manager.LoadAsync();
         BotsList.ItemsSource = _manager.Bots;
         foreach (var b in _manager.Bots)
         {
-            LoadAvatar(b);
+            _ = LoadAvatarAsync(b);
             LogTo(b, "Loaded - token stored locally", LogSeverity.Info);
         }
         RefreshSidebar();
         if (_manager.Bots.Count > 0)
             BotsList.SelectedIndex = 0;
 
-        // Start bots that are marked to auto-start.
+        // Start bots that are marked to auto-start (per bot or the global toggle).
         foreach (var b in _manager.Bots)
-            if (b.AutoStart)
+            if (b.AutoStart || _settings.StartAllOnLaunch)
                 await _manager.StartAsync(b);
 
         _ticker.Start();
-        _ = CheckForUpdateAsync();
+        if (_settings.CheckUpdates)
+            _ = CheckForUpdateAsync();
     }
 
     private async Task CheckForUpdateAsync()
@@ -240,7 +246,7 @@ public partial class MainWindow : Window
         }
 
         _ = TelemetryService.ReportBotAsync(entry.Name, entry.Id, "added");
-        LoadAvatar(entry);
+        _ = LoadAvatarAsync(entry);
         LogTo(entry, "Bot added", LogSeverity.Info);
         AddPanel.Visibility = Visibility.Collapsed;
         TokenBox.Text = "";
@@ -276,18 +282,31 @@ public partial class MainWindow : Window
         PresenceHint.Text = "Token copied to clipboard.";
     }
 
-    private void LoadAvatar(BotEntry b)
+    /// <summary>
+    /// Loads the bot avatar reliably: download the bytes off the UI thread,
+    /// then decode from a stream (UriSource-based loading can silently fail
+    /// for HTTPS images on the UI thread).
+    /// </summary>
+    private async Task LoadAvatarAsync(BotEntry b)
     {
-        if (string.IsNullOrEmpty(b.AvatarUrl)) return;
+        if (string.IsNullOrEmpty(b.AvatarUrl) || b.AvatarImage != null) return;
         try
         {
+            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("CFG2-BotHoster/1.0");
+            var bytes = await client.GetByteArrayAsync(b.AvatarUrl);
             var bmp = new BitmapImage();
             bmp.BeginInit();
-            bmp.UriSource = new Uri(b.AvatarUrl);
+            bmp.StreamSource = new MemoryStream(bytes);
             bmp.CacheOption = BitmapCacheOption.OnLoad;
             bmp.EndInit();
             bmp.Freeze();
             b.AvatarImage = bmp;
+            Dispatcher.BeginInvoke(() =>
+            {
+                BotsList.Items.Refresh();
+                if (_selected == b) BotAvatarImage.Source = bmp;
+            });
         }
         catch
         {
@@ -498,5 +517,122 @@ public partial class MainWindow : Window
             return System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.0.0";
         }
         catch { return "1.0.0"; }
+    }
+
+    // ================================================================== context menu
+
+    private BotEntry? CtxBot(object sender)
+    {
+        if (sender is MenuItem mi && mi.Parent is ContextMenu cm &&
+            cm.PlacementTarget is FrameworkElement fe)
+            return fe.DataContext as BotEntry;
+        return null;
+    }
+
+    private async void Ctx_Start(object sender, RoutedEventArgs e)
+    {
+        var b = CtxBot(sender);
+        if (b != null) await _manager.StartAsync(b);
+    }
+
+    private async void Ctx_Stop(object sender, RoutedEventArgs e)
+    {
+        var b = CtxBot(sender);
+        if (b != null) await _manager.StopAsync(b);
+    }
+
+    private async void Ctx_Restart(object sender, RoutedEventArgs e)
+    {
+        var b = CtxBot(sender);
+        if (b != null) await _manager.RestartAsync(b);
+    }
+
+    private void Ctx_CopyToken(object sender, RoutedEventArgs e)
+    {
+        var b = CtxBot(sender);
+        if (b == null) return;
+        Clipboard.SetText(b.Token);
+        if (_selected == b) PresenceHint.Text = "Token copied to clipboard.";
+    }
+
+    private async void Ctx_Remove(object sender, RoutedEventArgs e)
+    {
+        var b = CtxBot(sender);
+        if (b == null) return;
+        var confirm = MessageBox.Show(
+            $"Remove \"{b.Name}\"? It will be stopped and deleted from this app.",
+            "Remove bot", MessageBoxButton.OKCancel, MessageBoxImage.Warning);
+        if (confirm != MessageBoxResult.OK) return;
+        await _manager.RemoveBotAsync(b);
+        _logs.Remove(b);
+        RefreshSidebar();
+        if (BotsList.Items.Count > 0) BotsList.SelectedIndex = 0;
+        else _selected = null;
+        RefreshSelectedView();
+        EmptyState.Visibility = BotsList.Items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        BotView.Visibility = BotsList.Items.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    private void Console_CopyAll(object sender, RoutedEventArgs e)
+    {
+        if (_selected != null && _logs.TryGetValue(_selected, out var list))
+        {
+            var sb = new System.Text.StringBuilder();
+            foreach (var (text, _) in list) sb.AppendLine(text);
+            Clipboard.SetText(sb.ToString());
+        }
+    }
+
+    // ================================================================== settings
+
+    private static AppSettings _settings = new();
+
+    private void Settings_Click(object sender, RoutedEventArgs e)
+    {
+        StartAllCheck.IsChecked = _settings.StartAllOnLaunch;
+        AutoRestartNewCheck.IsChecked = _settings.AutoRestartNew;
+        UpdateCheck.IsChecked = _settings.CheckUpdates;
+        TelemetryCheck.IsChecked = _settings.Telemetry;
+        DefStatusCombo.SelectedIndex = _settings.DefaultStatus switch
+        {
+            "idle" => 1, "dnd" => 2, "invisible" => 3, _ => 0,
+        };
+        DefActivityCombo.SelectedIndex = _settings.DefaultActivity switch
+        {
+            "watching" => 1, "listening" => 2, "competing" => 3,
+            "streaming" => 4, "custom" => 5, _ => 0,
+        };
+        DefActivityTextBox.Text = _settings.DefaultActivityText;
+        DataPathText.Text = System.IO.Path.Combine(AppPaths.LocalDataDir, "bot_hoster_bots.json");
+        SettingsOverlay.Visibility = Visibility.Visible;
+    }
+
+    private void SettingsClose_Click(object sender, RoutedEventArgs e) =>
+        SettingsOverlay.Visibility = Visibility.Collapsed;
+
+    private void SettingsSave_Click(object sender, RoutedEventArgs e)
+    {
+        _settings.StartAllOnLaunch = StartAllCheck.IsChecked == true;
+        _settings.AutoRestartNew = AutoRestartNewCheck.IsChecked == true;
+        _settings.CheckUpdates = UpdateCheck.IsChecked == true;
+        _settings.Telemetry = TelemetryCheck.IsChecked == true;
+        _settings.DefaultStatus = DefStatusCombo.SelectedIndex switch
+        {
+            1 => "idle", 2 => "dnd", 3 => "invisible", _ => "online",
+        };
+        _settings.DefaultActivity = DefActivityCombo.SelectedIndex switch
+        {
+            1 => "watching", 2 => "listening", 3 => "competing",
+            4 => "streaming", 5 => "custom", _ => "playing",
+        };
+        _settings.DefaultActivityText = DefActivityTextBox.Text;
+        _settings.Save();
+        TelemetryService.Enabled = _settings.Telemetry;
+        SettingsOverlay.Visibility = Visibility.Collapsed;
+    }
+
+    private void OpenDataFolder_Click(object sender, RoutedEventArgs e)
+    {
+        try { Process.Start(new ProcessStartInfo(AppPaths.LocalDataDir) { UseShellExecute = true }); } catch { }
     }
 }
