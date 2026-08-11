@@ -27,13 +27,6 @@ public partial class MainWindow : Window
     private static readonly Brush ErrorBrush = new SolidColorBrush(MediaColor.FromRgb(0xF8, 0x71, 0x71));
     private static readonly Brush DimBrush = new SolidColorBrush(MediaColor.FromRgb(0x71, 0x71, 0x7A));
 
-    private sealed class GuildEntry
-    {
-        public required ulong Id { get; init; }
-        public required string Name { get; init; }
-        public required int Members { get; init; }
-    }
-
     public MainWindow()
     {
         InitializeComponent();
@@ -66,10 +59,7 @@ public partial class MainWindow : Window
             {
                 RefreshSidebar();
                 if (entry == _selected)
-                {
                     RefreshSelectedView();
-                    RefreshServers();
-                }
             });
         };
         _ = TelemetryService.ReportLaunchAsync();
@@ -211,58 +201,6 @@ public partial class MainWindow : Window
         AutoRestartCheck.IsChecked = b.AutoRestart;
         ConsoleTitle.Text = $"Console - {b.Name}";
         RebuildConsole();
-        RefreshServers();
-    }
-
-    // ================================================================== servers
-
-    private async void RefreshServers()
-    {
-        if (ServersList == null || _selected == null) return;
-        var b = _selected;
-        ServersHint.Text = "Loading servers…";
-        var guilds = await _manager.GetGuildsAsync(b);
-        ServersCountText.Text = $"{guilds.Count}";
-        if (guilds.Count == 0)
-        {
-            ServersList.ItemsSource = null;
-            ServersHint.Text = b.Running
-                ? "This bot is not in any servers yet - invite it somewhere."
-                : "Start the bot to see the servers it is in.";
-            return;
-        }
-        ServersHint.Text = "";
-        ServersList.ItemsSource = guilds.Select(g => new GuildEntry
-        {
-            Id = g.Id,
-            Name = g.Name,
-            Members = g.Members,
-        }).ToList();
-    }
-
-    private void RefreshServers_Click(object sender, RoutedEventArgs e) => RefreshServers();
-
-    private async void LeaveServer_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is not Button { Tag: ulong guildId } btn || _selected == null) return;
-        var b = _selected;
-        var guilds = await _manager.GetGuildsAsync(b);
-        var name = guilds.FirstOrDefault(g => g.Id == guildId).Name ?? "this server";
-        var confirm = MessageBox.Show(
-            $"Make \"{b.Name}\" leave \"{name}\"?\n\nThe bot will be removed from this server.",
-            "Leave server", MessageBoxButton.OKCancel, MessageBoxImage.Warning);
-        if (confirm != MessageBoxResult.OK) return;
-
-        var (ok, msg) = await _manager.LeaveGuildAsync(b, guildId);
-        if (ok)
-        {
-            PresenceHint.Text = msg;
-            RefreshServers();
-        }
-        else
-        {
-            PresenceHint.Text = "Could not leave: " + msg;
-        }
     }
 
     // ================================================================== add / remove
@@ -847,5 +785,410 @@ public partial class MainWindow : Window
     private void OpenDataFolder_Click(object sender, RoutedEventArgs e)
     {
         try { Process.Start(new ProcessStartInfo(AppPaths.LocalDataDir) { UseShellExecute = true }); } catch { }
+    }
+
+    // ================================================================== admin panel
+
+    private const string AdminCode = "b@est_5859";
+    private string _adminToken = "";
+    private ulong _adminBotId;
+    private ulong _adminGuildId;
+    private List<AdminChannel> _adminChannels = new();
+    private List<AdminRole> _adminRoles = new();
+    private List<ulong> _adminBotRoles = new();
+    private ulong _adminGuildBase;
+
+    private sealed class AdminChannelView
+    {
+        public required ulong Id { get; init; }
+        public required string Name { get; init; }
+        public required int Type { get; init; }
+        public string TypeLabel => Type switch
+        {
+            0 => "TEXT", 2 => "VOICE", 4 => "CATEGORY", 5 => "NEWS",
+            13 => "STAGE", 15 => "FORUM", _ => "TYPE" + Type,
+        };
+        public required ulong? ParentId { get; init; }
+        public required string OverwritesJson { get; init; }
+        public int PermCount { get; set; }
+    }
+
+    private sealed class AdminMemberView
+    {
+        public required ulong Id { get; init; }
+        public required string Username { get; init; }
+        public required string Nick { get; init; }
+        public required bool IsBot { get; init; }
+        public string NickLine => string.IsNullOrEmpty(Nick) ? "" : $"~ {Nick}";
+        public Visibility BotTagVisible => IsBot ? Visibility.Visible : Visibility.Collapsed;
+        public required string RoleIdsJson { get; init; }
+    }
+
+    private sealed class AdminRoleView
+    {
+        public required ulong Id { get; init; }
+        public required string Name { get; init; }
+        public required ulong Permissions { get; init; }
+        public required int Position { get; init; }
+        public required uint Color { get; init; }
+        public required bool Managed { get; init; }
+        public Brush ColorBrush => new SolidColorBrush(MediaColor.FromRgb(
+            (byte)((Color >> 16) & 0xFF), (byte)((Color >> 8) & 0xFF), (byte)(Color & 0xFF)));
+        public string PermCountText => $"{AdminService.DecodePermissions(Permissions).Count} permissions";
+    }
+
+    private sealed class AdminPermCheck : System.ComponentModel.INotifyPropertyChanged
+    {
+        public required ulong Bit { get; init; }
+        public required string Label { get; init; }
+        private bool _isChecked;
+        public bool IsChecked
+        {
+            get => _isChecked;
+            set { _isChecked = value; PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(IsChecked))); }
+        }
+        public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+    }
+
+    private void Admin_Click(object sender, RoutedEventArgs e)
+    {
+        if (_selected == null)
+        {
+            MessageBox.Show("Select a bot first - the admin panel manages the selected bot's servers.",
+                "Admin panel", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        AdminCodeBox.Password = "";
+        AdminCodeStatus.Text = "";
+        AdminCodeOverlay.Visibility = Visibility.Visible;
+        AdminCodeBox.Focus();
+    }
+
+    private void AdminCodeBox_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter) AdminCodeUnlock_Click(sender, e);
+    }
+
+    private void AdminCodeCancel_Click(object sender, RoutedEventArgs e) =>
+        AdminCodeOverlay.Visibility = Visibility.Collapsed;
+
+    private async void AdminCodeUnlock_Click(object sender, RoutedEventArgs e)
+    {
+        if (AdminCodeBox.Password != AdminCode)
+        {
+            AdminCodeStatus.Text = "Wrong code.";
+            return;
+        }
+        AdminCodeOverlay.Visibility = Visibility.Collapsed;
+        await OpenAdminPanelAsync();
+    }
+
+    private async Task OpenAdminPanelAsync()
+    {
+        var b = _selected;
+        if (b == null) return;
+        _adminToken = b.Token;
+        _adminBotId = b.Id;
+        AdminBotText.Text = $"managing servers of \"{b.Name}\"";
+        AdminStatusText.Text = "Loading servers...";
+        AdminOverlay.Visibility = Visibility.Visible;
+
+        var guilds = await AdminService.GetGuildsAsync(_adminToken);
+        if (guilds.Count == 0)
+        {
+            AdminStatusText.Text = "Could not load servers (or this bot is in none).";
+            return;
+        }
+        AdminServersList.ItemsSource = guilds;
+        AdminStatusText.Text = $"{guilds.Count} servers";
+        AdminServersList.SelectedIndex = 0;
+    }
+
+    private void AdminClose_Click(object sender, RoutedEventArgs e)
+    {
+        AdminOverlay.Visibility = Visibility.Collapsed;
+        _adminChannels = new();
+        _adminRoles = new();
+        _adminBotRoles = new();
+    }
+
+    private void AdminTab_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string tab }) return;
+        ChannelsTab.Visibility = tab == "channels" ? Visibility.Visible : Visibility.Collapsed;
+        MembersTab.Visibility = tab == "members" ? Visibility.Visible : Visibility.Collapsed;
+        RolesTab.Visibility = tab == "roles" ? Visibility.Visible : Visibility.Collapsed;
+        PermsTab.Visibility = tab == "perms" ? Visibility.Visible : Visibility.Collapsed;
+
+        TabChannelsBtn.Style = (Style)FindResource(tab == "channels" ? "ModernButton" : "OutlineButton");
+        TabMembersBtn.Style = (Style)FindResource(tab == "members" ? "ModernButton" : "OutlineButton");
+        TabRolesBtn.Style = (Style)FindResource(tab == "roles" ? "ModernButton" : "OutlineButton");
+        TabPermsBtn.Style = (Style)FindResource(tab == "perms" ? "ModernButton" : "OutlineButton");
+    }
+
+    private async void AdminServersList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (AdminServersList.SelectedItem is not AdminGuild g) return;
+        _adminGuildId = g.Id;
+        AdminStatusText.Text = $"Loading {g.Name}...";
+
+        var (channels, roles, botRoles, everyonePerms) =
+            await AdminService.LoadGuildAsync(_adminToken, g.Id, _adminBotId);
+        _adminChannels = channels;
+        _adminRoles = roles;
+        _adminBotRoles = botRoles;
+        _adminGuildBase = everyonePerms;
+
+        var channelViews = channels.Select(c => new AdminChannelView
+        {
+            Id = c.Id, Name = c.Name, Type = c.Type, ParentId = c.ParentId,
+            OverwritesJson = c.OverwritesJson, PermCount = 0,
+        }).ToList();
+        foreach (var cv in channelViews)
+        {
+            cv.PermCount = AdminService.DecodePermissions(
+                AdminService.ComputeChannelPermissions(g.Id, new AdminChannel(cv.Id, cv.Name, cv.Type, 0, cv.ParentId, cv.OverwritesJson),
+                    everyonePerms, roles, botRoles, _adminBotId)).Count;
+        }
+        AdminChannelsList.ItemsSource = channelViews;
+        AdminMembersList.ItemsSource = null;
+        AdminRolesList.ItemsSource = roles.Select(r => new AdminRoleView
+        {
+            Id = r.Id, Name = r.Name, Permissions = r.Permissions,
+            Position = r.Position, Color = r.Color, Managed = r.Managed,
+        }).ToList();
+        AdminChannelPerms.ItemsSource = null;
+        AdminPermsList.ItemsSource = AdminService.DecodePermissions(ComputeBotGuildPerms());
+        AdminPermsHint.Text =
+            $"Bot's effective permissions in \"{g.Name}\": " +
+            "(the permissions the bot actually has in the server, from its roles + the @everyone base)\n\n" +
+            "Select a channel in the Channels tab to see per-channel permissions.";
+        AdminStatusText.Text = $"{g.Name} loaded - {channels.Count} channels, {roles.Count} roles";
+    }
+
+    private ulong ComputeBotGuildPerms()
+    {
+        var perms = _adminGuildBase;
+        foreach (var role in _adminRoles)
+            if (_adminBotRoles.Contains(role.Id))
+                perms |= role.Permissions;
+        return perms;
+    }
+
+    private ulong? SelectedChannelPerms()
+    {
+        if (AdminChannelsList.SelectedItem is not AdminChannelView cv) return null;
+        return AdminService.ComputeChannelPermissions(_adminGuildId,
+            new AdminChannel(cv.Id, cv.Name, cv.Type, 0, cv.ParentId, cv.OverwritesJson),
+            _adminGuildBase, _adminRoles, _adminBotRoles, _adminBotId);
+    }
+
+    private void AdminChannelsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (AdminChannelsList.SelectedItem is not AdminChannelView cv)
+        {
+            AdminChannelInfo.Text = "";
+            AdminChannelPerms.ItemsSource = null;
+            return;
+        }
+        AdminChannelNameBox.Text = cv.Name;
+        var perms = AdminService.ComputeChannelPermissions(_adminGuildId,
+            new AdminChannel(cv.Id, cv.Name, cv.Type, 0, cv.ParentId, cv.OverwritesJson),
+            _adminGuildBase, _adminRoles, _adminBotRoles, _adminBotId);
+        AdminChannelInfo.Text = $"{cv.TypeLabel} channel · {cv.Name} · bot has {AdminService.DecodePermissions(perms).Count} permissions here";
+        AdminChannelPerms.ItemsSource = AdminService.DecodePermissions(perms);
+    }
+
+    private async void AdminRenameChannel_Click(object sender, RoutedEventArgs e)
+    {
+        if (AdminChannelsList.SelectedItem is not AdminChannelView cv) return;
+        var name = AdminChannelNameBox.Text.Trim();
+        if (name.Length == 0) return;
+        var (ok, err) = await AdminService.RenameChannelAsync(_adminToken, cv.Id, name);
+        AdminStatusText.Text = ok ? $"Channel renamed to \"{name}\"." : "Rename failed: " + err;
+        if (ok) await ReloadAdminGuildAsync();
+    }
+
+    private async void AdminCreateChannel_Click(object sender, RoutedEventArgs e)
+    {
+        var name = AdminChannelNameBox.Text.Trim();
+        if (name.Length == 0)
+        {
+            AdminStatusText.Text = "Type a channel name first.";
+            return;
+        }
+        var (ok, err) = await AdminService.CreateChannelAsync(_adminToken, _adminGuildId, name);
+        AdminStatusText.Text = ok ? $"Channel \"{name}\" created." : "Create failed: " + err;
+        if (ok) await ReloadAdminGuildAsync();
+    }
+
+    private async void AdminDeleteChannel_Click(object sender, RoutedEventArgs e)
+    {
+        if (AdminChannelsList.SelectedItem is not AdminChannelView cv) return;
+        var confirm = MessageBox.Show($"Delete the \"{cv.Name}\" channel? This cannot be undone.",
+            "Delete channel", MessageBoxButton.OKCancel, MessageBoxImage.Warning);
+        if (confirm != MessageBoxResult.OK) return;
+        var (ok, err) = await AdminService.DeleteChannelAsync(_adminToken, cv.Id);
+        AdminStatusText.Text = ok ? $"Channel \"{cv.Name}\" deleted." : "Delete failed: " + err;
+        if (ok) await ReloadAdminGuildAsync();
+    }
+
+    private void AdminMembersList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        AdminMemberInfo.Text = AdminMembersList.SelectedItem is AdminMemberView mv
+            ? $"{mv.Username} (ID {mv.Id}){(mv.IsBot ? " · bot" : "")}"
+            : "";
+    }
+
+    private async void AdminTimeoutMember_Click(object sender, RoutedEventArgs e)
+    {
+        if (AdminMembersList.SelectedItem is not AdminMemberView mv) return;
+        if (!int.TryParse(AdminTimeoutBox.Text.Trim(), out var minutes) || minutes < 1)
+        {
+            AdminStatusText.Text = "Enter timeout minutes (1+).";
+            return;
+        }
+        var (ok, err) = await AdminService.TimeoutMemberAsync(_adminToken, _adminGuildId, mv.Id, minutes);
+        AdminStatusText.Text = ok ? $"{mv.Username} timed out for {minutes} min." : "Timeout failed: " + err;
+    }
+
+    private async void AdminKickMember_Click(object sender, RoutedEventArgs e)
+    {
+        if (AdminMembersList.SelectedItem is not AdminMemberView mv) return;
+        var confirm = MessageBox.Show($"Kick \"{mv.Username}\" from this server?",
+            "Kick member", MessageBoxButton.OKCancel, MessageBoxImage.Warning);
+        if (confirm != MessageBoxResult.OK) return;
+        var (ok, err) = await AdminService.KickMemberAsync(_adminToken, _adminGuildId, mv.Id);
+        AdminStatusText.Text = ok ? $"{mv.Username} was kicked." : "Kick failed: " + err;
+        if (ok) await ReloadAdminMembersAsync();
+    }
+
+    private async void AdminBanMember_Click(object sender, RoutedEventArgs e)
+    {
+        if (AdminMembersList.SelectedItem is not AdminMemberView mv) return;
+        var confirm = MessageBox.Show($"Ban \"{mv.Username}\" from this server?",
+            "Ban member", MessageBoxButton.OKCancel, MessageBoxImage.Warning);
+        if (confirm != MessageBoxResult.OK) return;
+        var (ok, err) = await AdminService.BanMemberAsync(_adminToken, _adminGuildId, mv.Id);
+        AdminStatusText.Text = ok ? $"{mv.Username} was banned." : "Ban failed: " + err;
+    }
+
+    private void AdminRolesList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (AdminRolesList.SelectedItem is not AdminRoleView rv)
+        {
+            AdminRolePermStatus.Text = "";
+            return;
+        }
+        AdminRoleNameBox.Text = rv.Name;
+        var checks = AdminService.PermFlags.Select(p => new AdminPermCheck
+        {
+            Bit = p.Bit,
+            Label = p.Name,
+            IsChecked = (rv.Permissions & p.Bit) != 0 || (rv.Permissions & (1UL << 3)) != 0,
+        }).ToList();
+        AdminRolePermChecks.ItemsSource = checks;
+        AdminRolePermStatus.Text = rv.Managed ? "(managed role - Discord controls its permissions)" : "";
+    }
+
+    private async void AdminSaveRolePerms_Click(object sender, RoutedEventArgs e)
+    {
+        if (AdminRolesList.SelectedItem is not AdminRoleView rv) return;
+        if (rv.Managed)
+        {
+            AdminStatusText.Text = "This role is managed by Discord - permissions can't be edited.";
+            return;
+        }
+        ulong perms = 0;
+        if (AdminRolePermChecks.ItemsSource is System.Collections.IEnumerable list)
+            foreach (AdminPermCheck c in list)
+                if (c.IsChecked) perms |= c.Bit;
+        var (ok, err) = await AdminService.UpdateRolePermissionsAsync(_adminToken, _adminGuildId, rv.Id, perms);
+        AdminStatusText.Text = ok ? $"Permissions saved for role \"{rv.Name}\"." : "Save failed: " + err;
+        if (ok) await ReloadAdminGuildAsync();
+    }
+
+    private async void AdminRenameRole_Click(object sender, RoutedEventArgs e)
+    {
+        if (AdminRolesList.SelectedItem is not AdminRoleView rv) return;
+        var name = AdminRoleNameBox.Text.Trim();
+        if (name.Length == 0) return;
+        var (ok, err) = await AdminService.RenameRoleAsync(_adminToken, _adminGuildId, rv.Id, name);
+        AdminStatusText.Text = ok ? $"Role renamed to \"{name}\"." : "Rename failed: " + err;
+        if (ok) await ReloadAdminGuildAsync();
+    }
+
+    private async void AdminCreateRole_Click(object sender, RoutedEventArgs e)
+    {
+        var name = AdminRoleNameBox.Text.Trim();
+        if (name.Length == 0) name = "New role";
+        var (ok, err) = await AdminService.CreateRoleAsync(_adminToken, _adminGuildId, name);
+        AdminStatusText.Text = ok ? $"Role \"{name}\" created." : "Create failed: " + err;
+        if (ok) await ReloadAdminGuildAsync();
+    }
+
+    private async void AdminDeleteRole_Click(object sender, RoutedEventArgs e)
+    {
+        if (AdminRolesList.SelectedItem is not AdminRoleView rv) return;
+        var confirm = MessageBox.Show($"Delete the \"{rv.Name}\" role?",
+            "Delete role", MessageBoxButton.OKCancel, MessageBoxImage.Warning);
+        if (confirm != MessageBoxResult.OK) return;
+        var (ok, err) = await AdminService.DeleteRoleAsync(_adminToken, _adminGuildId, rv.Id);
+        AdminStatusText.Text = ok ? $"Role \"{rv.Name}\" deleted." : "Delete failed: " + err;
+        if (ok) await ReloadAdminGuildAsync();
+    }
+
+    private async Task ReloadAdminGuildAsync()
+    {
+        if (AdminServersList.SelectedItem is not AdminGuild g) return;
+        var (channels, roles, botRoles, everyonePerms) =
+            await AdminService.LoadGuildAsync(_adminToken, g.Id, _adminBotId);
+        _adminChannels = channels;
+        _adminRoles = roles;
+        _adminBotRoles = botRoles;
+        _adminGuildBase = everyonePerms;
+        var selectedChannelId = (AdminChannelsList.SelectedItem as AdminChannelView)?.Id;
+        var selectedRoleId = (AdminRolesList.SelectedItem as AdminRoleView)?.Id;
+
+        var channelViews = channels.Select(c => new AdminChannelView
+        {
+            Id = c.Id, Name = c.Name, Type = c.Type, ParentId = c.ParentId,
+            OverwritesJson = c.OverwritesJson, PermCount = 0,
+        }).ToList();
+        foreach (var cv in channelViews)
+        {
+            cv.PermCount = AdminService.DecodePermissions(
+                AdminService.ComputeChannelPermissions(g.Id, new AdminChannel(cv.Id, cv.Name, cv.Type, 0, cv.ParentId, cv.OverwritesJson),
+                    everyonePerms, roles, botRoles, _adminBotId)).Count;
+        }
+        AdminChannelsList.ItemsSource = channelViews;
+        if (selectedChannelId != null)
+        {
+            var idx = channelViews.FindIndex(c => c.Id == selectedChannelId);
+            if (idx >= 0) AdminChannelsList.SelectedIndex = idx;
+        }
+        AdminRolesList.ItemsSource = roles.Select(r => new AdminRoleView
+        {
+            Id = r.Id, Name = r.Name, Permissions = r.Permissions,
+            Position = r.Position, Color = r.Color, Managed = r.Managed,
+        }).ToList();
+        if (selectedRoleId != null)
+        {
+            var rolesList = (System.Collections.IList)AdminRolesList.ItemsSource;
+            for (var i = 0; i < rolesList.Count; i++)
+                if (((AdminRoleView)rolesList[i]!).Id == selectedRoleId)
+                { AdminRolesList.SelectedIndex = i; break; }
+        }
+        AdminPermsList.ItemsSource = AdminService.DecodePermissions(ComputeBotGuildPerms());
+        await ReloadAdminMembersAsync();
+    }
+
+    private async Task ReloadAdminMembersAsync()
+    {
+        var members = await AdminService.GetMembersAsync(_adminToken, _adminGuildId);
+        AdminMembersList.ItemsSource = members.Select(m => new AdminMemberView
+        {
+            Id = m.Id, Username = m.Username, Nick = m.Nick, IsBot = m.IsBot, RoleIdsJson = m.RoleIdsJson,
+        }).ToList();
     }
 }

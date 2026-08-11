@@ -97,6 +97,11 @@
                                Margin="8,1,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button x:Name="AdminBtn" Style="{StaticResource WindowControlButton}" Width="40" Height="44"
+                            ToolTip="Admin panel" Click="Admin_Click">
+                        <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconShield}"
+                              Width="13" Height="13" Stroke="{StaticResource AccentTextBrush}"/>
+                    </Button>
                     <Button x:Name="SettingsBtn" Style="{StaticResource WindowControlButton}" Width="40" Height="44"
                             ToolTip="Settings" Click="Settings_Click">
                         <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconSettings}"
@@ -486,59 +491,6 @@
                                     </Grid>
                                 </Border>
 
-                                <!-- Servers card -->
-                                <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"
-                                        BorderThickness="1" CornerRadius="10" Margin="0,12,0,0" Padding="16">
-                                    <StackPanel>
-                                        <Grid Margin="0,0,0,10">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                            </Grid.ColumnDefinitions>
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="SERVERS" Style="{StaticResource SectionHeader}" VerticalAlignment="Center"/>
-                                                <TextBlock x:Name="ServersCountText" FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}"
-                                                           Margin="8,0,0,0" VerticalAlignment="Center"/>
-                                            </StackPanel>
-                                            <Button Grid.Column="1" Style="{StaticResource GhostButton}" Height="26" Padding="10,0"
-                                                    Click="RefreshServers_Click">
-                                                <StackPanel Orientation="Horizontal">
-                                                    <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconRefresh}"
-                                                          Width="10" Height="10" Stroke="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"/>
-                                                    <TextBlock Text="Refresh" FontSize="10.5" Foreground="{StaticResource TextSecondaryBrush}" Margin="5,0,0,0"/>
-                                                </StackPanel>
-                                            </Button>
-                                        </Grid>
-                                        <TextBlock x:Name="ServersHint" FontSize="11" Foreground="{StaticResource TextTertiaryBrush}"
-                                                   TextWrapping="Wrap" Margin="0,0,0,8"/>
-                                        <ListBox x:Name="ServersList" Height="150" Background="Transparent" BorderThickness="0"
-                                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                                 ItemContainerStyle="{StaticResource RowItem}">
-                                            <ListBox.ItemTemplate>
-                                                <DataTemplate>
-                                                    <Grid Margin="10,7">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="*"/>
-                                                            <ColumnDefinition Width="Auto"/>
-                                                        </Grid.ColumnDefinitions>
-                                                        <StackPanel VerticalAlignment="Center">
-                                                            <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold"
-                                                                       Foreground="{StaticResource TextBrush}" TextTrimming="CharacterEllipsis"/>
-                                                            <TextBlock FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}" Margin="0,2,0,0">
-                                                                <Run Text="{Binding Members}"/><Run Text=" members"/>
-                                                            </TextBlock>
-                                                        </StackPanel>
-                                                        <Button Grid.Column="1" Style="{StaticResource GhostButton}" Height="26" Padding="10,0"
-                                                                VerticalAlignment="Center" Tag="{Binding Id}" Click="LeaveServer_Click">
-                                                            <TextBlock Text="Leave" FontSize="10.5" FontWeight="SemiBold"
-                                                                       Foreground="{StaticResource DangerBrush}"/>
-                                                        </Button>
-                                                    </Grid>
-                                                </DataTemplate>
-                                            </ListBox.ItemTemplate>
-                                        </ListBox>
-                                    </StackPanel>
-                                </Border>
                             </StackPanel>
                         </ScrollViewer>
 
@@ -644,6 +596,388 @@
                             </Button>
                         </StackPanel>
                     </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- ======================== Admin code prompt ======================== -->
+            <Grid x:Name="AdminCodeOverlay" Grid.RowSpan="2" Visibility="Collapsed" Background="#66000000">
+                <Border Width="340" VerticalAlignment="Center" HorizontalAlignment="Center"
+                        Background="{StaticResource BgElevatedBrush}" BorderBrush="{StaticResource BorderStrongBrush}"
+                        BorderThickness="1" CornerRadius="12" Padding="20">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconShield}"
+                                  Width="16" Height="16" Stroke="{StaticResource AccentTextBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="Admin access" FontSize="15" FontWeight="Bold" Margin="8,0,0,0"
+                                       Foreground="{StaticResource TextBrush}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock Text="Enter the admin code to unlock server management."
+                                   FontSize="11" Foreground="{StaticResource TextTertiaryBrush}" TextWrapping="Wrap" Margin="0,6,0,12"/>
+                        <PasswordBox x:Name="AdminCodeBox" Height="34"
+                                     Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}"
+                                     BorderThickness="1" Foreground="{StaticResource TextBrush}" CaretBrush="{StaticResource TextBrush}"
+                                     FontFamily="{StaticResource MonoFont}" FontSize="12" Padding="8,0"
+                                     KeyDown="AdminCodeBox_KeyDown"/>
+                        <TextBlock x:Name="AdminCodeStatus" FontSize="10.5" Foreground="{StaticResource DangerBrush}"
+                                   TextWrapping="Wrap" Margin="0,7,0,0"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
+                            <Button Style="{StaticResource GhostButton}" Height="30" Padding="12,0" Click="AdminCodeCancel_Click">
+                                <TextBlock Text="Cancel" FontSize="11.5" Foreground="{StaticResource TextSecondaryBrush}"/>
+                            </Button>
+                            <Button x:Name="AdminCodeUnlockBtn" Style="{StaticResource ModernButton}" Height="30" Padding="16,0"
+                                    Margin="10,0,0,0" Click="AdminCodeUnlock_Click">
+                                <TextBlock Text="Unlock" FontSize="11.5" FontWeight="SemiBold"
+                                           Foreground="{StaticResource OnAccentBrush}"/>
+                            </Button>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- ======================== Admin panel ======================== -->
+            <Grid x:Name="AdminOverlay" Grid.RowSpan="2" Visibility="Collapsed" Background="#66000000">
+                <Border Width="940" Height="600" VerticalAlignment="Center" HorizontalAlignment="Center"
+                        Background="{StaticResource BgElevatedBrush}" BorderBrush="{StaticResource BorderStrongBrush}"
+                        BorderThickness="1" CornerRadius="12">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Header -->
+                        <Grid Grid.Row="0" Margin="20,16,20,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Orientation="Horizontal">
+                                <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconShield}"
+                                      Width="15" Height="15" Stroke="{StaticResource AccentTextBrush}" VerticalAlignment="Center"/>
+                                <TextBlock Text="Admin panel" FontSize="15" FontWeight="Bold" Foreground="{StaticResource TextBrush}"
+                                           Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="AdminBotText" FontSize="11" Foreground="{StaticResource TextTertiaryBrush}"
+                                           Margin="10,1,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <Button Grid.Column="1" Style="{StaticResource GhostButton}" Width="28" Height="28"
+                                    Click="AdminClose_Click">
+                                <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconClose}"
+                                      Width="11" Height="11" Stroke="{StaticResource TextSecondaryBrush}"/>
+                            </Button>
+                        </Grid>
+
+                        <!-- Body -->
+                        <Grid Grid.Row="1" Margin="20,14,20,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="210"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Servers -->
+                            <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"
+                                    BorderThickness="1" CornerRadius="8" Padding="8">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Text="SERVERS" Style="{StaticResource SectionHeader}" Margin="4,2,0,8"/>
+                                    <ListBox x:Name="AdminServersList" Grid.Row="1" Background="Transparent" BorderThickness="0"
+                                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                             ItemContainerStyle="{StaticResource RowItem}"
+                                             SelectionChanged="AdminServersList_SelectionChanged">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Margin="8,6">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel>
+                                                        <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold"
+                                                                   Foreground="{StaticResource TextBrush}" TextTrimming="CharacterEllipsis"/>
+                                                        <TextBlock FontSize="10" Foreground="{StaticResource TextTertiaryBrush}" Margin="0,2,0,0">
+                                                            <Run Text="{Binding Members, Mode=OneWay}"/><Run Text=" members"/>
+                                                        </TextBlock>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </Grid>
+                            </Border>
+
+                            <!-- Right side -->
+                            <Grid Grid.Column="1" Margin="14,0,0,0">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Tabs -->
+                                <StackPanel Orientation="Horizontal">
+                                    <Button x:Name="TabChannelsBtn" Style="{StaticResource ModernButton}" Height="28" Padding="12,0"
+                                            Click="AdminTab_Click" Tag="channels">
+                                        <TextBlock Text="Channels" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource OnAccentBrush}"/>
+                                    </Button>
+                                    <Button x:Name="TabMembersBtn" Style="{StaticResource OutlineButton}" Height="28" Padding="12,0" Margin="8,0,0,0"
+                                            Click="AdminTab_Click" Tag="members">
+                                        <TextBlock Text="Members" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
+                                    </Button>
+                                    <Button x:Name="TabRolesBtn" Style="{StaticResource OutlineButton}" Height="28" Padding="12,0" Margin="8,0,0,0"
+                                            Click="AdminTab_Click" Tag="roles">
+                                        <TextBlock Text="Roles" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
+                                    </Button>
+                                    <Button x:Name="TabPermsBtn" Style="{StaticResource OutlineButton}" Height="28" Padding="12,0" Margin="8,0,0,0"
+                                            Click="AdminTab_Click" Tag="perms">
+                                        <TextBlock Text="Bot permissions" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
+                                    </Button>
+                                </StackPanel>
+
+                                <!-- Channels tab -->
+                                <Grid x:Name="ChannelsTab" Grid.Row="1" Margin="0,10,0,0">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"
+                                            BorderThickness="1" CornerRadius="8">
+                                        <ListBox x:Name="AdminChannelsList" Background="Transparent" BorderThickness="0"
+                                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                                 ItemContainerStyle="{StaticResource RowItem}"
+                                                 SelectionChanged="AdminChannelsList_SelectionChanged">
+                                            <ListBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid Margin="10,7">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Text="{Binding TypeLabel}" FontSize="10" FontWeight="Bold"
+                                                                   Foreground="{StaticResource AccentTextBrush}" VerticalAlignment="Center" Width="52"/>
+                                                        <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="12"
+                                                                   Foreground="{StaticResource TextBrush}" VerticalAlignment="Center" Margin="8,0,0,0" TextTrimming="CharacterEllipsis"/>
+                                                        <TextBlock Grid.Column="2" FontSize="10" Foreground="{StaticResource TextTertiaryBrush}" VerticalAlignment="Center">
+                                                            <Run Text="{Binding PermCount, Mode=OneWay}"/><Run Text=" perms"/>
+                                                        </TextBlock>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ListBox.ItemTemplate>
+                                        </ListBox>
+                                    </Border>
+                                    <StackPanel Grid.Row="1" Margin="0,10,0,0">
+                                        <TextBlock x:Name="AdminChannelInfo" FontSize="10.5" Foreground="{StaticResource TextSecondaryBrush}"
+                                                   TextWrapping="Wrap" Margin="0,0,0,8"/>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBox x:Name="AdminChannelNameBox" Style="{StaticResource FieldTextBox}" Height="30" Width="200"
+                                                     FontSize="11"/>
+                                            <Button x:Name="AdminRenameChannelBtn" Style="{StaticResource OutlineButton}" Height="30" Padding="10,0" Margin="8,0,0,0"
+                                                    Click="AdminRenameChannel_Click">
+                                                <TextBlock Text="Rename" FontSize="10.5" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
+                                            </Button>
+                                            <Button Style="{StaticResource ModernButton}" Height="30" Padding="10,0" Margin="8,0,0,0"
+                                                    Click="AdminCreateChannel_Click">
+                                                <TextBlock Text="New channel" FontSize="10.5" FontWeight="SemiBold" Foreground="{StaticResource OnAccentBrush}"/>
+                                            </Button>
+                                            <Button Style="{StaticResource GhostButton}" Height="30" Padding="10,0" Margin="8,0,0,0"
+                                                    Click="AdminDeleteChannel_Click">
+                                                <TextBlock Text="Delete channel" FontSize="10.5" FontWeight="SemiBold" Foreground="{StaticResource DangerBrush}"/>
+                                            </Button>
+                                        </StackPanel>
+                                        <ItemsControl x:Name="AdminChannelPerms" Margin="0,8,0,0">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Style="{StaticResource TagChip}" Margin="0,0,6,6">
+                                                        <TextBlock Text="{Binding}" Style="{StaticResource TagChipText}"/>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- Members tab -->
+                                <Grid x:Name="MembersTab" Grid.Row="1" Margin="0,10,0,0" Visibility="Collapsed">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"
+                                            BorderThickness="1" CornerRadius="8">
+                                        <ListBox x:Name="AdminMembersList" Background="Transparent" BorderThickness="0"
+                                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                                 ItemContainerStyle="{StaticResource RowItem}"
+                                                 SelectionChanged="AdminMembersList_SelectionChanged">
+                                            <ListBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid Margin="10,7">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <StackPanel>
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <TextBlock Text="{Binding Username}" FontSize="12" FontWeight="SemiBold"
+                                                                           Foreground="{StaticResource TextBrush}" TextTrimming="CharacterEllipsis"/>
+                                                                <Border x:Name="BotTag" Visibility="{Binding BotTagVisible}" Background="{StaticResource AccentSoftBrush}"
+                                                                        CornerRadius="5" Padding="6,1" Margin="8,0,0,0">
+                                                                    <TextBlock Text="BOT" FontSize="8.5" FontWeight="Bold" Foreground="{StaticResource AccentTextBrush}"/>
+                                                                </Border>
+                                                            </StackPanel>
+                                                            <TextBlock FontSize="10" Foreground="{StaticResource TextTertiaryBrush}" Margin="0,2,0,0">
+                                                                <Run Text="{Binding NickLine, Mode=OneWay}"/><Run Text="  ID "/><Run Text="{Binding Id, Mode=OneWay}"/>
+                                                            </TextBlock>
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ListBox.ItemTemplate>
+                                        </ListBox>
+                                    </Border>
+                                    <StackPanel Grid.Row="1" Margin="0,10,0,0">
+                                        <TextBlock x:Name="AdminMemberInfo" FontSize="10.5" Foreground="{StaticResource TextSecondaryBrush}"
+                                                   TextWrapping="Wrap" Margin="0,0,0,8"/>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBox x:Name="AdminTimeoutBox" Style="{StaticResource FieldTextBox}" Height="30" Width="90"
+                                                     FontSize="11" ToolTip="Timeout minutes"/>
+                                            <Button Style="{StaticResource OutlineButton}" Height="30" Padding="10,0" Margin="8,0,0,0"
+                                                    Click="AdminTimeoutMember_Click">
+                                                <TextBlock Text="Timeout (min)" FontSize="10.5" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
+                                            </Button>
+                                            <Button Style="{StaticResource OutlineButton}" Height="30" Padding="10,0" Margin="8,0,0,0"
+                                                    Click="AdminKickMember_Click">
+                                                <TextBlock Text="Kick" FontSize="10.5" FontWeight="SemiBold" Foreground="{StaticResource WarnBrush}"/>
+                                            </Button>
+                                            <Button Style="{StaticResource GhostButton}" Height="30" Padding="10,0" Margin="8,0,0,0"
+                                                    Click="AdminBanMember_Click">
+                                                <TextBlock Text="Ban" FontSize="10.5" FontWeight="SemiBold" Foreground="{StaticResource DangerBrush}"/>
+                                            </Button>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- Roles tab -->
+                                <Grid x:Name="RolesTab" Grid.Row="1" Margin="0,10,0,0" Visibility="Collapsed">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="240"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"
+                                            BorderThickness="1" CornerRadius="8" Padding="8">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+                                            <ListBox x:Name="AdminRolesList" Background="Transparent" BorderThickness="0"
+                                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                                     ItemContainerStyle="{StaticResource RowItem}"
+                                                     SelectionChanged="AdminRolesList_SelectionChanged">
+                                                <ListBox.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Grid Margin="8,6">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="10"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <Ellipse Width="8" Height="8" Fill="{Binding ColorBrush}" VerticalAlignment="Center"/>
+                                                            <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                                                                <TextBlock Text="{Binding Name}" FontSize="11.5" FontWeight="SemiBold"
+                                                                           Foreground="{StaticResource TextBrush}" TextTrimming="CharacterEllipsis"/>
+                                                                <TextBlock Text="{Binding PermCountText}" FontSize="9.5" Foreground="{StaticResource TextTertiaryBrush}" Margin="0,2,0,0"/>
+                                                            </StackPanel>
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ListBox.ItemTemplate>
+                                            </ListBox>
+                                            <StackPanel Grid.Row="1" Margin="0,8,0,0">
+                                                <TextBox x:Name="AdminRoleNameBox" Style="{StaticResource FieldTextBox}" Height="30" FontSize="11"/>
+                                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                                    <Button x:Name="AdminRenameRoleBtn" Style="{StaticResource OutlineButton}" Height="28" Padding="10,0"
+                                                            Click="AdminRenameRole_Click">
+                                                        <TextBlock Text="Rename" FontSize="10.5" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
+                                                    </Button>
+                                                    <Button Style="{StaticResource ModernButton}" Height="28" Padding="10,0" Margin="8,0,0,0"
+                                                            Click="AdminCreateRole_Click">
+                                                        <TextBlock Text="New role" FontSize="10.5" FontWeight="SemiBold" Foreground="{StaticResource OnAccentBrush}"/>
+                                                    </Button>
+                                                    <Button Style="{StaticResource GhostButton}" Height="28" Padding="10,0" Margin="8,0,0,0"
+                                                            Click="AdminDeleteRole_Click">
+                                                        <TextBlock Text="Delete" FontSize="10.5" FontWeight="SemiBold" Foreground="{StaticResource DangerBrush}"/>
+                                                    </Button>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                    <Border Grid.Column="1" Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"
+                                            BorderThickness="1" CornerRadius="8" Margin="12,0,0,0" Padding="12">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="Role permissions" FontSize="11" FontWeight="Bold"
+                                                           Foreground="{StaticResource TextBrush}"/>
+                                                <TextBlock x:Name="AdminRolePermStatus" FontSize="10" Foreground="{StaticResource TextTertiaryBrush}" Margin="8,0,0,0"/>
+                                            </StackPanel>
+                                            <ScrollViewer Grid.Row="1" Margin="0,10,0,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                                <ItemsControl x:Name="AdminRolePermChecks">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay}" Content="{Binding Label}"
+                                                                      Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" Margin="0,4,0,0"/>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </ScrollViewer>
+                                            <Button x:Name="AdminSaveRolePermsBtn" Grid.Row="2" Style="{StaticResource ModernButton}" Height="30"
+                                                    Margin="0,10,0,0" Click="AdminSaveRolePerms_Click">
+                                                <TextBlock Text="Save role permissions" FontSize="10.5" FontWeight="SemiBold"
+                                                           Foreground="{StaticResource OnAccentBrush}"/>
+                                            </Button>
+                                        </Grid>
+                                    </Border>
+                                </Grid>
+
+                                <!-- Bot permissions tab -->
+                                <Grid x:Name="PermsTab" Grid.Row="1" Margin="0,10,0,0" Visibility="Collapsed">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock x:Name="AdminPermsHint" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"
+                                               TextWrapping="Wrap" Margin="0,0,0,10"/>
+                                    <Border Grid.Row="1" Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"
+                                            BorderThickness="1" CornerRadius="8" Padding="14">
+                                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                            <ItemsControl x:Name="AdminPermsList">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border Style="{StaticResource TagChip}" Margin="0,0,8,8">
+                                                            <TextBlock Text="{Binding}" Style="{StaticResource TagChipText}"/>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </ScrollViewer>
+                                    </Border>
+                                </Grid>
+                            </Grid>
+                        </Grid>
+
+                        <!-- Footer status -->
+                        <TextBlock x:Name="AdminStatusText" Grid.Row="2" FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}"
+                                   TextWrapping="Wrap" Margin="20,10,20,14"/>
+                    </Grid>
                 </Border>
             </Grid>
 
