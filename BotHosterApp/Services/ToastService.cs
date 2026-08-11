@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using MediaColor = System.Windows.Media.Color;
 
@@ -171,10 +172,34 @@ internal sealed class ToastWindow : Window
 
         Content = border;
         MouseLeftButtonUp += (_, _) => Close();
+        Opacity = 0;
 
         _timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(7) };
-        _timer.Tick += (_, _) => Close();
+        _timer.Tick += (_, _) =>
+        {
+            _timer.Stop();
+            var fade = new DoubleAnimation(0, TimeSpan.FromMilliseconds(220))
+            {
+                EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseIn },
+            };
+            fade.Completed += (_, _) => Close();
+            BeginAnimation(OpacityProperty, fade);
+        };
         _timer.Start();
         Closed += (_, _) => _timer.Stop();
+    }
+
+    protected override void OnContentRendered(EventArgs e)
+    {
+        base.OnContentRendered(e);
+        // Slide in from the right with a fade - the toast is a topmost window,
+        // so animate the window opacity and a transform on the content border.
+        var tt = new TranslateTransform(26, 0);
+        if (Content is Border b) b.RenderTransform = tt;
+        var ease = new QuadraticEase { EasingMode = EasingMode.EaseOut };
+        tt.BeginAnimation(TranslateTransform.XProperty,
+            new DoubleAnimation(0, TimeSpan.FromMilliseconds(200)) { EasingFunction = ease });
+        BeginAnimation(OpacityProperty,
+            new DoubleAnimation(1, TimeSpan.FromMilliseconds(200)) { EasingFunction = ease });
     }
 }

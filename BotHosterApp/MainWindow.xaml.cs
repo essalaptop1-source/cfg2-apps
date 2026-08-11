@@ -11,6 +11,7 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using BotHosterApp.Services;
@@ -31,6 +32,7 @@ public partial class MainWindow : Window
     private ICollectionView? _botsView;
 
     private static readonly Brush InfoBrush = new SolidColorBrush(MediaColor.FromRgb(0xD4, 0xD4, 0xD8));
+    private static readonly Brush InfoTagBrush = new SolidColorBrush(MediaColor.FromRgb(0x7D, 0xD3, 0xFC));
     private static readonly Brush WarnBrush = new SolidColorBrush(MediaColor.FromRgb(0xFE, 0xBB, 0x3D));
     private static readonly Brush ErrorBrush = new SolidColorBrush(MediaColor.FromRgb(0xF8, 0x71, 0x71));
     private static readonly Brush DimBrush = new SolidColorBrush(MediaColor.FromRgb(0x71, 0x71, 0x7A));
@@ -38,6 +40,7 @@ public partial class MainWindow : Window
     private System.Windows.Forms.NotifyIcon? _trayIcon;
     private bool _exiting;
     private bool _startToTray;
+    private bool _autoScroll = true;
 
     public MainWindow()
     {
@@ -48,8 +51,11 @@ public partial class MainWindow : Window
             if (RootClip != null)
                 RootClip.Rect = new Rect(0, 0, e.NewSize.Width, e.NewSize.Height);
         };
-        Loaded += (_, e) =>
+        Loaded += (_, _) =>
         {
+            Opacity = 0;
+            BeginAnimation(OpacityProperty,
+                Anim(1, 280, new QuadraticEase { EasingMode = EasingMode.EaseOut }));
             ClampToWorkArea();
             SetupTray();
             if (_startToTray)
@@ -96,8 +102,12 @@ public partial class MainWindow : Window
             Dispatcher.BeginInvoke(() =>
             {
                 RefreshSidebar();
+                UpdateStatusBar();
                 if (entry == _selected)
+                {
                     RefreshSelectedView();
+                    UpdateDotPulse();
+                }
 
                 // Toast notifications: small cards in the top-right corner, a
                 // bit below the top edge and above the taskbar. They show even
@@ -286,6 +296,7 @@ public partial class MainWindow : Window
             EmptyState.Visibility = Visibility.Collapsed;
             BotView.Visibility = Visibility.Collapsed;
             RefreshAccountView();
+            FadeIn(AccountPanel);
         }
     }
 
@@ -293,6 +304,7 @@ public partial class MainWindow : Window
     {
         EmptyState.Visibility = _selected == null ? Visibility.Visible : Visibility.Collapsed;
         BotView.Visibility = _selected == null ? Visibility.Collapsed : Visibility.Visible;
+        FadeIn(_selected == null ? EmptyState : BotView);
     }
 
     private void RefreshAccountView()
@@ -514,6 +526,7 @@ public partial class MainWindow : Window
 
         BotStateDot.Fill = b.StateBrush;
         BotStateText.Text = b.StateText;
+        UpdateDotPulse();
 
         // Start/stop button
         var running = b.Running;
@@ -545,6 +558,13 @@ public partial class MainWindow : Window
             return;
         }
         AddPanel.Visibility = Visibility.Visible;
+        AddPanel.Opacity = 0;
+        var tt = new TranslateTransform(0, -6);
+        AddPanel.RenderTransform = tt;
+        AddPanel.BeginAnimation(UIElement.OpacityProperty,
+            Anim(1, 170, new QuadraticEase { EasingMode = EasingMode.EaseOut }));
+        tt.BeginAnimation(TranslateTransform.YProperty,
+            Anim(0, 170, new QuadraticEase { EasingMode = EasingMode.EaseOut }));
         BrowseFileBtn.Focus();
     }
 
@@ -1045,17 +1065,21 @@ public partial class MainWindow : Window
     private void AppendConsole(string text, LogSeverity severity)
     {
         if (ConsoleBox == null) return;
-        var brush = severity switch
+        var (tag, tagBrush, msgBrush) = severity switch
         {
-            LogSeverity.Warning => WarnBrush,
-            LogSeverity.Error or LogSeverity.Critical => ErrorBrush,
-            _ => InfoBrush,
+            LogSeverity.Warning => ("WARN", WarnBrush, WarnBrush),
+            LogSeverity.Error or LogSeverity.Critical => ("ERR!", ErrorBrush, ErrorBrush),
+            _ => ("INFO", InfoTagBrush, InfoBrush),
         };
-        var run = new Run($"[{DateTime.Now:HH:mm:ss}] {text}\n") { Foreground = brush };
-        ConsoleBox.Document.Blocks.Add(new Paragraph(run));
+        var para = new Paragraph { Margin = new Thickness(0) };
+        para.Inlines.Add(new Run($"[{DateTime.Now:HH:mm:ss}]") { Foreground = DimBrush });
+        para.Inlines.Add(new Run($"[{tag}]") { Foreground = tagBrush, FontWeight = FontWeights.Bold });
+        para.Inlines.Add(new Run(" " + text) { Foreground = msgBrush });
+        ConsoleBox.Document.Blocks.Add(para);
         if (ConsoleBox.Document.Blocks.Count > 600)
             ConsoleBox.Document.Blocks.Remove(ConsoleBox.Document.Blocks.FirstBlock);
-        ConsoleBox.ScrollToEnd();
+        if (_autoScroll)
+            ConsoleBox.ScrollToEnd();
     }
 
     private void RebuildConsole()
@@ -1075,6 +1099,51 @@ public partial class MainWindow : Window
         {
             _logs.Remove(_selected);
             ConsoleBox.Document.Blocks.Clear();
+        }
+    }
+
+    private void AutoScroll_Click(object sender, RoutedEventArgs e)
+    {
+        _autoScroll = !_autoScroll;
+        if (AutoScrollIcon != null)
+            AutoScrollIcon.Stroke = (Brush)FindResource(_autoScroll ? "AccentTextBrush" : "TextTertiaryBrush");
+        if (AutoScrollLabel != null)
+        {
+            AutoScrollLabel.Foreground = (Brush)FindResource(_autoScroll ? "AccentTextBrush" : "TextTertiaryBrush");
+            AutoScrollLabel.Text = _autoScroll ? "Auto-scroll" : "Paused";
+        }
+        if (_autoScroll)
+            ConsoleBox.ScrollToEnd();
+    }
+
+    private async void RestartAll_Click(object sender, RoutedEventArgs e)
+    {
+        var running = _manager.Bots.Count(b => b.Running);
+        if (running == 0)
+        {
+            ToastService.Show("Restart all", "No bots are running right now.");
+            return;
+        }
+        ToastService.Show("Restart all", $"Restarting {running} running bot(s)...");
+        await _manager.RestartAllAsync();
+    }
+
+    private void OpenFileLocation_Click(object sender, RoutedEventArgs e)
+    {
+        var b = _selected ?? CtxBot(sender);
+        if (b == null || string.IsNullOrWhiteSpace(b.PythonPath)) return;
+        var dir = Path.GetDirectoryName(b.PythonPath) ?? "";
+        if (Directory.Exists(dir))
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{b.PythonPath}\"") { UseShellExecute = true });
+            }
+            catch { }
+        }
+        else if (File.Exists(b.PythonPath))
+        {
+            try { Process.Start(new ProcessStartInfo(dir) { UseShellExecute = true }); } catch { }
         }
     }
 
@@ -1130,6 +1199,41 @@ public partial class MainWindow : Window
                 GuildsText.Text = _selected.GuildCountText;
             ProcStatsText.Text = _selected.Running ? SampleProcStats(_selected) : "—";
         }
+        UpdateStatusBar();
+    }
+
+    /// <summary>Bottom status bar: bot / running counts + longest uptime.</summary>
+    private void UpdateStatusBar()
+    {
+        if (StatusBarText == null) return;
+        var all = _manager.Bots;
+        var running = all.Count(b => b.Running);
+        var online = all.Count(b => b.LiveState == "running");
+        var up = running == 0 ? TimeSpan.Zero : all.Where(b => b.Running).Max(b => TimeSpan.FromSeconds(b.UptimeSecs));
+        StatusBarText.Text = running == 0
+            ? $"{all.Count} bot{(all.Count == 1 ? "" : "s")} · none running"
+            : $"{all.Count} bot{(all.Count == 1 ? "" : "s")} · {running} running · {online} online · longest uptime {FormatTime(up)}";
+    }
+
+    /// <summary>Pulses the header status dot while the selected bot is online.</summary>
+    private void UpdateDotPulse()
+    {
+        if (BotStateDot == null) return;
+        if (_selected is { Running: true } && _selected.LiveState == "running")
+        {
+            var anim = new DoubleAnimation(0.35, 1, TimeSpan.FromMilliseconds(900))
+            {
+                AutoReverse = true,
+                RepeatBehavior = RepeatBehavior.Forever,
+                EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseInOut },
+            };
+            BotStateDot.BeginAnimation(UIElement.OpacityProperty, anim);
+        }
+        else
+        {
+            BotStateDot.BeginAnimation(UIElement.OpacityProperty, null);
+            BotStateDot.Opacity = 1;
+        }
     }
 
     /// <summary>Live CPU % and memory of the bot's Python process.</summary>
@@ -1176,6 +1280,19 @@ public partial class MainWindow : Window
     }
 
     private void Close_Click(object sender, RoutedEventArgs e) => Close();
+
+    // ================================================= animations
+
+    private static DoubleAnimation Anim(double to, double ms, IEasingFunction? ease = null)
+        => new DoubleAnimation(to, TimeSpan.FromMilliseconds(ms)) { EasingFunction = ease };
+
+    private static void FadeIn(UIElement el, double ms = 170)
+    {
+        if (el == null) return;
+        el.Opacity = 0;
+        el.BeginAnimation(UIElement.OpacityProperty,
+            Anim(1, ms, new QuadraticEase { EasingMode = EasingMode.EaseOut }));
+    }
 
     // ================================================= frameless chrome helpers
     // The window is AllowsTransparency so DWM never paints glass over it. That

@@ -30,7 +30,13 @@ public sealed class BotEntry : INotifyPropertyChanged
 
     // Live state (not persisted)
     [JsonIgnore] public Process? Proc { get; set; }
-    [JsonIgnore] public bool Running { get; set; }
+
+    private bool _running;
+    [JsonIgnore] public bool Running
+    {
+        get => _running;
+        set { _running = value; Raise(nameof(UptimeText)); }
+    }
 
     private string _liveState = "offline";
     [JsonIgnore] public string LiveState // offline | starting | running | restarting
@@ -47,7 +53,13 @@ public sealed class BotEntry : INotifyPropertyChanged
     }
 
     [JsonIgnore] public DateTime StartedAt { get; set; }
-    [JsonIgnore] public int UptimeSecs { get; set; }
+
+    private int _uptimeSecs;
+    [JsonIgnore] public int UptimeSecs
+    {
+        get => _uptimeSecs;
+        set { _uptimeSecs = value; Raise(nameof(UptimeText)); }
+    }
     [JsonIgnore] public int RestartCount { get; set; }
     [JsonIgnore] public bool ReportedOnline { get; set; }
 
@@ -69,6 +81,7 @@ public sealed class BotEntry : INotifyPropertyChanged
     [JsonIgnore] public string Initial => string.IsNullOrWhiteSpace(Name) ? "?" : Name[..1].ToUpperInvariant();
     [JsonIgnore] public string GuildCountText => GuildCount == 0 ? "—" : $"{GuildCount}";
     [JsonIgnore] public string FileName => string.IsNullOrWhiteSpace(PythonPath) ? "" : Path.GetFileName(PythonPath);
+    [JsonIgnore] public string UptimeText => !Running ? "" : $"· {UptimeSecs / 3600}h {(UptimeSecs % 3600) / 60:D2}m";
 }
 
 /// <summary>
@@ -449,6 +462,13 @@ public sealed class BotManager
         foreach (var b in Bots.ToList())
             if (b.Running)
                 await StopAsync(b);
+    }
+
+    public async Task RestartAllAsync()
+    {
+        foreach (var b in Bots.ToList())
+            if (b.Running)
+                await RestartAsync(b);
     }
 
     // ================================================================ REST: guilds + leave

@@ -34,6 +34,10 @@
                         <MenuItem Header="Copy token" Click="Ctx_CopyToken">
                             <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconCopy}" Width="11" Height="11" Stroke="{StaticResource TextSecondaryBrush}"/></MenuItem.Icon>
                         </MenuItem>
+                        <MenuItem Header="Open file location" Click="OpenFileLocation_Click">
+                            <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconFolder}" Width="11" Height="11" Stroke="{StaticResource TextSecondaryBrush}"/></MenuItem.Icon>
+                        </MenuItem>
+                        <Separator/>
                         <MenuItem Header="Remove" Click="Ctx_Remove">
                             <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconTrash}" Width="11" Height="11" Stroke="{StaticResource DangerBrush}"/></MenuItem.Icon>
                         </MenuItem>
@@ -68,6 +72,8 @@
                         <Ellipse Width="7" Height="7" Fill="{Binding StateBrush}" VerticalAlignment="Center"/>
                         <TextBlock Text="{Binding StateText}" FontSize="11"
                                    Foreground="{StaticResource TextSecondaryBrush}" Margin="5,0,0,0"/>
+                        <TextBlock Text="{Binding UptimeText}" FontSize="10.5"
+                                   Foreground="{StaticResource AccentTextBrush}" Margin="6,0,0,0"/>
                     </StackPanel>
                 </StackPanel>
                 <Border Grid.Column="2" Background="{StaticResource SurfaceBrush}" CornerRadius="8" Padding="6,2"
@@ -432,6 +438,10 @@
                 <!-- ============ Main panel ============ -->
                 <Grid Grid.Column="3" Background="{StaticResource WindowBgBrush}">
                     <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
                     <!-- Empty state: welcome dashboard -->
                     <StackPanel x:Name="EmptyState" VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="430">
                         <Border Width="96" Height="96" CornerRadius="48" Background="{StaticResource AccentGradientBrush}">
@@ -490,6 +500,9 @@
                                             </MenuItem>
                                             <MenuItem Header="Copy invite link" Click="CopyInvite_Click">
                                                 <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconLink}" Width="11" Height="11" Stroke="{StaticResource AccentTextBrush}"/></MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Header="Open file location" Click="OpenFileLocation_Click">
+                                                <MenuItem.Icon><Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconFolder}" Width="11" Height="11" Stroke="{StaticResource TextSecondaryBrush}"/></MenuItem.Icon>
                                             </MenuItem>
                                             <Separator/>
                                             <MenuItem Header="Remove" Click="RemoveBot_Click">
@@ -710,7 +723,21 @@
                                                TextTrimming="CharacterEllipsis" MaxWidth="420"/>
                                 </StackPanel>
                                 <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                    <Button Style="{StaticResource GhostButton}" Height="26" Padding="10,0"
+                                    <Button Style="{StaticResource GhostButton}" Height="26" Width="30" Padding="0"
+                                            Click="RestartAll_Click" ToolTip="Restart all running bots">
+                                        <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconRefresh}" Width="11" Height="11"
+                                              Stroke="{StaticResource AccentTextBrush}" VerticalAlignment="Center"/>
+                                    </Button>
+                                    <Button x:Name="AutoScrollBtn" Style="{StaticResource GhostButton}" Height="26"
+                                            Padding="9,0" Margin="8,0,0,0" Click="AutoScroll_Click"
+                                            ToolTip="Follow new log lines automatically">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Path x:Name="AutoScrollIcon" Style="{StaticResource StrokeIcon}" Data="{StaticResource IconLink}" Width="10" Height="10"
+                                                  Stroke="{StaticResource AccentTextBrush}" VerticalAlignment="Center"/>
+                                            <TextBlock x:Name="AutoScrollLabel" Text="Auto-scroll" FontSize="10.5" Foreground="{StaticResource AccentTextBrush}" Margin="5,0,0,0"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Style="{StaticResource GhostButton}" Height="26" Padding="10,0" Margin="8,0,0,0"
                                             Click="SaveLog_Click" ToolTip="Save the console to a text file">
                                         <StackPanel Orientation="Horizontal">
                                             <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconDownload}" Width="10" Height="10"
@@ -751,7 +778,7 @@
                     </Grid>
 
                     <!-- ======================== Account panel ======================== -->
-                    <ScrollViewer x:Name="AccountPanel" Grid.Row="1" Visibility="Collapsed"
+                    <ScrollViewer x:Name="AccountPanel" Grid.Row="0" Visibility="Collapsed"
                                   VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                         <StackPanel Margin="26,18,26,22">
 
@@ -888,6 +915,17 @@
                             </Border>
                         </StackPanel>
                     </ScrollViewer>
+
+                    <!-- Bottom status bar: bots / running / uptime overview -->
+                    <Border Grid.Row="1" Background="{StaticResource BgElevatedBrush}"
+                            BorderBrush="{StaticResource PanelDividerBrush}" BorderThickness="0,1,0,0"
+                            Padding="18,7" IsHitTestVisible="False">
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse Width="6" Height="6" Fill="{StaticResource AccentBrush}" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="StatusBarText" FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}"
+                                       Margin="8,0,0,0" TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
+                    </Border>
                     </Grid>
                 </Grid>
             </Grid>
