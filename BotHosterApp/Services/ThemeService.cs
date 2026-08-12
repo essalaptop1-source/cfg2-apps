@@ -23,12 +23,12 @@ public static class ThemeService
         _ => name,
     };
 
-    public const string DefaultTheme = "Cyan";
+    public const string DefaultTheme = "Mono";
 
     public static string Current { get; private set; } = DefaultTheme;
 
     /// <summary>Accent of the active theme (updated on Apply).</summary>
-    public static Color Accent { get; private set; } = Color.FromRgb(0x22, 0xD3, 0xEE);
+    public static Color Accent { get; private set; } = Color.FromRgb(0xFF, 0xFF, 0xFF);
 
     /// <summary>Accent as the 0xRRGGBB int Discord embeds expect.</summary>
     public static int AccentRgb =>
@@ -36,14 +36,14 @@ public static class ThemeService
 
     public static bool IsValid(string name) => Themes.Contains(name);
 
-    // The default palette lives in Colors.xaml; every other theme has its
-    // own Colors.<Name>.xaml. Use the same relative form App.xaml uses for
-    // its merged dictionaries - assembly-qualified pack URIs
+    // The Cyan palette lives in Colors.xaml; every other theme has its own
+    // Colors.<Name>.xaml. Use the same relative form App.xaml uses for its
+    // merged dictionaries - assembly-qualified pack URIs
     // ("/BotHosterApp;component/...") throw FileNotFoundException in
     // single-file published builds because the embedded assembly can't be
     // loaded by name.
     private static string DictionaryPath(string name) =>
-        name == DefaultTheme ? "Themes/Colors.xaml" : $"Themes/Colors.{name}.xaml";
+        name == "Cyan" ? "Themes/Colors.xaml" : $"Themes/Colors.{name}.xaml";
 
     /// <summary>Loads a theme palette without applying it (for swatch previews).</summary>
     public static Color PeekAccent(string name)
