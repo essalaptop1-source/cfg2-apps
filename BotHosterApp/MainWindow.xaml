@@ -101,20 +101,11 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <!-- Top accent strip: cyan -> blue gradient line -->
-                <Border Height="4" VerticalAlignment="Top" Background="{DynamicResource AccentStripBrush}"
-                        IsHitTestVisible="False">
-                    <Border.Effect>
-                        <DropShadowEffect BlurRadius="12" ShadowDepth="0" Opacity="0.6" Color="{DynamicResource ColorGlowDim}"/>
-                    </Border.Effect>
-                </Border>
                 <Border VerticalAlignment="Bottom" Height="1" Background="{DynamicResource PanelDividerBrush}"
                         IsHitTestVisible="False"/>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="18,0,0,0">
-                    <Border Width="36" Height="36" CornerRadius="16" Background="{DynamicResource AccentGradientBrush}">
-                        <Border.Effect>
-                            <DropShadowEffect BlurRadius="14" ShadowDepth="0" Opacity="0.55" Color="{DynamicResource ColorGlow}"/>
-                        </Border.Effect>
+                    <Border Width="36" Height="36" CornerRadius="16" Background="{DynamicResource SurfaceAltBrush}"
+                            BorderBrush="{DynamicResource BorderStrongBrush}" BorderThickness="1">
                         <Image x:Name="TitleLogo" Stretch="Uniform" Width="24" Height="24"
                                HorizontalAlignment="Center" VerticalAlignment="Center"
                                RenderOptions.BitmapScalingMode="HighQuality"/>
@@ -175,10 +166,8 @@
                     <Border HorizontalAlignment="Right" VerticalAlignment="Stretch" Width="1"
                             Background="{DynamicResource PanelDividerBrush}" IsHitTestVisible="False"/>
                     <StackPanel HorizontalAlignment="Center" Margin="0,16,0,0">
-                        <Border Width="42" Height="42" CornerRadius="14" Background="{DynamicResource AccentGradientBrush}">
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="16" ShadowDepth="0" Opacity="0.6" Color="{DynamicResource ColorGlow}"/>
-                            </Border.Effect>
+                        <Border Width="42" Height="42" CornerRadius="14" Background="{DynamicResource SurfaceAltBrush}"
+                                BorderBrush="{DynamicResource BorderStrongBrush}" BorderThickness="1">
                             <Image x:Name="RailLogo" Stretch="Uniform" Width="28" Height="28"
                                    HorizontalAlignment="Center" VerticalAlignment="Center"
                                    RenderOptions.BitmapScalingMode="HighQuality"/>
@@ -447,12 +436,10 @@
                         </Grid.RowDefinitions>
                     <!-- Empty state: welcome dashboard -->
                     <StackPanel x:Name="EmptyState" VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="430">
-                        <Border Width="108" Height="108" CornerRadius="54" Background="{DynamicResource AccentGradientBrush}">
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="30" ShadowDepth="0" Opacity="0.6" Color="{DynamicResource ColorGlow}"/>
-                            </Border.Effect>
+                        <Border Width="108" Height="108" CornerRadius="54" Background="{DynamicResource SurfaceAltBrush}"
+                                BorderBrush="{DynamicResource BorderStrongBrush}" BorderThickness="1">
                             <Path Style="{StaticResource StrokeIcon}" Data="{StaticResource IconBot}" Width="44" Height="44"
-                                  Stroke="{DynamicResource OnAccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                  Stroke="{DynamicResource AccentTextBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <TextBlock Text="No bot selected" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"
                                    Foreground="{DynamicResource TextBrush}" Margin="0,24,0,0"/>
@@ -527,11 +514,8 @@
                                             <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
                                         <Border Grid.Row="0" Grid.RowSpan="2" Width="70" Height="70" CornerRadius="35" Padding="2"
-                                                BorderBrush="{DynamicResource AccentBorderBrush}" BorderThickness="2"
+                                                BorderBrush="{DynamicResource BorderStrongBrush}" BorderThickness="1"
                                                 Background="{DynamicResource SurfaceAltBrush}" VerticalAlignment="Center">
-                                            <Border.Effect>
-                                                <DropShadowEffect BlurRadius="20" ShadowDepth="0" Opacity="0.5" Color="{DynamicResource ColorGlowDim}"/>
-                                            </Border.Effect>
                                             <Grid>
                                                 <TextBlock x:Name="BotAvatarInitial" FontSize="26" FontWeight="Bold"
                                                            Foreground="{DynamicResource TextSecondaryBrush}"
